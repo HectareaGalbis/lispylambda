@@ -1,0 +1,8 @@
+#+TITLE: Lispy lambda
+#+AUTHOR: Héctor Galbis Sanchis
+
+Bienvenido a Lispy Lambda. Este es mi proyecto personal en el que iré añadiendo todo lo que sé sobre Common Lisp. A medida que vaya aprendiendo HTML y CSS iré modernizando la página. 
+
+* Indice
+
+- [[http:lispylambda.es/common-lisp][¿Qué es Common Lisp?]]
