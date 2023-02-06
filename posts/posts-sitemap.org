@@ -1,0 +1,3 @@
+#+TITLE: 
+
+- (05-02-2023) [[file:common-lisp.org][Introducción a Common Lisp que no introduce nada sobre el lenguaje]]

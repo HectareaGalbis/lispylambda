@@ -1,8 +1,0 @@
-#+TITLE: ¿Qué es Common Lisp?
-#+AUTHOR: Héctor Galbis Sanchis
-
-* Indice :toc:
-- [[#introducción][Introducción]]
-
-* Introducción
-
