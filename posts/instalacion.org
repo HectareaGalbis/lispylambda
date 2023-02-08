@@ -3,6 +3,16 @@
 
 Quizás la expresión 'instalar Common Lisp' no es la más acertada, pero creo que se entiende bastante bien. El objetivo al final es poder picar código Common Lisp de manera cómoda. Sin embargo, lo mínimo que necesitamos para poder programar es una implementación del lenguaje. Lo demás, editores de texto junto con las extensiones adecuadas, son un extra.
 
+* Indice :toc:
+- [[#lo-mínimo-necesario][Lo mínimo necesario]]
+  - [[#sbcl-en-ubuntu][SBCL en Ubuntu]]
+  - [[#en-cualquier-os][En cualquier OS]]
+  - [[#pues-ya-estaría][Pues ya estaría]]
+- [[#un-ide-para-common-lisp][Un IDE para Common Lisp]]
+  - [[#instalando-emacs][Instalando Emacs]]
+  - [[#instalando-slime][Instalando Slime]]
+  - [[#usando-slime][Usando SLIME]]
+
 * Lo mínimo necesario
 
 Common Lisp es un estándar, como lo es también C++. Es decir, cuando hablamos del lenguaje, hablamos de cómo funciona. Pero si queremos crear un programa, necesitamos además un compilador o intérprete. Éstos se llaman implementaciones del lenguaje. Pues eso es lo único que necesitas para crear programas usando el lenguaje Common Lisp.
@@ -65,4 +75,85 @@ sh install.sh
 
 * Un IDE para Common Lisp
 
+Claramente usar la terminal para programar en Common Lisp no es la mejor idea. Es por eso que existen los IDEs, es decir, entornos de desarrollo. El problema es que no existe ningún IDE específico para Common Lisp. Bueno, en realidad LispWorks si te ofrece uno, pero no es gratuito. Es por eso que la mejor opción es prepararnos algo lo más parecido a un IDE, y para ello necesitamos 3 ingredientes:
+
+1) Un editor de texto.
+2) Una extensión del editor que se pueda comunicar con la implementación de Common Lisp que queramos usar.
+3) Indicarle a dicha extensión dónde está el ejecutable de la implementación de Common Lisp.
+
+Las tres opciones 'editor+extensión' más conocidas son las siguientes:
+
+- [[https://code.visualstudio.com][Visual Studio Code]] + [[https://marketplace.visualstudio.com/items?itemName=rheller.alive][Alive]] (también existe la extensión [[https://marketplace.visualstudio.com/items?itemName=ailisp.commonlisp-vscode][Common Lisp]])
+- [[https://atom.uptodown.com/windows][Atom]] + [[https://github.com/neil-lindquist/slima][Slima]]
+- [[https://www.gnu.org/software/emacs/][Emacs]] + [[https://github.com/slime/slime][Slime]] (lo mejor de lo mejor)
+
+Si has visto otros blogs o videos sobre qué se debe usar para programar en Common Lisp habrás visto que todos recomiendan la última opción: [[Emacs]] junto con [[https://github.com/slime/slime][Slime]]. Y tienen razón. No hay más. Es que es lo mejor que hay ahora mismo (y muy posiblemente para siempre).
+
+Pero hablemos un poco sobre Emacs. Empezar a usarlo fue una experiencia dura. Si no recuerdo mal lo instalé y desinstalé 4 o 5 veces. Mientras tanto iba probando las otras dos opciones. Con VSCode duré una semana o así porque la extensión Alive era algo incómoda y no me iba del todo bien. La otra extensión llamada Common Lisp no la he probado. En cuanto a Atom lo usé aproximadamente durante un mes. La verdad es que no estaba nada mal, pero a Slima le faltaba algo que hiciese que me gustase del todo. Además, me acabo de enterar de que ya no van a seguir actualizándolo, es decir, Atom a muerto. Pero tú debes hacer lo que quieras, ve probando las diferentes opciones. Aunque lo más seguro es que acabes con Emacs, como hice yo. Y estaré eternamente agradecido con la gente que haya creado Emacs porque ahora lo adoro. Lo uso para casi todo, incluso escribir lo que estás leyendo ahora mismo.
+
+Como ya puedes imaginar, vamos a explicar cómo instalar Emacs junto con la extensión Slime.
+
+** Instalando Emacs
+
+Puedes ver las instrucciones de instalación en su [[https://www.gnu.org/software/emacs/download.html][página oficial]].
+
+*** Ubuntu
+
+Basta con que ejecutes el siguiente comando:
+
+#+begin_src bash
+sudo apt install emacs
+#+end_src
+
+En su [[https://www.gnu.org/software/emacs/download.html#gnu-linux][página de descargas]] puedes ver cómo instalar emacs con otros gestores de paquetes.
+
+*** Otros OS
+
+Casi lo mismo que antes, en su [[https://www.gnu.org/software/emacs/download.html][página]] puedes ver las instrucciones de instalación para cada sistema operativo, no tiene pérdida.
+
+
+** Instalando Slime
+
+Como Slime es una extensión de Emacs, necesitamos abrir primero el editor. La primera vez que ejecutes Emacs verás algo como esto:
+
+#+CAPTION: Primera sesión de Emacs
+#+ATTR_ORG: :width 300
+[[../images/instalacion/emacs-primera-vez.png]]
+
+Ostras... Es... ¡¡feísimo!! ¡¡Y viejo!! Que no cunda el pánico. Seguramente ya hayas leído que en Emacs todo se puede configurar. Y eso incluye su apariencia. Para que veas un ejemplo de un Emacs configurado te muestro qué veo yo cuando inicio Emacs:
+
+#+CAPTION: Emacs ya configurado
+#+ATTR_ORG: :width 300
+[[../images/instalacion/emacs-configurado.png]]
+
+Mucho mejor, creo yo. Un tema oscuro, minimalista y sin botones feos. Al menos es bonito para mí. Y esa es la gracia, Emacs es para que lo configures a tu gusto. Y no tengas prisa, la configuración se va cociendo a fuego lento. Lo mejor es ir añadiendo cosas a medida que las vas necesitando.
+
+Y lo que quizás te estés preguntando ahora es cómo configuramos Emacs, cómo cambios las cosas del editor. La respuesta es el fichero de inicialización de Emacs. Es literalmente un fichero que ejecuta código cada vez que se inicia Emacs. El código que se pone ahí es lo que va a modificar Emacs. 
+
+Hay varias opciones como fichero de configuración. La gente al comenzar con Emacs suele usar el fichero '~/.emacs.el', aunque yo prefiero el fichero '~/.emacs.d/init.el'. Elige cualquiera de los dos (pero sólo uno). Si no existe ese fichero o carpeta simplemente créalo.
+
+Ahora introduce el siguiente código en el fichero de inicialización que hayas creado:
+
+#+begin_src elisp
+;; Primero necesitamos el repositorio MELPA donde está el paquete SLIME
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/") t)
+(package-initialize)
+
+;; Y segundo instalamos SLIME
+(use-package slime
+  :init
+  ;; Indicamos donde esta el ejecutable de la implementacion de Common Lisp
+  (setq slime-lisp-implementations         '((sbcl  ("/usr/bin/sbcl")))))
+#+end_src
+
+Como indican los comentarios, primero necesitamos incluir los repositorios de MELPA donde está el paquete SLIME. Luego se instala SLIME (si aún no lo está) y además indicamos dónde se sitúa el ejecutable de la implementación de Common Lisp, que en este caso está en '/usr/bin' y el ejecutable se llama 'sbcl'. Modifica el string a tus necesidades.
+
+No te preocupes de entender todo el código. Más de la mitad de mi fichero de inicialización no lo entiendo. La gracia es que vas copiando el código de allí y allá de los ficheros de inicialización de otras personas y lo vas pegando en el tuyo. Poco a poco, cuando entiendas un poco cómo funciona todo podrás empezar a escribir tú tus propias configuraciones.
+
+Pues ya estaría todo listo. Cierra Emacs y vuélvelo a abrir para el fichero se ejecute. Si todo ha ido bien deberías ver la misma imagen fea que antes y no debe de haber salido ningún error. Si por lo que fuese te indica que no se encuentra el paquete SLIME, prueba a presionar 'Alt+x' y escribe el comando 'package-list-packages'. De esta forma se actualiza la lista de paquetes disponibles. Prueba a cerrar y abrir de nuevo Emacs.
+
+
+** Usando SLIME
 
