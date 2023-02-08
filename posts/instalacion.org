@@ -1,0 +1,68 @@
+#+TITLE:Instalando Common Lisp
+#+DATE: <2023-02-08 mié>
+
+Quizás la expresión 'instalar Common Lisp' no es la más acertada, pero creo que se entiende bastante bien. El objetivo al final es poder picar código Common Lisp de manera cómoda. Sin embargo, lo mínimo que necesitamos para poder programar es una implementación del lenguaje. Lo demás, editores de texto junto con las extensiones adecuadas, son un extra.
+
+* Lo mínimo necesario
+
+Common Lisp es un estándar, como lo es también C++. Es decir, cuando hablamos del lenguaje, hablamos de cómo funciona. Pero si queremos crear un programa, necesitamos además un compilador o intérprete. Éstos se llaman implementaciones del lenguaje. Pues eso es lo único que necesitas para crear programas usando el lenguaje Common Lisp.
+
+Al igual que ocurre con C++, existen varias [[https://en.wikipedia.org/wiki/Common_Lisp#List_of_implementations][implementaciones de Common Lisp]]. Algunas de las más conocidas son:
+
+- [[https://franz.com/products/allegro-common-lisp/][Allegro Common Lisp]]
+- [[http://www.lispworks.com][Lisp Works]]
+- [[https://ccl.clozure.com][Clozure CL]] (CCL)
+- [[https://ecl.common-lisp.dev][Embeddable Common Lisp]] (ECL)
+- [[http://www.sbcl.org][Steel Bank Common Lisp]] (SBCL)
+
+Casi todo el mundo, yo incluido, empieza con SBCL por los buenos mensajes de error que muestra. Y esta implementación es la que vamos a ver cómo se instala.
+
+Todas te sirven. La diferencia está en aquellas partes que no se especifican en el estándar de Common Lisp. Por ejemplo, cómo se deben crear hilos, cómo se crean los ejecutables, cómo ejecutamos código foráneo, cómo se compila el código, etc.
+
+** SBCL en Ubuntu
+
+Si está usando Ubuntu la instalación es muy sencilla, pues SBCL está en los repositorios oficiales. Es decir, sólo tienes que ejecutar en una terminal el siguiente comando:
+
+#+BEGIN_SRC: bash
+sudo apt install sbcl
+#+END_SRC
+
+
+** En cualquier OS
+
+Si no estás en Ubuntu, puedes descargar SBCl desde su [[http://www.sbcl.org/platform-table.html][página web]] y seguir el [[http://www.sbcl.org/getting.html][proceso de instalación]]. Verás algo como esto:
+
+#+CAPTION: Página de descargas de SBCL
+#+ATTR_ORG: :width 300
+[[file:~/lispylambda/images/instalacion/sbcl-page.png]]
+
+Basta con que elijas el sistema operativo y la versión que quieras. Por ejemplo, usando Linux o Windows vale la pena que cojas la última versión situada en la columna AMD64.
+
+Con esto descargarás un archivo comprimido. Su nombre será parecido al de '/sbcl-2.3.1-x86-64-linux-binary.tar.bz2/'. 
+
+Descomprímelo usando el siguiente comando:
+
+#+begin_src bash
+bzip2 -cd sbcl-2.3.1-x86-64-linux-binary.tar.bz2 | tar xvf -
+#+end_src
+
+En el interior de la carpeta descomprimida habrá un archivo '/install.sh/'. Así que basta con que lo ejecutes:
+
+#+begin_src bash
+cd sbcl-2.3.1-x86-64-linux
+sh install.sh
+#+end_src
+
+
+** Pues ya estaría
+
+¡Ya está! No necesitas nada más para programar en Common Lisp. Para empezar a usar el intérprete basta con ejecutar el comando src_bash{sbcl}.
+
+#+CAPTION: Ejemplo de uso con SBCL
+#+ATTR_ORG: :width 300
+[[../images/instalacion/ejemplo-sbcl.png]]
+
+
+* Un IDE para Common Lisp
+
+
