@@ -1,5 +1,0 @@
-#+TITLE: 
-
-- (05-02-2023) [[file:common-lisp.org][Introducción a Common Lisp que no introduce nada sobre el lenguaje]]
-- (08-02-2023) [[file:instalacion.org][Instalando Common Lisp]]
-- (12-02-2023) [[file:introduccion.org][Introducción al lenguaje Common Lisp (ahora sí)]]

@@ -5,8 +5,3 @@ Bienvenido a Lispy Lambda! Este es mi proyecto personal en el que iré añadiend
 * Common Lisp
 
 #+include: posts/common-lisp/common-lisp-sitemap.org
-
-
-* Unreal Engine 5
-
-#+include: posts/UnrealEngine/UnrealEngine-sitemap.org

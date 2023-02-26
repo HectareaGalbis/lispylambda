@@ -37,7 +37,7 @@ Si no estás en Ubuntu, puedes descargar SBCL desde su [[http://www.sbcl.org/pla
 
 #+CAPTION: Página de descargas de SBCL
 #+ATTR_ORG: :width 300
-[[../images/instalacion/sbcl-page.png]]
+[[../../images/instalacion/sbcl-page.png]]
 
 Basta con que elijas el sistema operativo y la versión que quieras. Por ejemplo, usando Linux o Windows vale la pena que cojas la última versión situada en la columna AMD64.
 
@@ -63,7 +63,7 @@ sh install.sh
 
 #+CAPTION: Ejemplo de uso con SBCL
 #+ATTR_ORG: :width 300
-[[../images/instalacion/ejemplo-sbcl.png]]
+[[../../images/instalacion/ejemplo-sbcl.png]]
 
 
 * Un IDE para Common Lisp
@@ -111,13 +111,13 @@ Como Slime es una extensión de Emacs, necesitamos abrir primero el editor. La p
 
 #+CAPTION: Primera sesión de Emacs
 #+ATTR_ORG: :width 300
-[[../images/instalacion/emacs-primera-vez.png]]
+[[../../images/instalacion/emacs-primera-vez.png]]
 
 Ostras... Es... ¡¡feísimo!! ¡¡Y viejo!! Que no cunda el pánico. Seguramente ya hayas leído que en Emacs todo se puede configurar. Y eso incluye su apariencia. Para que veas un ejemplo de un Emacs configurado te muestro qué veo yo cuando inicio Emacs:
 
 #+CAPTION: Emacs ya configurado
 #+ATTR_ORG: :width 300
-[[../images/instalacion/emacs-configurado.png]]
+[[../../images/instalacion/emacs-configurado.png]]
 
 Mucho mejor, creo yo. Un tema oscuro, minimalista y sin botones feos. Al menos es bonito para mí. Y esa es la gracia, Emacs es para que lo configures a tu gusto. Y no tengas prisa, la configuración se va cociendo a fuego lento. Lo mejor es ir añadiendo cosas a medida que las vas necesitando.
 
@@ -166,7 +166,7 @@ Si ya tenemos todo correctamente instalado lo difícil está ya hecho. Para ejec
 
 #+CAPTION: Emacs y SLIME
 #+ATTR_ORG: :width 300
-[[../images/instalacion/emacs-slime.png]]
+[[../../images/instalacion/emacs-slime.png]]
 
 Pues ya tendríamos el IDE completamente montado de no ser por lo incómodo que es usar Emacs en su versión por defecto. Ya digo que la configuración tiene que ser tuya, pero puedo indicarte algunas extensiones más para allanarte el camino al principio.
 
@@ -210,7 +210,7 @@ Cuando inicies un atajo de teclado y no te acuerdes de cómo sigue, espérate 3 
 
 #+CAPTION: Emacs y which-key
 #+ATTR_ORG: :width 300
-[[../images/instalacion/emacs-which-key.png]]
+[[../../images/instalacion/emacs-which-key.png]]
 
 ** Autocompletado en tiempo real
 

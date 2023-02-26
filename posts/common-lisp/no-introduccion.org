@@ -1,4 +1,4 @@
-#+TITLE: Introducción a Common Lisp que no introduce nada sobre el lenguaje
+#+TITLE: Introducción a Common Lisp que no introduce nada
 #+DATE: <2023-02-05 dom>
 
 Si has leído algún libro sobre Common Lisp habrás notado que todos empiezan de la misma manera. Siempre hablan del poder que este lenguaje te da, y que ningún otro (los que no son Lisp) puede darte algo parecido. Que la flexibilidad de un lenguaje Lisp es enorme y que, sin embargo, no tienes que despedirte de la eficiencia. Que no es un lenguaje de bajo ni alto nivel, sino que es la herramienta perfecta para construir herramientas de programación. Que con cualquier otro lenguaje, tú deberías adaptarte, pero aquí, es Common Lisp el que se adapta a ti. 
