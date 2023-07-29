@@ -45,5 +45,299 @@ C++ usa los métodos virtules para conseguir el polimorfismo y en el momento en 
 #+end_src
 
 #+RESULTS:
-| La | figura | 1 | tiene | área: | 78.5 |
-| La | figura | 2 | tiene | área: |   12 |
+: La figura 1 tiene área: 78.5
+: La figura 2 tiene área: 12
+
+Se llama *single dispatch* porque sólo interviene un objeto en la elección de la función correcta. Si son varios objetos los que deben determinar a qué función llamar, entonces hablamos de *multiple dispatch*. Desgraciadamente no hay en C++ una forma ‘oficial’ de resolver el problema del *multiple dispatch*, por lo que existen varias soluciones, cada una con sus ventajas e inconvenientes. 
+
+Como ejemplo, imagina el problema de comprobar si dos figuras intersectan. Dependiendo de las figuras de las que hablemos, el algoritmo de intersección es diferente.
+
+#+begin_src cpp
+  struct Figura{
+	  virtual bool intersect(Figura* other) = 0;
+  };
+
+  struct Circulo : public Figura{
+	  float x, y;
+	  float radio;
+
+	  virtual bool intersect(Figura* other) override{
+		  // ????????
+	  }
+  };
+
+  struct Rectangulo : public Figura{
+	  float x, y;
+	  float height;
+	  float width;
+
+	  virtual bool intersect(Figura* other) override{
+		  // ????????
+	  }
+  };
+
+#+end_src
+
+En las siguientes secciones veremos las posibles soluciones disponibles, pasando por varios *single dispatch*, el uso de *dynamic_cast* y los *open multi-methods*.
+
+* La solución mala: Dos single dispatches
+
+Antes de aventurarse en el multiple dispatch debemos intentar primero solucionar el caso más sencillo, el *double dispatch*. Usaremos el ejemplo de las figuras y el método intersección durante las siguientes secciones. Lo que buscamos es una manera de elegir una de las siguientes funciones que implementan un algoritmo de intersección para dos objetos de un tipo concreto.
+
+#+begin_src cpp
+  bool intersect_impl(Circulo* c, Rectangulo* r){
+	  // Algoritmo de intersección entre un círculo y un rectángulo
+	  // ...
+  }
+
+  bool intersect_impl(Rectangulo* c, Circulo* r){
+	  // Algoritmo de intersección entre un rectangulo y un circulo
+	  // ...
+  }
+
+  bool intersect_impl(Circulo* t, Circulo* c){
+	  // Algoritmo de intersección entre dos circulos
+	  // ...
+  }
+
+  bool intersect_impl(Rectangulo* t, Rectangulo* c){
+	  // Algoritmo de intersección entre dos rectangulos
+	  // ...
+  }
+#+end_src
+
+Sabemos que mediante el polimorfismo y los métodos virtuales podemos realizar un *single dispatch*. Así, el trabajo se reduce a la mitad. El método ~intersect~ en la clase abstracta ~Figura~ debería presentar la siguiente forma:
+
+#+begin_src cpp
+  struct Figura{
+
+	  // ...
+
+	  virtual bool intersect(Figura* f2) = 0;
+
+  };
+#+end_src
+
+Y cada clase hija de ~Figura~ debería implementar su propio método intersect:
+
+#+begin_src cpp
+  struct Circulo : public Figura{
+
+	  // ...
+  
+	  virtual bool intersect(Figura* f2) override{
+		  // ???
+	  }
+  };
+
+  struct Rectangulo : public Figura{
+
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  // ???
+	  }
+  };
+#+end_src
+
+En el momento en el que ejecutemos ~f1->intersect(f2)~ con dos objetos ~Figura~ ~f1~ y ~f2~ entraremos en alguna especialización del método ~intersect~ dependiendo de la clase concreta de ~f1~. Es decir, si ~f1~ es en realidad un ~Circulo~, estaremos en el método ~intersect~ de la clase ~Circulo~. Lo que buscamos ahora es un *segundo single dispatch*. Sabiendo esto lo esperable es que los métodos intersect sean de la siguiente forma:
+
+#+begin_src cpp
+  struct Circulo : public Figura{
+
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  return f2->intersect(this);
+	  }
+  };
+
+  struct Rectangulo : public Figura{
+
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  return f2->intersect(this);
+	  }
+  };
+#+end_src
+
+Observa ahora que cada ~this~ es del tipo puntero a la clase donde se encuentre. Es decir, si ~f1~ y ~f2~ son dos objetos ~Figura~ y ejecutamos ~f1→intersect(f2)~, si suponemos que ~f1~ es concretamente un ~Circulo~, entraremos en el método ~intersect~ de la clase ~Circulo~ que ejecutará ~f2→intersect(this)~ donde ~this~ es de tipo puntero a ~Circulo~. Sin embargo, no tenemos ningún método que acepte como argumento un ~Circulo~, sino una ~Figura~. Realizaríamos el single dispatch de ~f2~, pero perderíamos el anterior single dispatch al convertirse de nuevo en una ~Figura~. Además, fíjate que entraríamos en un bucle infinito, pues cada llamada a ~intersect~, llamaría de nuevo a ~intersect~, que llamaría de nuevo a ~intersect~ … Para solucionar este problema basta con sobrecargar el método ~intersect~ para poder recibir cada una de las clases concretas ~Circulo~ y ~Rectangulo~. Y así, finalmente, llamar a las funciones que contienen las implementaciones de cada intersección:
+
+#+begin_src cpp
+  struct Figura{
+
+	  // ...
+
+	  virtual bool intersect(Figura* f2) = 0;
+	  virtual bool intersect(Circulo* c) = 0;
+	  virtual bool intersect(Rectangulo* r) = 0;
+  };
+
+  struct Circulo : public Figura{
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  return f2->intersect(this);
+	  }
+	  virtual bool intersect(Circulo* c) override{
+		  return intersect_impl(this, c);
+	  }
+	  virtual bool intersect(Rectangulo* r) override{
+		  return intersect_impl(this, r);
+	  }
+  };
+
+  struct Rectangulo : public Figura{
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  return f2->intersect(this);
+	  }
+	  virtual bool intersect(Circulo* c) override{
+		  return intersect_impl(this, c);
+	  }
+	  virtual bool intersect(Rectangulo* r) override{
+		  return intersect_impl(this, r);
+	  }
+  };
+
+#+end_src
+
+Y ya está, *double dispatch* solucionado.
+
+Aunque hayamos conseguido solucionar el problema, fíjate que ahora cada clase tiene tres versiones distintas del método ~intersect~. Si quisiéramos añadir más clases, deberíamos modificar el resto de clases para poder seguir teniendo solucionado el *double dispatch*. Estamos ante una solución *muy intrusiva*. Además, supón ahora que queremos solucionar un *triple dispatch*. La solución pasa por realizar *otro single dispatch* con el tercer argumento, lo que hará que vuelva a aumentar el número de métodos por cada clase.
+
+Claramente esta solución es inviable cuando nos enfrentamos a un problema real. A parte de la cantidad  abrumadora de métodos que tendría cada clase, la mantenibilidad del código se hace imposible. Un pequeño cambio podría suponer cambiar cientos o miles de líneas de código.
+
+* La solución fea: dynamic_cast
+
+Desde el inicio de este post hemos hablado de realizar un correcto dispatch de cada uno de los objetos implicados en una función determinada. Observa que cuando se realiza un dispatch se está cambiando el tipo de un objeto, se está realizando un *casteo*. Esa es la principal idea de esta solución, buscar un casting adecuado para cada objeto. Como no podemos saber el tipo de dato al que debemos realizar el casting necesitaremos usar la fuerza bruta con *dynamic_cast*.
+
+Al igual que en la solución anterior aprovecharemos las funciones virtuales para realizar un primer single dispatch. La clase ~Figura~ tendrá el siguiente aspecto:
+
+#+begin_src C++
+  struct Figura{
+
+	  // ...
+
+	  virtual bool intersect(Figura* f2) = 0;
+  };
+#+end_src
+
+Cada una de las clases derivadas deberá implementar el método ~intersect~, y en este caso utilizarán *dynamic_cast* para obtener el tipo de la ~Figura~ ~f2~.
+
+#+begin_src C++
+  struct Circulo : public Figura{
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  if (Circulo* c2 = dynamic_cast<Circulo*>(f2)){
+			  return intersect_impl(this, c2);
+		  }
+		  else if (Rectangulo* r2 = dynamic_cast<Rectangulo*>(f2)){
+			  return intersect_impl(this, r2);
+		  }
+		  return false;
+	  }
+  };
+
+  struct Rectangulo : public Figura{
+	  // ...
+
+	  virtual bool intersect(Figura* f2) override{
+		  if (Circulo* c2 = dynamic_cast<Circulo*>(f2)){
+			  return intersect_impl(this, c2);
+		  }
+		  else if (Rectangulo* r2 = dynamic_cast<Rectangulo*>(f2)){
+			  return intersect_impl(this, r2);
+		  }
+		  return false;
+	  }
+  };
+#+end_src
+
+Y de nuevo ya está, *double dispatch* solucionado. 
+
+Fíjate que el número de métodos que implementa cada clase se ha reducido a uno sólo, mientras que antes necesitábamos ~n~ métodos si eran ~n~ clases (incluida la clase base) las que participaban en el double dispatch. Desgraciadamente el número de operaciones a realizar es ~n~ en el peor de los casos  (un single dispatch y n-1 dynamic_cast). Y por si fuera poco, la intrusividad no ha desaparecido del todo, pues si quisiésemos añadir una nueva clase derivada debemos modificar cada una de las clases anteriores (excepto la clase base ~Figura~) para seguir teniendo solucionado el double dispatch.
+
+Para el caso de un *triple dispatch* deberíamos insertar dentro de cada una de las sentencias ~if~ una nueva capa de fuerza bruta con el tercer argumento. Ya te puedes imaginar cómo se agrandaría el método ~intersect~ en cada clase y más si usáramos un caso real con muchas más clases.
+
+* La solución buena: Open multi-methods
+
+Una de las características más importantes de C++ es la sobrecarga de funciones. Podemos conseguir diferentes implementaciones de la misma función si los parámetros que le proporcionamos a la función son diferentes. Esto ya lo hemos visto con las funciones ~intersect_impl~.
+
+#+begin_src C++
+  bool intersect_impl(Circulo* c, Rectangulo* r){
+	  // Algoritmo de intersección entre un círculo y un rectángulo
+	  // ...
+  }
+
+  bool intersect_impl(Rectangulo* c, Circulo* r){
+	  // Algoritmo de intersección entre un rectangulo y un circulo
+	  // ...
+  }
+
+  bool intersect_impl(Circulo* t, Circulo* c){
+	  // Algoritmo de intersección entre dos circulos
+	  // ...
+  }
+
+  bool intersect_impl(Rectangulo* t, Rectangulo* c){
+	  // Algoritmo de intersección entre dos rectangulos
+	  // ...
+  }
+#+end_src
+
+Imagina que añadimos la siguiente funcionalidad a C++: *Parámetros virtuales*. Los parámetros virtuales son capaces de realizar un *single dispatch* al momento de ejecutar la función.
+
+Un hipotético ejemplo con la función ~intersect_impl~ sería el siguiente:
+
+#+begin_src C++
+  // Declaracion de la funcion con argumentos virtuales
+  bool intersect_impl(virtual Figura* f1, virtual Figura* f2);
+
+  // Implementaciones dependiendo del tipo pasado como parametro
+  bool intersect_impl(Circulo* c, Rectangulo* r){
+	  // Algoritmo de intersección entre un círculo y un rectángulo
+	  // ...
+  }
+
+  bool intersect_impl(Rectangulo* c, Circulo* r){
+	  // Algoritmo de intersección entre un rectangulo y un circulo
+	  // ...
+  }
+
+  bool intersect_impl(Circulo* t, Circulo* c){
+	  // Algoritmo de intersección entre dos circulos
+	  // ...
+  }
+
+  bool intersect_impl(Rectangulo* t, Rectangulo* c){
+	  // Algoritmo de intersección entre dos rectangulos
+	  // ...
+  }
+#+end_src
+
+Es decir, por un lado indicamos cómo es la función y qué parámetros son virtuales. Por otro, cada una de las implementaciones.
+
+Estos son los denominados *open multi-methods*, llamados así por *no* estar dentro de ninguna clase (open), y por admitir multiples implementaciones (multi). Este tipo de funciones están disponibles en otros lenguajes como C# o Common Lisp, y por desgracia C++ no los ha implementado aún.
+
+Al no existir los open multi-methods en C++, la única opción es que las creamos nosotros mismos. El problema es que esto requiere bastante trabajo y no merece la pena hablar de los detalles aquí. Pero sí podemos comentar algunos de los requisitos:
+
+- Una tabla de punteros a funciones.
+- Una forma de obtener el tipo concreto de un objeto en tiempo de ejecución.
+
+Y la idea de su funcionamiento es muy sencilla: Primero obtienes el tipo concreto de cada uno de los argumentos virtuales. Y, a partir de esta información, debemos ser capaces de obtener un índice que nos diga qué función de nuestra tabla debemos llamar.
+
+Si tienes curiosidad sobre los detalles de la implementación de los open multi-methods, te dejo el blog de Jean Louis Leroy: [[https://www.codeproject.com/Articles/635264/Open-Multi-Methods-for-Cplusplus11-Part-1-The-Case][Open Multi-Methods for C++11]].
+
+A día de hoy, sólo conozco una librería que podría usarse en un proyecto serio: [[https://github.com/jll63/yomm2][Yomm2]], de Jean Louis Leroy (el autor del blog anterior).
+
+Yo, por otro lado, intenté en su día crear también una implementación de los open multi-methods, y la verdad es que estoy bastante orgulloso de ello. Se llama [[https://github.com/Hectarea1996/omm][omm]] y es un simple fichero ~omm.h~ de 1000 líneas de código.
+
+* Conclusión
+
+Creo que es claro que la mejor solución para resolver el problema del *double* o *multiple dispatch* es el uso de *open multi-methods*. Son limpios, claros, fáciles de usar, etc. Es por ello que me extraña que un lenguaje como C++ no los tenga aún implementados. Y no es que este tipo de métodos sean nuevos, existen desde hace ya años. Por ejemplo, Common Lisp los tiene y es un lenguaje que no se actualiza desde el año 1999. Ains, cómo te echo de menos Common Lisp...
+
+:D

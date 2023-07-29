@@ -202,6 +202,17 @@
  <a accesskey="H" href="https://hectarea1996.github.io/lispylambda/"> HOME </a>
 </div><div id="content" class="content">
 <h1 class="title">Las soluciones buena, fea y mala del multiple dispatch en C++</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>&Iacute;ndice</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org6174eec">La solución mala: Dos single dispatches</a></li>
+<li><a href="#orgf235843">La solución fea: dynamic<sub>cast</sub></a></li>
+<li><a href="#org79eb64d">La solución buena: Open multi-methods</a></li>
+<li><a href="#org7af106c">Conclusión</a></li>
+</ul>
+</div>
+</div>
 <p>
 Una de las herramientas más importantes de la orientación a objetos es el polimorfismo, y es que la capacidad de elegir la función correcta a partir de un objeto del que sólo conocemos su clase abstracta ofrece bastante poder al programador. Así, en lugar de llamar a una función diferente para acelerar un coche, una furgoneta o un camión podemos llamar a la función acelerar de la clase abstracta vehículo. En lugar de llamar a una función distinta para obtener el área de un círculo, un triángulo o un rectaágulo podemos usar la función area de la clase abstracta figura.
 </p>
@@ -254,6 +265,383 @@ C++ usa los métodos virtules para conseguir el polimorfismo y en el momento en 
 La figura 1 tiene área: 78.5
 La figura 2 tiene área: 12
 </pre>
+
+
+<p>
+Se llama <b>single dispatch</b> porque sólo interviene un objeto en la elección de la función correcta. Si son varios objetos los que deben determinar a qué función llamar, entonces hablamos de <b>multiple dispatch</b>. Desgraciadamente no hay en C++ una forma ‘oficial’ de resolver el problema del <b>multiple dispatch</b>, por lo que existen varias soluciones, cada una con sus ventajas e inconvenientes. 
+</p>
+
+<p>
+Como ejemplo, imagina el problema de comprobar si dos figuras intersectan. Dependiendo de las figuras de las que hablemos, el algoritmo de intersección es diferente.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">other</span>) = 0;
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Circulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">x</span>, <span style="color: #9cdcfe;">y</span>;
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">radio</span>;
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">other</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #6a9955;">// </span><span style="color: #6a9955;">????????</span>
+    }
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Rectangulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">x</span>, <span style="color: #9cdcfe;">y</span>;
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">height</span>;
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">width</span>;
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">other</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #6a9955;">// </span><span style="color: #6a9955;">????????</span>
+    }
+};
+
+</pre>
+</div>
+
+<p>
+En las siguientes secciones veremos las posibles soluciones disponibles, pasando por varios <b>single dispatch</b>, el uso de <b>dynamic<sub>cast</sub></b> y los <b>open multi-methods</b>.
+</p>
+
+<div id="outline-container-org6174eec" class="outline-2">
+<h2 id="org6174eec">La solución mala: Dos single dispatches</h2>
+<div class="outline-text-2" id="text-org6174eec">
+<p>
+Antes de aventurarse en el multiple dispatch debemos intentar primero solucionar el caso más sencillo, el <b>double dispatch</b>. Usaremos el ejemplo de las figuras y el método intersección durante las siguientes secciones. Lo que buscamos es una manera de elegir una de las siguientes funciones que implementan un algoritmo de intersección para dos objetos de un tipo concreto.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>, <span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre un c&#237;rculo y un rect&#225;ngulo</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">c</span>, <span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">r</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre un rectangulo y un circulo</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">t</span>, <span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre dos circulos</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">t</span>, <span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">c</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre dos rectangulos</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+</pre>
+</div>
+
+<p>
+Sabemos que mediante el polimorfismo y los métodos virtuales podemos realizar un <b>single dispatch</b>. Así, el trabajo se reduce a la mitad. El método <code>intersect</code> en la clase abstracta <code>Figura</code> debería presentar la siguiente forma:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) = 0;
+
+};
+</pre>
+</div>
+
+<p>
+Y cada clase hija de <code>Figura</code> debería implementar su propio método intersect:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Circulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #6a9955;">// </span><span style="color: #6a9955;">???</span>
+    }
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Rectangulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #6a9955;">// </span><span style="color: #6a9955;">???</span>
+    }
+};
+</pre>
+</div>
+
+<p>
+En el momento en el que ejecutemos <code>f1-&gt;intersect(f2)</code> con dos objetos <code>Figura</code> <code>f1</code> y <code>f2</code> entraremos en alguna especialización del método <code>intersect</code> dependiendo de la clase concreta de <code>f1</code>. Es decir, si <code>f1</code> es en realidad un <code>Circulo</code>, estaremos en el método <code>intersect</code> de la clase <code>Circulo</code>. Lo que buscamos ahora es un <b>segundo single dispatch</b>. Sabiendo esto lo esperable es que los métodos intersect sean de la siguiente forma:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Circulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> f2-&gt;intersect(<span style="color: #569cd6;">this</span>);
+    }
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Rectangulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> f2-&gt;intersect(<span style="color: #569cd6;">this</span>);
+    }
+};
+</pre>
+</div>
+
+<p>
+Observa ahora que cada <code>this</code> es del tipo puntero a la clase donde se encuentre. Es decir, si <code>f1</code> y <code>f2</code> son dos objetos <code>Figura</code> y ejecutamos <code>f1→intersect(f2)</code>, si suponemos que <code>f1</code> es concretamente un <code>Circulo</code>, entraremos en el método <code>intersect</code> de la clase <code>Circulo</code> que ejecutará <code>f2→intersect(this)</code> donde <code>this</code> es de tipo puntero a <code>Circulo</code>. Sin embargo, no tenemos ningún método que acepte como argumento un <code>Circulo</code>, sino una <code>Figura</code>. Realizaríamos el single dispatch de <code>f2</code>, pero perderíamos el anterior single dispatch al convertirse de nuevo en una <code>Figura</code>. Además, fíjate que entraríamos en un bucle infinito, pues cada llamada a <code>intersect</code>, llamaría de nuevo a <code>intersect</code>, que llamaría de nuevo a <code>intersect</code> … Para solucionar este problema basta con sobrecargar el método <code>intersect</code> para poder recibir cada una de las clases concretas <code>Circulo</code> y <code>Rectangulo</code>. Y así, finalmente, llamar a las funciones que contienen las implementaciones de cada intersección:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-cpp"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) = 0;
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>) = 0;
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r</span>) = 0;
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Circulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> f2-&gt;intersect(<span style="color: #569cd6;">this</span>);
+    }
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, c);
+    }
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, r);
+    }
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Rectangulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> f2-&gt;intersect(<span style="color: #569cd6;">this</span>);
+    }
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, c);
+    }
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, r);
+    }
+};
+
+</pre>
+</div>
+
+<p>
+Y ya está, <b>double dispatch</b> solucionado.
+</p>
+
+<p>
+Aunque hayamos conseguido solucionar el problema, fíjate que ahora cada clase tiene tres versiones distintas del método <code>intersect</code>. Si quisiéramos añadir más clases, deberíamos modificar el resto de clases para poder seguir teniendo solucionado el <b>double dispatch</b>. Estamos ante una solución <b>muy intrusiva</b>. Además, supón ahora que queremos solucionar un <b>triple dispatch</b>. La solución pasa por realizar <b>otro single dispatch</b> con el tercer argumento, lo que hará que vuelva a aumentar el número de métodos por cada clase.
+</p>
+
+<p>
+Claramente esta solución es inviable cuando nos enfrentamos a un problema real. A parte de la cantidad  abrumadora de métodos que tendría cada clase, la mantenibilidad del código se hace imposible. Un pequeño cambio podría suponer cambiar cientos o miles de líneas de código.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf235843" class="outline-2">
+<h2 id="orgf235843">La solución fea: dynamic<sub>cast</sub></h2>
+<div class="outline-text-2" id="text-orgf235843">
+<p>
+Desde el inicio de este post hemos hablado de realizar un correcto dispatch de cada uno de los objetos implicados en una función determinada. Observa que cuando se realiza un dispatch se está cambiando el tipo de un objeto, se está realizando un <b>casteo</b>. Esa es la principal idea de esta solución, buscar un casting adecuado para cada objeto. Como no podemos saber el tipo de dato al que debemos realizar el casting necesitaremos usar la fuerza bruta con <b>dynamic<sub>cast</sub></b>.
+</p>
+
+<p>
+Al igual que en la solución anterior aprovecharemos las funciones virtuales para realizar un primer single dispatch. La clase <code>Figura</code> tendrá el siguiente aspecto:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Figura</span>{
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) = 0;
+};
+</pre>
+</div>
+
+<p>
+Cada una de las clases derivadas deberá implementar el método <code>intersect</code>, y en este caso utilizarán <b>dynamic<sub>cast</sub></b> para obtener el tipo de la <code>Figura</code> <code>f2</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Circulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">if</span> (<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c2</span> = <span style="color: #569cd6;">dynamic_cast</span>&lt;<span style="color: #4ec9b0;">Circulo</span>*&gt;(f2)){
+            <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, c2);
+        }
+        <span style="color: #569cd6;">else</span> <span style="color: #569cd6;">if</span> (<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r2</span> = <span style="color: #569cd6;">dynamic_cast</span>&lt;<span style="color: #4ec9b0;">Rectangulo</span>*&gt;(f2)){
+            <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, r2);
+        }
+        <span style="color: #569cd6;">return</span> <span style="color: #569cd6;">false</span>;
+    }
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Rectangulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect</span>(<span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span>) <span style="color: #569cd6;">override</span>{
+        <span style="color: #569cd6;">if</span> (<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c2</span> = <span style="color: #569cd6;">dynamic_cast</span>&lt;<span style="color: #4ec9b0;">Circulo</span>*&gt;(f2)){
+            <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, c2);
+        }
+        <span style="color: #569cd6;">else</span> <span style="color: #569cd6;">if</span> (<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r2</span> = <span style="color: #569cd6;">dynamic_cast</span>&lt;<span style="color: #4ec9b0;">Rectangulo</span>*&gt;(f2)){
+            <span style="color: #569cd6;">return</span> intersect_impl(<span style="color: #569cd6;">this</span>, r2);
+        }
+        <span style="color: #569cd6;">return</span> <span style="color: #569cd6;">false</span>;
+    }
+};
+</pre>
+</div>
+
+<p>
+Y de nuevo ya está, <b>double dispatch</b> solucionado. 
+</p>
+
+<p>
+Fíjate que el número de métodos que implementa cada clase se ha reducido a uno sólo, mientras que antes necesitábamos <code>n</code> métodos si eran <code>n</code> clases (incluida la clase base) las que participaban en el double dispatch. Desgraciadamente el número de operaciones a realizar es <code>n</code> en el peor de los casos  (un single dispatch y n-1 dynamic<sub>cast</sub>). Y por si fuera poco, la intrusividad no ha desaparecido del todo, pues si quisiésemos añadir una nueva clase derivada debemos modificar cada una de las clases anteriores (excepto la clase base <code>Figura</code>) para seguir teniendo solucionado el double dispatch.
+</p>
+
+<p>
+Para el caso de un <b>triple dispatch</b> deberíamos insertar dentro de cada una de las sentencias <code>if</code> una nueva capa de fuerza bruta con el tercer argumento. Ya te puedes imaginar cómo se agrandaría el método <code>intersect</code> en cada clase y más si usáramos un caso real con muchas más clases.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org79eb64d" class="outline-2">
+<h2 id="org79eb64d">La solución buena: Open multi-methods</h2>
+<div class="outline-text-2" id="text-org79eb64d">
+<p>
+Una de las características más importantes de C++ es la sobrecarga de funciones. Podemos conseguir diferentes implementaciones de la misma función si los parámetros que le proporcionamos a la función son diferentes. Esto ya lo hemos visto con las funciones <code>intersect_impl</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>, <span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre un c&#237;rculo y un rect&#225;ngulo</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">c</span>, <span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">r</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre un rectangulo y un circulo</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">t</span>, <span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre dos circulos</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">t</span>, <span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">c</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre dos rectangulos</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+</pre>
+</div>
+
+<p>
+Imagina que añadimos la siguiente funcionalidad a C++: <b>Parámetros virtuales</b>. Los parámetros virtuales son capaces de realizar un <b>single dispatch</b> al momento de ejecutar la función.
+</p>
+
+<p>
+Un hipotético ejemplo con la función <code>intersect_impl</code> sería el siguiente:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #6a9955;">// </span><span style="color: #6a9955;">Declaracion de la funcion con argumentos virtuales</span>
+<span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">intersect_impl</span>(<span style="color: #569cd6;">virtual</span> Figura* f1, <span style="color: #569cd6;">virtual</span> Figura* f2);
+
+<span style="color: #6a9955;">// </span><span style="color: #6a9955;">Implementaciones dependiendo del tipo pasado como parametro</span>
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>, <span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">r</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre un c&#237;rculo y un rect&#225;ngulo</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">c</span>, <span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">r</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre un rectangulo y un circulo</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">t</span>, <span style="color: #4ec9b0;">Circulo</span>* <span style="color: #9cdcfe;">c</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre dos circulos</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+
+<span style="color: #4ec9b0;">bool</span> <span style="color: #dcdcaa;">intersect_impl</span>(<span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">t</span>, <span style="color: #4ec9b0;">Rectangulo</span>* <span style="color: #9cdcfe;">c</span>){
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Algoritmo de intersecci&#243;n entre dos rectangulos</span>
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">...</span>
+}
+</pre>
+</div>
+
+<p>
+Es decir, por un lado indicamos cómo es la función y qué parámetros son virtuales. Por otro, cada una de las implementaciones.
+</p>
+
+<p>
+Estos son los denominados <b>open multi-methods</b>, llamados así por <b>no</b> estar dentro de ninguna clase (open), y por admitir multiples implementaciones (multi). Este tipo de funciones están disponibles en otros lenguajes como C# o Common Lisp, y por desgracia C++ no los ha implementado aún.
+</p>
+
+<p>
+Al no existir los open multi-methods en C++, la única opción es que las creamos nosotros mismos. El problema es que esto requiere bastante trabajo y no merece la pena hablar de los detalles aquí. Pero sí podemos comentar algunos de los requisitos:
+</p>
+
+<ul class="org-ul">
+<li>Una tabla de punteros a funciones.</li>
+<li>Una forma de obtener el tipo concreto de un objeto en tiempo de ejecución.</li>
+</ul>
+
+<p>
+Y la idea de su funcionamiento es muy sencilla: Primero obtienes el tipo concreto de cada uno de los argumentos virtuales. Y, a partir de esta información, debemos ser capaces de obtener un índice que nos diga qué función de nuestra tabla debemos llamar.
+</p>
+
+<p>
+Si tienes curiosidad sobre los detalles de la implementación de los open multi-methods, te dejo el blog de Jean Louis Leroy: <a href="https://www.codeproject.com/Articles/635264/Open-Multi-Methods-for-Cplusplus11-Part-1-The-Case">Open Multi-Methods for C++11</a>.
+</p>
+
+<p>
+A día de hoy, sólo conozco una librería que podría usarse en un proyecto serio: <a href="https://github.com/jll63/yomm2">Yomm2</a>, de Jean Louis Leroy (el autor del blog anterior).
+</p>
+
+<p>
+Yo, por otro lado, intenté en su día crear también una implementación de los open multi-methods, y la verdad es que estoy bastante orgulloso de ello. Se llama <a href="https://github.com/Hectarea1996/omm">omm</a> y es un simple fichero <code>omm.h</code> de 1000 líneas de código.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org7af106c" class="outline-2">
+<h2 id="org7af106c">Conclusión</h2>
+<div class="outline-text-2" id="text-org7af106c">
+<p>
+Creo que es claro que la mejor solución para resolver el problema del <b>double</b> o <b>multiple dispatch</b> es el uso de <b>open multi-methods</b>. Son limpios, claros, fáciles de usar, etc. Es por ello que me extraña que un lenguaje como C++ no los tenga aún implementados. Y no es que este tipo de métodos sean nuevos, existen desde hace ya años. Por ejemplo, Common Lisp los tiene y es un lenguaje que no se actualiza desde el año 1999. Ains, cómo te echo de menos Common Lisp&#x2026;
+</p>
+
+<p>
+:D
+</p>
+</div>
+</div>
 </div>
 <div id="postamble" class="status">
 <p><a href="https://hectarea1996.github.io/lispylambda/">UP</a> | <a href="https://hectarea1996.github.io/lispylambda/">HOME</a></p><p></p><p>Autor: Héctor Galbis Sanchis <<a href="mailto:hectometrocuadrado@gmail.com">hectometrocuadrado@gmail.com</a>></p><p>Última edición: 29-07-2023</p>
