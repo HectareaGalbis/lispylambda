@@ -78,7 +78,7 @@ Como ejemplo, imagina el problema de comprobar si dos figuras intersectan. Depen
 
 #+end_src
 
-En las siguientes secciones veremos las posibles soluciones disponibles, pasando por varios *single dispatch*, el uso de *dynamic_cast* y los *open multi-methods*.
+En las siguientes secciones veremos las posibles soluciones disponibles, pasando por varios *single dispatch*, el uso de *dynamic​_​cast* y los *open multi-methods*.
 
 * La solución mala: Dos single dispatches
 
@@ -210,9 +210,9 @@ Aunque hayamos conseguido solucionar el problema, fíjate que ahora cada clase t
 
 Claramente esta solución es inviable cuando nos enfrentamos a un problema real. A parte de la cantidad  abrumadora de métodos que tendría cada clase, la mantenibilidad del código se hace imposible. Un pequeño cambio podría suponer cambiar cientos o miles de líneas de código.
 
-* La solución fea: dynamic_cast
+* La solución fea: dynamic​_​cast
 
-Desde el inicio de este post hemos hablado de realizar un correcto dispatch de cada uno de los objetos implicados en una función determinada. Observa que cuando se realiza un dispatch se está cambiando el tipo de un objeto, se está realizando un *casteo*. Esa es la principal idea de esta solución, buscar un casting adecuado para cada objeto. Como no podemos saber el tipo de dato al que debemos realizar el casting necesitaremos usar la fuerza bruta con *dynamic_cast*.
+Desde el inicio de este post hemos hablado de realizar un correcto dispatch de cada uno de los objetos implicados en una función determinada. Observa que cuando se realiza un dispatch se está cambiando el tipo de un objeto, se está realizando un *casteo*. Esa es la principal idea de esta solución, buscar un casting adecuado para cada objeto. Como no podemos saber el tipo de dato al que debemos realizar el casting necesitaremos usar la fuerza bruta con *dynamic​_​cast*.
 
 Al igual que en la solución anterior aprovecharemos las funciones virtuales para realizar un primer single dispatch. La clase ~Figura~ tendrá el siguiente aspecto:
 
@@ -225,7 +225,7 @@ Al igual que en la solución anterior aprovecharemos las funciones virtuales par
   };
 #+end_src
 
-Cada una de las clases derivadas deberá implementar el método ~intersect~, y en este caso utilizarán *dynamic_cast* para obtener el tipo de la ~Figura~ ~f2~.
+Cada una de las clases derivadas deberá implementar el método ~intersect~, y en este caso utilizarán *dynamic​_​cast* para obtener el tipo de la ~Figura~ ~f2~.
 
 #+begin_src C++
   struct Circulo : public Figura{
@@ -259,7 +259,7 @@ Cada una de las clases derivadas deberá implementar el método ~intersect~, y e
 
 Y de nuevo ya está, *double dispatch* solucionado. 
 
-Fíjate que el número de métodos que implementa cada clase se ha reducido a uno sólo, mientras que antes necesitábamos ~n~ métodos si eran ~n~ clases (incluida la clase base) las que participaban en el double dispatch. Desgraciadamente el número de operaciones a realizar es ~n~ en el peor de los casos  (un single dispatch y n-1 dynamic_cast). Y por si fuera poco, la intrusividad no ha desaparecido del todo, pues si quisiésemos añadir una nueva clase derivada debemos modificar cada una de las clases anteriores (excepto la clase base ~Figura~) para seguir teniendo solucionado el double dispatch.
+Fíjate que el número de métodos que implementa cada clase se ha reducido a uno sólo, mientras que antes necesitábamos ~n~ métodos si eran ~n~ clases (incluida la clase base) las que participaban en el double dispatch. Desgraciadamente el número de operaciones a realizar es ~n~ en el peor de los casos  (un single dispatch y n-1 dynamic​_​cast). Y por si fuera poco, la intrusividad no ha desaparecido del todo, pues si quisiésemos añadir una nueva clase derivada debemos modificar cada una de las clases anteriores (excepto la clase base ~Figura~) para seguir teniendo solucionado el double dispatch.
 
 Para el caso de un *triple dispatch* deberíamos insertar dentro de cada una de las sentencias ~if~ una nueva capa de fuerza bruta con el tercer argumento. Ya te puedes imaginar cómo se agrandaría el método ~intersect~ en cada clase y más si usáramos un caso real con muchas más clases.
 

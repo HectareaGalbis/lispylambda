@@ -207,7 +207,7 @@
 <div id="text-table-of-contents" role="doc-toc">
 <ul>
 <li><a href="#org6174eec">La solución mala: Dos single dispatches</a></li>
-<li><a href="#orgf235843">La solución fea: dynamic<sub>cast</sub></a></li>
+<li><a href="#org27673d2">La solución fea: dynamic​_​cast</a></li>
 <li><a href="#org79eb64d">La solución buena: Open multi-methods</a></li>
 <li><a href="#org7af106c">Conclusión</a></li>
 </ul>
@@ -303,7 +303,7 @@ Como ejemplo, imagina el problema de comprobar si dos figuras intersectan. Depen
 </div>
 
 <p>
-En las siguientes secciones veremos las posibles soluciones disponibles, pasando por varios <b>single dispatch</b>, el uso de <b>dynamic<sub>cast</sub></b> y los <b>open multi-methods</b>.
+En las siguientes secciones veremos las posibles soluciones disponibles, pasando por varios <b>single dispatch</b>, el uso de <b>dynamic​_​cast</b> y los <b>open multi-methods</b>.
 </p>
 
 <div id="outline-container-org6174eec" class="outline-2">
@@ -460,11 +460,11 @@ Claramente esta solución es inviable cuando nos enfrentamos a un problema real.
 </div>
 </div>
 
-<div id="outline-container-orgf235843" class="outline-2">
-<h2 id="orgf235843">La solución fea: dynamic<sub>cast</sub></h2>
-<div class="outline-text-2" id="text-orgf235843">
+<div id="outline-container-org27673d2" class="outline-2">
+<h2 id="org27673d2">La solución fea: dynamic​_​cast</h2>
+<div class="outline-text-2" id="text-org27673d2">
 <p>
-Desde el inicio de este post hemos hablado de realizar un correcto dispatch de cada uno de los objetos implicados en una función determinada. Observa que cuando se realiza un dispatch se está cambiando el tipo de un objeto, se está realizando un <b>casteo</b>. Esa es la principal idea de esta solución, buscar un casting adecuado para cada objeto. Como no podemos saber el tipo de dato al que debemos realizar el casting necesitaremos usar la fuerza bruta con <b>dynamic<sub>cast</sub></b>.
+Desde el inicio de este post hemos hablado de realizar un correcto dispatch de cada uno de los objetos implicados en una función determinada. Observa que cuando se realiza un dispatch se está cambiando el tipo de un objeto, se está realizando un <b>casteo</b>. Esa es la principal idea de esta solución, buscar un casting adecuado para cada objeto. Como no podemos saber el tipo de dato al que debemos realizar el casting necesitaremos usar la fuerza bruta con <b>dynamic​_​cast</b>.
 </p>
 
 <p>
@@ -482,7 +482,7 @@ Al igual que en la solución anterior aprovecharemos las funciones virtuales par
 </div>
 
 <p>
-Cada una de las clases derivadas deberá implementar el método <code>intersect</code>, y en este caso utilizarán <b>dynamic<sub>cast</sub></b> para obtener el tipo de la <code>Figura</code> <code>f2</code>.
+Cada una de las clases derivadas deberá implementar el método <code>intersect</code>, y en este caso utilizarán <b>dynamic​_​cast</b> para obtener el tipo de la <code>Figura</code> <code>f2</code>.
 </p>
 
 <div class="org-src-container">
@@ -521,7 +521,7 @@ Y de nuevo ya está, <b>double dispatch</b> solucionado.
 </p>
 
 <p>
-Fíjate que el número de métodos que implementa cada clase se ha reducido a uno sólo, mientras que antes necesitábamos <code>n</code> métodos si eran <code>n</code> clases (incluida la clase base) las que participaban en el double dispatch. Desgraciadamente el número de operaciones a realizar es <code>n</code> en el peor de los casos  (un single dispatch y n-1 dynamic<sub>cast</sub>). Y por si fuera poco, la intrusividad no ha desaparecido del todo, pues si quisiésemos añadir una nueva clase derivada debemos modificar cada una de las clases anteriores (excepto la clase base <code>Figura</code>) para seguir teniendo solucionado el double dispatch.
+Fíjate que el número de métodos que implementa cada clase se ha reducido a uno sólo, mientras que antes necesitábamos <code>n</code> métodos si eran <code>n</code> clases (incluida la clase base) las que participaban en el double dispatch. Desgraciadamente el número de operaciones a realizar es <code>n</code> en el peor de los casos  (un single dispatch y n-1 dynamic​_​cast). Y por si fuera poco, la intrusividad no ha desaparecido del todo, pues si quisiésemos añadir una nueva clase derivada debemos modificar cada una de las clases anteriores (excepto la clase base <code>Figura</code>) para seguir teniendo solucionado el double dispatch.
 </p>
 
 <p>
