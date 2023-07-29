@@ -1,0 +1,624 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+<!-- 29-07-2023 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>El código de Common Lisp son objetos</title>
+<meta name="author" content="Héctor Galbis Sanchis" />
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<link rel="stylesheet" href="/css/simple.css" type="text/css"/>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="https://lispylambda.es"> UP </a>
+ |
+ <a accesskey="H" href="https://lispylambda.es"> HOME </a>
+</div><div id="content" class="content">
+<h1 class="title">El código de Common Lisp son objetos</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>&Iacute;ndice</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orge0f1a53">Introducción</a></li>
+<li><a href="#org2849c56">Objetos legibles</a></li>
+<li><a href="#org6a2ce7f">Evaluar o no evaluar, esa es la cuestión</a></li>
+<li><a href="#org01d8924">Conclusión</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-orge0f1a53" class="outline-2">
+<h2 id="orge0f1a53">Introducción</h2>
+<div class="outline-text-2" id="text-orge0f1a53">
+<p>
+Lo normal de cualquier lenguaje de programación es tener dos partes bien diferenciadas: Por un lado tenemos los datos, y por otro lado tenemos la sintaxis del lenguaje. La sintaxis es lo que define el lenguaje como tal, y nos dice qué debemos escribir para manipular los datos. 
+</p>
+
+<p>
+Sin embargo, en Common Lisp los datos y la sintaxis son uno. Más concretamente, la sintaxis de Common Lisp es la representación 'impresa' de los objetos de Common Lisp. Por ejemplo, el objeto <code>5</code> tiene su representación 'impresa' como el caracter '5'. Y como es un objeto de Common Lisp con una representación impresa podemos usarlo en nuestro código. Es decir, si tienes un fichero '<i>~​/​prueba.lisp</i>' puedes usar el <code>5</code> como código.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #6a9955;">;;; </span><span style="color: #6a9955;">~/prueba.lisp</span>
+5
+</pre>
+</div>
+
+<p>
+El fichero '<i>~​/​prueba.lisp</i>' contiene código válido. Pero claro, un <code>5</code> no va a hacer nada. 
+</p>
+
+<p>
+Recuerda que la definición de una función que imprima <code>"Hello world!"</code> podía ser así:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">defun</span> <span style="color: #dcdcaa;">hello-world</span> ()
+  (princ <span style="color: #ce9178;">"Hello world!"</span>))
+</pre>
+</div>
+
+<p>
+Pero si esto es código y acabamos de decir que el código es, en realidad, objetos, entonces quiere decir que lo que acabo de escribir es la representación 'impresa' de algún objeto de Common Lisp. Y por tanto, podría guardar ese objeto en una variable, por ejemplo. Pues sí, así es. Es más, aquí tienes el código (es decir, otro objeto de Common Lisp) para definir una variable que contenga el código anterior:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">defvar</span> <span style="color: #9cdcfe;">hello-world-code</span> '(<span style="color: #569cd6;">defun</span> <span style="color: #dcdcaa;">hello-world</span> ()
+                            (princ <span style="color: #ce9178;">"Hello world!"</span>)))
+</pre>
+</div>
+
+<pre class="example">
+HELLO-WORLD-CODE
+</pre>
+
+
+<p>
+Y si intento usar la variable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">hello-world-code
+</pre>
+</div>
+
+<pre class="example">
+(DEFUN HELLO-WORLD () (PRINC "Hello world!"))
+</pre>
+
+
+<p>
+¡Tachán!
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org2849c56" class="outline-2">
+<h2 id="org2849c56">Objetos legibles</h2>
+<div class="outline-text-2" id="text-org2849c56">
+<p>
+Estos objetos que hemos dicho que pueden usarse en el código en realidad se denominan objetos legibles. Y por si te lo estás preguntando, también hay objetos no legibles en Common Lisp (es decir, no podemos usarlos como código).
+</p>
+
+<p>
+Un ejemplo rápido de un objeto no legible son las tablas hash. Para crear una tabla hash en Common Lisp usamos la función <code>make-hash-table</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(make-hash-table)
+</pre>
+</div>
+
+<pre class="example">
+#&lt;HASH-TABLE :TEST EQL :COUNT 0 {1002C88293}&gt;
+</pre>
+
+
+<p>
+Ya sólo de ver qué ha impreso el <i>REPL</i> podemos darnos cuenta de porqué eso es un objeto no legible. Aunque sí se indique el tipo del objeto, una tabla hash nunca va a imprimir los objetos que contiene. Además, fíjate que el número que hay entre llaves podría ser perfectamente una dirección de memoria al objeto de la tabla hash. Cada vez que se inicie un programa esa dirección de memoria será diferente, por lo que no tiene sentido escribir todo ese chorro en el código (Si lo intentas, saltará un error prácticamente siempre. No dará un error mientras estés en la misma sesión en el que se creó esa tabla hash.).
+</p>
+
+<p>
+Es claro que los objetos no legibles ya no tienen mayor interés en lo que nos concierne ahora mismo. Centrémonos en los que sí son legibles. Entre los objetos legibles más comúnmente usados encontramos los siguientes:
+</p>
+
+<ul class="org-ul">
+<li>Números: <code>5</code>, <code>6/7</code>, <code>-5.6</code>, &#x2026;</li>
+<li>Caracteres: <code>#\a</code>, <code>#\b</code>, <code>#\5</code>, <code>#\+</code>, &#x2026;</li>
+<li>Cadenas de texto: <code>"Hola"</code>, <code>"Que tal"</code>, &#x2026;</li>
+<li>Símbolos: <code>pi</code>, <code>casa</code>, <code>+</code>, <code>char&gt;</code>, &#x2026;</li>
+<li>Listas: <code>()</code>, <code>(1 2 3 4)</code>, <code>(hola 5 "Hola")</code>, <code>(defun hello-world () (princ "Hello world!"))</code>, &#x2026;</li>
+</ul>
+
+<p>
+Hay más, pero con estos nos sobra. Ya conocemos los números, los caracteres y las cadenas de texto. Adicionalmente, he añadido los símbolos y las listas. Los símbolos, intuitivamente, son como los identificadores en cualquier lenguaje de programación, y los usamos para asociarles algún valor o función. Por otro lado, las listas son un conjunto de objetos puestos entre paréntesis y separados por al menos un espacio. Aquí ya te habrás dado cuenta de que has estado usando símbolos y listas desde que empezaste a usar Common Lisp. 
+</p>
+
+<p>
+Pero, ¿cuál es la clave de todo esto? Está muy bien saber que son objetos, pero al final los estamos usando como código y ya está, ¿no? ¿Qué nos aporta saber todo esto? Pues aquí es donde está toda la magia de Common Lisp: Los objetos se evalúan, y tenemos el control total de cuándo lo tienen que hacer.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org6a2ce7f" class="outline-2">
+<h2 id="org6a2ce7f">Evaluar o no evaluar, esa es la cuestión</h2>
+<div class="outline-text-2" id="text-org6a2ce7f">
+<p>
+Cuando decimos que evaluamos un objeto nos referimos a que vamos a obtener otro objeto a partir de él. El cómo se evalúa un objeto depende de su tipo. Es decir, no es lo mismo evaluar un número que evaluar un símbolo.
+</p>
+
+<p>
+Para evaluar los objetos utilizamos el <i>REPL</i>. Cada vez que escribimos una expresión en el <i>REPL</i>, éste lo evalúa y nos devuelve otro objeto. Es lo que hemos estado haciendo continuamente hasta ahora.
+</p>
+
+<p>
+Comencemos con los tipos más básicos. ¿Qué ocurre cuando evaluamos un número como <code>7</code>? Vamos a comprobarlo.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">7
+</pre>
+</div>
+
+<pre class="example">
+7
+</pre>
+
+
+<p>
+Al evaluar el número <code>7</code> obtenemos el mismo número. Es decir, los números enteros se evalúan a sí mismos. Lo mismo ocurre con los números en coma flotante.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">7.65
+</pre>
+</div>
+
+<pre class="example">
+7.65
+</pre>
+
+
+<p>
+Y también con los caracteres o los strings.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #ce9178;">"Hola mundo!"</span>
+</pre>
+</div>
+
+<pre class="example">
+"Hola mundo!"
+</pre>
+
+
+<p>
+Un ejemplo de número que no se evalúa a sí mismo son las fracciones no irreducibles.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">2/4
+</pre>
+</div>
+
+<pre class="example">
+1/2
+</pre>
+
+
+<p>
+Las fracciones no irreducibles se evalúan a su fracción irreducible equivalente.
+</p>
+
+<p>
+Hasta ahora nada impresionante, pero la cosa se pone interesante cuando queremos evaluar los símbolos. Un símbolo, que es un objeto, tiene cierta información asociada y, en particular, puede tener asociado un valor. Pues cuando evaluamos un símbolo, obtenemos dicho valor asociado. Si el símbolo no tiene ningún valor asociado, se genera un error. Por ejemplo, podemos intentar evaluar el símbolo <code>casa</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">casa
+</pre>
+</div>
+
+
+<div id="org21e72f2" class="figure">
+<p><img src="../../images/datos-codigo/error-casa.png" alt="error-casa.png" />
+</p>
+<p><span class="figure-number">Figura 1: </span>Error evaluando un símbolo</p>
+</div>
+
+<p>
+Por el contrario, podemos usar el símbolo <code>pi</code> que sí tiene un valor asociado:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">pi
+</pre>
+</div>
+
+<pre class="example">
+3.141592653589793d0
+</pre>
+
+
+<p>
+Pasemos ahora a las listas. La evaluación de una lista es un proceso un poco más complejo. Lo que hace Common Lisp es, primero, comprobar el primer elemento de dicha lista. Si el primer elemento <b>no</b> es un símbolo, se genera un error (excepto si es una expresión lambda). Por ejemplo, podemos intentar evaluar la lista <code>(1 2 3 4)</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(1 2 3 4)
+</pre>
+</div>
+
+
+<div id="org72a5c28" class="figure">
+<p><img src="../../images/datos-codigo/error-lista.png" alt="error-lista.png" />
+</p>
+<p><span class="figure-number">Figura 2: </span>Error evaluando una lista</p>
+</div>
+
+<p>
+Por otro lado, si el primer elemento de la lista es un símbolo, Common Lisp se preguntará ahora si dicho símbolo tiene una función asociada (o una macro o un operador especial). Es por eso que en el error anterior Common Lisp nos dice que hemos intentado evaluar la función <code>1</code> cuando <code>1</code> no es una función. Por ejemplo, el símbolo <code>+</code> tiene una función asociada, y por tanto podemos evaluar una lista donde esté este símbolo al inicio.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(+ 1 2 3)
+</pre>
+</div>
+
+<pre class="example">
+6
+</pre>
+
+
+<p>
+En este caso, la lista <code>(+ 1 2 3)</code> se evalúa al objeto <code>6</code>, que es el resultado de sumar <code>1</code>, <code>2</code> y <code>3</code>. Recordemos que también podemos evaluar expresiones como la siguiente:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(+ 1 (+ 2 3) 4)
+</pre>
+</div>
+
+<pre class="example">
+10
+</pre>
+
+
+<p>
+Lo que hace Common Lisp cuando se encuentra con una lista donde su primer elemento es un símbolo con una función asociada es:
+</p>
+
+<ol class="org-ol">
+<li>Evalúa de izquierda a derecha todos los argumentos de la función. En este caso se evalúa el <code>1</code> (se evalúa a sí mismo), seguidamente se evalúa <code>(+ 2 3)</code> (que se evalúa a <code>5</code>), y por último se evalúa el <code>4</code> (a sí mismo).</li>
+<li>Se evalúa la lista con los argumentos evaluados. En este caso, se evalúa la lista <code>(+ 1 5 4)</code> al valor <code>10</code>.</li>
+</ol>
+
+<p>
+Consideremos ahora el símbolo <code>length</code> que también tiene una función asociada. Esta función debe recibir una lista y devolverá la cantidad de elementos que tiene. Imagina entonces que queremos obtener el número de elementos que hay en la lista <code>(1 2 3 4)</code>. Podemos entonces pensar que basta con evaluar lo siguiente:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(length (1 2 3 4))
+</pre>
+</div>
+
+
+<div id="orgfb38cf7" class="figure">
+<p><img src="../../images/datos-codigo/error-length.png" alt="error-length.png" />
+</p>
+<p><span class="figure-number">Figura 3: </span>Error evaluando una lista</p>
+</div>
+
+<p>
+Pero recuerda que <code>length</code> es una función y, por tanto, Common Lisp va a intentar evaluar todos sus argumentos. En este caso, se ha intentado evaluar la lista <code>(1 2 3 4)</code>, pero como <code>1</code> no es una función, obtenemos el mismo error que ya obtuvimos antes.
+</p>
+
+<p>
+¿Qué hacemos entonces? ¿Cómo le pasamos la lista, sin que se evalúe, a la función <code>length</code>? Para eso tenemos que hablar de <code>quote</code>. Este símbolo tiene un operador especial asociado. Un operador especial es como una función, podemos usar ese símbolo al inicio de una lista, pero en lugar de evaluar todos los argumentos, algunos se evaluarán, y otros no. Depende de cada operador especial qué argumentos se evaluarán y cuáles no. En particular, <code>quote</code> sólo recibe un argumento, <b>no</b> lo evalúa y, simplemente, lo devuelve.
+</p>
+
+<p>
+Por ejemplo, podemos pasar un <code>5</code> a <code>quote</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(quote 5)
+</pre>
+</div>
+
+<pre class="example">
+5
+</pre>
+
+
+<p>
+El <code>5</code> no se evalúa y se devuelve. Aunque tampoco hay mucha diferencia a lo que ocurría cuando no usamos <code>quote</code>. Probemos con el símbolo <code>casa</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(quote casa)
+</pre>
+</div>
+
+<pre class="example">
+CASA
+</pre>
+
+
+<p>
+Recuerda que <code>casa</code> no tenía ningún valor asociado, por lo que obteníamos un error al intentar evaluarlo. Como <code>quote</code> no evalúa su argumento, eso no ocurre.
+</p>
+
+<p>
+Probemos ahora con la lista <code>(+ 1 2 3)</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(quote (+ 1 2 3))
+</pre>
+</div>
+
+<pre class="example">
+(+ 1 2 3)
+</pre>
+
+
+<p>
+De nuevo, <code>quote</code> no evalúa la lista y directamente la devuelve. Observa que, en cierta manera, lo que estamos haciendo es desactivar la evaluación. 
+</p>
+
+<p>
+Volviendo a la función <code>length</code>, queremos que reciba una lista. En nuestro intento fallido, escribir directamente la lista suponía que ésta se iba a evaluar. Y lo que queremos es que esa lista no se evalúe. Necesitamos desactivar su evaluación. Pues entonces sólo tenemos que usar <code>quote</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(length (quote (1 2 3 4)))
+</pre>
+</div>
+
+<pre class="example">
+4
+</pre>
+
+
+<p>
+¡Perfecto! 
+</p>
+
+<p>
+Esta operación, la de desactivar la evaluación con <code>quote</code>, es tan común, que se usa una notación diferente para referirnos a <code>quote</code>. Se usa una comilla simple para indicar que queremos desactivar la evaluación:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(length '(1 2 3 4))
+</pre>
+</div>
+
+<pre class="example">
+4
+</pre>
+
+
+<p>
+Esta comilla simple es exactamente lo mismo que <code>quote</code>. Puedes usar indistintamente una u otra. Claro está, que es más rápido, cómodo y legible usar <code>'</code>​. Por si tienes curiosidad, esta comilla simple es lo que en Common Lisp se llama una reader macro. Estos caracteres se sustituyen durante el proceso de lectura por un objeto de Common Lisp. En este caso, la comilla simple junto con un objeto, por ejemplo, <code>'x</code>, se sustituye por <code>(quote x)</code>. Pues puedes incluso crear tus porpias reader macros con <a href="http://www.lispworks.com/documentation/HyperSpec/Body/f_set_ma.htm#set-macro-character"> <code>set-macro-character</code> </a>.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org01d8924" class="outline-2">
+<h2 id="org01d8924">Conclusión</h2>
+<div class="outline-text-2" id="text-org01d8924">
+<p>
+Entender que el código de Common Lisp son en realidad objetos es clave para dominar el lenguaje. Todo se basa en qué se evalúa y qué no se evalúa. 
+</p>
+
+<p>
+Hemos visto que <code>quote</code> nos permite 'desactivar' la evaluación de un objeto de Common Lisp. En realidad, recordemos que lo único que hace es devolver su primer argumento sin evaluarlo, no se está desactivando nada.
+</p>
+
+<p>
+Pues si las funciones evalúan todos sus argumentos y los operadores especiales van un poco a su rollo, también tenemos las macros, que no evalúan ninguno de sus argumentos, pero sí el objeto devuelto. La mezcla de funciones, operadores especiales y macros es lo que le da poder y magia a este lenguaje. Y si los operadores especiales y las macros pueden existir, es gracias al hecho de que todo son objetos,y éstos pueden o no evaluarse.
+</p>
+
+<p>
+:D
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p><a href="https://lispylambda.es">UP</a> | <a href="https://lispylambda.es">HOME</a></p><p></p><p>Autor: Héctor Galbis Sanchis <<a href="mailto:hectometrocuadrado@gmail.com">hectometrocuadrado@gmail.com</a>></p><p>Última edición: 29-07-2023</p>
+</div>
+</body>
+</html>

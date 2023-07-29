@@ -1,0 +1,733 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+<!-- 29-07-2023 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Instalando Common Lisp</title>
+<meta name="author" content="Héctor Galbis Sanchis" />
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<link rel="stylesheet" href="/css/simple.css" type="text/css"/>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="https://lispylambda.es"> UP </a>
+ |
+ <a accesskey="H" href="https://lispylambda.es"> HOME </a>
+</div><div id="content" class="content">
+<h1 class="title">Instalando Common Lisp</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>&Iacute;ndice</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org5b8fd2a">Introducción</a></li>
+<li><a href="#org81d76e2">Lo mínimo necesario</a>
+<ul>
+<li><a href="#orged3b48e">SBCL en Ubuntu</a></li>
+<li><a href="#org5bd6dae">En cualquier OS</a></li>
+<li><a href="#orgd3f22ab">Pues ya estaría</a></li>
+</ul>
+</li>
+<li><a href="#org8dbfddd">Un IDE para Common Lisp</a>
+<ul>
+<li><a href="#org54c0d58">Instalando Emacs</a></li>
+<li><a href="#org857aa00">Instalando Slime</a></li>
+<li><a href="#org72703b0">Usando SLIME</a></li>
+</ul>
+</li>
+<li><a href="#orgb492c0e">Configurando Emacs</a>
+<ul>
+<li><a href="#orgcc09a16">Cambiando el aspecto</a></li>
+<li><a href="#orga2162da">¿Cómo seguía el atajo de teclado?</a></li>
+<li><a href="#orga501fe3">Autocompletado en tiempo real</a></li>
+<li><a href="#orgfbc3ed3">Facilidades para escribir código Common Lisp</a></li>
+<li><a href="#org31b5445">Gestionando proyectos</a></li>
+</ul>
+</li>
+<li><a href="#org3fbd0a2">Conclusión</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org5b8fd2a" class="outline-2">
+<h2 id="org5b8fd2a">Introducción</h2>
+<div class="outline-text-2" id="text-org5b8fd2a">
+<p>
+Quizás la expresión 'instalar Common Lisp' no es la más acertada, pero creo que se entiende bastante bien. El objetivo al final es poder picar código Common Lisp de manera cómoda. Sin embargo, lo mínimo que necesitamos para poder programar es una implementación del lenguaje. Lo demás, editores de texto junto con las extensiones adecuadas, son un extra.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org81d76e2" class="outline-2">
+<h2 id="org81d76e2">Lo mínimo necesario</h2>
+<div class="outline-text-2" id="text-org81d76e2">
+<p>
+Common Lisp es un estándar, como lo es también C++. Es decir, cuando hablamos del lenguaje, hablamos de cómo funciona. Pero si queremos crear un programa, necesitamos además un compilador o intérprete. Éstos se llaman implementaciones del lenguaje. Pues eso es lo único que necesitas para crear programas usando el lenguaje Common Lisp.
+</p>
+
+<p>
+Al igual que ocurre con C++, existen varias <a href="https://en.wikipedia.org/wiki/Common_Lisp#List_of_implementations">implementaciones de Common Lisp</a>. Algunas de las más conocidas son:
+</p>
+
+<ul class="org-ul">
+<li><a href="https://franz.com/products/allegro-common-lisp/">Allegro Common Lisp</a></li>
+<li><a href="http://www.lispworks.com">Lisp Works</a></li>
+<li><a href="https://ccl.clozure.com">Clozure CL</a> (CCL)</li>
+<li><a href="https://ecl.common-lisp.dev">Embeddable Common Lisp</a> (ECL)</li>
+<li><a href="http://www.sbcl.org">Steel Bank Common Lisp</a> (SBCL)</li>
+</ul>
+
+<p>
+Casi todo el mundo, yo incluido, empieza con SBCL por los buenos mensajes de error que muestra. Y esta implementación es la que vamos a ver cómo se instala.
+</p>
+
+<p>
+Todas te sirven. La diferencia está en aquellas partes que no se especifican en el estándar de Common Lisp. Por ejemplo, cómo se deben crear hilos, cómo se crean los ejecutables, cómo ejecutamos código foráneo, cómo se compila el código, etc.
+</p>
+</div>
+
+
+<div id="outline-container-orged3b48e" class="outline-3">
+<h3 id="orged3b48e">SBCL en Ubuntu</h3>
+<div class="outline-text-3" id="text-orged3b48e">
+<p>
+Si estás usando Ubuntu la instalación es muy sencilla, pues SBCL está en los repositorios oficiales. Es decir, sólo tienes que ejecutar en una terminal el siguiente comando:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">sudo apt install sbcl
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org5bd6dae" class="outline-3">
+<h3 id="org5bd6dae">En cualquier OS</h3>
+<div class="outline-text-3" id="text-org5bd6dae">
+<p>
+Si no estás en Ubuntu, puedes descargar SBCL desde su <a href="http://www.sbcl.org/platform-table.html">página web</a> y seguir el <a href="http://www.sbcl.org/getting.html">proceso de instalación</a>. Verás algo como esto:
+</p>
+
+
+<div id="org9932629" class="figure">
+<p><img src="../../images/instalacion/sbcl-page.png" alt="sbcl-page.png" />
+</p>
+<p><span class="figure-number">Figura 1: </span>Página de descargas de SBCL</p>
+</div>
+
+<p>
+Basta con que elijas el sistema operativo y la versión que quieras. Por ejemplo, usando Linux o Windows vale la pena que cojas la última versión situada en la columna AMD64.
+</p>
+
+<p>
+Con esto descargarás un archivo comprimido. Su nombre será parecido al de '<i>sbcl-2.3.1-x86-64-linux-binary.tar.bz2</i>'. 
+</p>
+
+<p>
+Descomprímelo usando el siguiente comando:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">bzip2 -cd sbcl-2.3.1-x86-64-linux-binary.tar.bz2 | tar xvf -
+</pre>
+</div>
+
+<p>
+En el interior de la carpeta descomprimida habrá un archivo '<i>install.sh</i>'. Así que basta con que lo ejecutes:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash"><span style="color: #c586c0;">cd</span> sbcl-2.3.1-x86-64-linux
+sh install.sh
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgd3f22ab" class="outline-3">
+<h3 id="orgd3f22ab">Pues ya estaría</h3>
+<div class="outline-text-3" id="text-orgd3f22ab">
+<p>
+¡Ya está! No necesitas nada más para programar en Common Lisp. Para empezar a usar el intérprete basta con ejecutar el comando <code>sbcl</code>.
+</p>
+
+
+<div id="org9ce4aed" class="figure">
+<p><img src="../../images/instalacion/ejemplo-sbcl.png" alt="ejemplo-sbcl.png" />
+</p>
+<p><span class="figure-number">Figura 2: </span>Ejemplo de uso con SBCL</p>
+</div>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org8dbfddd" class="outline-2">
+<h2 id="org8dbfddd">Un IDE para Common Lisp</h2>
+<div class="outline-text-2" id="text-org8dbfddd">
+<p>
+Claramente usar la terminal para programar en Common Lisp no es la mejor idea. Es por eso que existen los IDEs, es decir, entornos de desarrollo. El problema es que no existe ningún IDE específico para Common Lisp. Bueno, en realidad LispWorks sí te ofrece uno, pero no es gratuito. Es por eso que la mejor opción es prepararnos algo lo más parecido a un IDE, y para ello necesitamos 3 ingredientes:
+</p>
+
+<ol class="org-ol">
+<li>Un editor de texto.</li>
+<li>Una extensión del editor que se pueda comunicar con la implementación de Common Lisp que queramos usar.</li>
+<li>Indicarle a dicha extensión dónde está el ejecutable de la implementación de Common Lisp.</li>
+</ol>
+
+<p>
+Las tres opciones 'editor+extensión' más conocidas son las siguientes:
+</p>
+
+<ul class="org-ul">
+<li><a href="https://code.visualstudio.com">Visual Studio Code</a> + <a href="https://marketplace.visualstudio.com/items?itemName=rheller.alive">Alive</a> (también existe la extensión <a href="https://marketplace.visualstudio.com/items?itemName=ailisp.commonlisp-vscode">Common Lisp</a>)</li>
+<li><a href="https://atom.uptodown.com/windows">Atom</a> + <a href="https://github.com/neil-lindquist/slima">Slima</a></li>
+<li><a href="https://www.gnu.org/software/emacs/">Emacs</a> + <a href="https://github.com/slime/slime">Slime</a> (lo mejor de lo mejor)</li>
+</ul>
+
+<p>
+Si has visto otros blogs o videos sobre qué se debe usar para programar en Common Lisp habrás visto que todos recomiendan la última opción: <a href="https://www.gnu.org/software/emacs/">Emacs</a> junto con <a href="https://github.com/slime/slime">Slime</a>. Y tienen razón. No hay más. Es que es lo mejor que hay ahora mismo (y muy posiblemente para siempre).
+</p>
+
+<p>
+Pero hablemos un poco sobre Emacs. Empezar a usarlo fue una experiencia dura. Si no recuerdo mal lo instalé y desinstalé 4 o 5 veces. Mientras tanto iba probando las otras dos opciones. Con VSCode duré una semana o así porque la extensión Alive era algo incómoda y no me iba del todo bien. La otra extensión llamada Common Lisp no la he probado. En cuanto a Atom lo usé aproximadamente durante un mes. La verdad es que no estaba nada mal, pero a Slima le faltaba algo que hiciese que me gustase del todo. Además, me acabo de enterar de que ya no van a seguir actualizándolo, es decir, Atom a muerto. Pero tú debes hacer lo que quieras, ve probando las diferentes opciones. Aunque lo más seguro es que acabes con Emacs, como hice yo. Y estaré eternamente agradecido con la gente que haya creado Emacs porque ahora lo adoro. Lo uso para casi todo, incluso para escribir lo que estás leyendo ahora mismo.
+</p>
+
+<p>
+Como ya puedes imaginar, vamos a explicar cómo instalar Emacs junto con la extensión Slime.
+</p>
+</div>
+
+<div id="outline-container-org54c0d58" class="outline-3">
+<h3 id="org54c0d58">Instalando Emacs</h3>
+<div class="outline-text-3" id="text-org54c0d58">
+<p>
+Puedes ver las instrucciones de instalación en su <a href="https://www.gnu.org/software/emacs/download.html">página oficial</a>.
+</p>
+</div>
+
+<div id="outline-container-orge77acd7" class="outline-4">
+<h4 id="orge77acd7">Ubuntu</h4>
+<div class="outline-text-4" id="text-orge77acd7">
+<p>
+Basta con que ejecutes el siguiente comando:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">sudo apt install emacs
+</pre>
+</div>
+
+<p>
+En su <a href="https://www.gnu.org/software/emacs/download.html#gnu-linux">página de descargas</a> puedes ver cómo instalar emacs con otros gestores de paquetes.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org9c20939" class="outline-4">
+<h4 id="org9c20939">Otros OS</h4>
+<div class="outline-text-4" id="text-org9c20939">
+<p>
+Casi lo mismo que antes, en su <a href="https://www.gnu.org/software/emacs/download.html">página</a> puedes ver las instrucciones de instalación para cada sistema operativo, no tiene pérdida.
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org857aa00" class="outline-3">
+<h3 id="org857aa00">Instalando Slime</h3>
+<div class="outline-text-3" id="text-org857aa00">
+<p>
+Como Slime es una extensión de Emacs, necesitamos abrir primero el editor. La primera vez que ejecutes Emacs verás algo como esto:
+</p>
+
+
+<div id="orge6d91fe" class="figure">
+<p><img src="../../images/instalacion/emacs-primera-vez.png" alt="emacs-primera-vez.png" />
+</p>
+<p><span class="figure-number">Figura 3: </span>Primera sesión de Emacs</p>
+</div>
+
+<p>
+Ostras&#x2026; Es&#x2026; ¡¡feísimo!! ¡¡Y viejo!! Que no cunda el pánico. Seguramente ya hayas leído que en Emacs todo se puede configurar. Y eso incluye su apariencia. Para que veas un ejemplo de un Emacs configurado te muestro qué veo yo cuando inicio Emacs:
+</p>
+
+
+<div id="org1f32054" class="figure">
+<p><img src="../../images/instalacion/emacs-configurado.png" alt="emacs-configurado.png" />
+</p>
+<p><span class="figure-number">Figura 4: </span>Emacs ya configurado</p>
+</div>
+
+<p>
+Mucho mejor, creo yo. Un tema oscuro, minimalista y sin botones feos. Al menos es bonito para mí. Y esa es la gracia, Emacs es para que lo configures a tu gusto. Y no tengas prisa, la configuración se va cociendo a fuego lento. Lo mejor es ir añadiendo cosas a medida que las vas necesitando.
+</p>
+
+<p>
+Y lo que quizás te estés preguntando ahora es cómo configuramos Emacs, cómo cambio las cosas del editor. La respuesta es el fichero de inicialización de Emacs. Es literalmente un fichero que ejecuta código cada vez que se inicia Emacs. El código que se pone ahí es lo que va a modificar el editor. 
+</p>
+
+<p>
+Hay varias opciones como fichero de configuración. La gente al comenzar con Emacs suele usar el fichero '<i>~​/​​.emacs.el</i>', aunque yo prefiero el fichero '<i>~​/​.emacs.d​/​init.el</i>'. Elige cualquiera de los dos (pero sólo uno). Si no existe ese fichero o carpeta simplemente créalo.
+</p>
+
+<p>
+Ahora introduce el siguiente código en el fichero de inicialización que hayas creado:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp"><span style="color: #6a9955;">;; </span><span style="color: #6a9955;">Primero necesitamos el repositorio MELPA donde est&#225; </span>
+<span style="color: #6a9955;">;; </span><span style="color: #6a9955;">el paquete SLIME</span>
+(<span style="color: #569cd6;">require</span> '<span style="color: #569cd6;">package</span>)
+(add-to-list 'package-archives 
+           '(<span style="color: #ce9178;">"melpa"</span> . <span style="color: #ce9178;">"https://melpa.org/packages/"</span>) t)
+(add-to-list 'package-archives 
+           '(<span style="color: #ce9178;">"melpa-stable"</span> . <span style="color: #ce9178;">"https://stable.melpa.org/packages/"</span>) t)
+(package-initialize)
+
+<span style="color: #6a9955;">;; </span><span style="color: #6a9955;">Instalamos el paquete use-package por comodidad</span>
+(<span style="color: #569cd6;">unless</span> (package-installed-p 'use-package)
+  (package-install 'use-package))
+(<span style="color: #569cd6;">require</span> '<span style="color: #569cd6;">use-package-ensure</span>)
+(<span style="color: #569cd6;">setq</span> use-package-always-ensure t) <span style="color: #6a9955;">; </span><span style="color: #6a9955;">Hacemos que al usar use-package </span>
+                                   <span style="color: #6a9955;">; </span><span style="color: #6a9955;">el paquete se instale si no lo </span>
+                                   <span style="color: #6a9955;">; </span><span style="color: #6a9955;">estaba ya</span>
+
+<span style="color: #6a9955;">;; </span><span style="color: #6a9955;">Y por ultimo instalamos SLIME</span>
+(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">slime</span>
+  <span style="color: #c586c0;">:init</span>
+  <span style="color: #6a9955;">;; </span><span style="color: #6a9955;">Indicamos donde esta el ejecutable de la implementacion de </span>
+  <span style="color: #6a9955;">;; </span><span style="color: #6a9955;">Common Lisp</span>
+  (<span style="color: #569cd6;">setq</span> slime-lisp-implementations '((sbcl  (<span style="color: #ce9178;">"/usr/bin/sbcl"</span>)))))
+</pre>
+</div>
+
+<p>
+Como indican los comentarios, primero necesitamos incluir los repositorios de MELPA donde está el paquete SLIME. Luego se instala el paquete use-package que nos facilita mucho la instalación de los paquetes. Y por último instalamos SLIME (si aún no lo está) y además indicamos dónde se sitúa el ejecutable de la implementación de Common Lisp, que en este caso está en '/usr/bin' y el ejecutable se llama 'sbcl'. Si no estás usando Ubuntu o SBCL tendrás que modificar el string.
+</p>
+
+<p>
+No te preocupes de entender todo el código. Más de la mitad de mi fichero de inicialización no lo entiendo. La gracia es que vas copiando el código de allí y allá de los ficheros de inicialización de otras personas y lo vas pegando en el tuyo. Poco a poco, cuando entiendas un poco cómo funciona todo podrás empezar a escribir tú tus propias configuraciones.
+</p>
+
+<p>
+Pues ya estaría todo listo. Cierra Emacs y vuélvelo a abrir para el fichero se ejecute. Si todo ha ido bien deberías ver la misma imagen fea de antes y no debe de haber salido ningún error. Si por lo que fuese te indica que no se encuentra el paquete SLIME, prueba a presionar 'Alt+x' y escribe el comando 'package-list-packages'. De esta forma se actualiza la lista de paquetes disponibles. Prueba a cerrar y abrir de nuevo Emacs.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org72703b0" class="outline-3">
+<h3 id="org72703b0">Usando SLIME</h3>
+<div class="outline-text-3" id="text-org72703b0">
+<p>
+Si ya tenemos todo correctamente instalado lo difícil está ya hecho. Para ejecutar SLIME presiona 'Alt+x' y escribe el comando 'slime'. Al igual que hice con la terminal al inicio de este post, se te abrirá un REPL de Common Lisp con el que podrás evaluar expresiones. En tu caso deberías ver algo como esto:
+</p>
+
+
+<div id="org5b131dc" class="figure">
+<p><img src="../../images/instalacion/emacs-slime.png" alt="emacs-slime.png" />
+</p>
+<p><span class="figure-number">Figura 5: </span>Emacs y SLIME</p>
+</div>
+
+<p>
+Pues ya tendríamos el IDE completamente montado de no ser por lo incómodo que es usar Emacs en su versión por defecto. Ya digo que la configuración tiene que ser tuya, pero puedo indicarte algunas extensiones más para allanarte el camino al principio.
+</p>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-orgb492c0e" class="outline-2">
+<h2 id="orgb492c0e">Configurando Emacs</h2>
+<div class="outline-text-2" id="text-orgb492c0e">
+<p>
+Para terminar el post voy a enseñarte algunas de las extensiones que deberías usar en Emacs casi obligatoriamente. Vamos allá.
+</p>
+</div>
+
+<div id="outline-container-orgcc09a16" class="outline-3">
+<h3 id="orgcc09a16">Cambiando el aspecto</h3>
+<div class="outline-text-3" id="text-orgcc09a16">
+<p>
+Lo primero que deberías hacer es cambiar el tema y los colores. Vamosm, hacer que sea más bonito. El tema que uso yo en este momento se llama modus-vivendi que viene en un pack llamado <a href="https://protesilaos.com/emacs/modus-themes">modus themes</a>. En su página podrás ver cómo se instala, pero aquí va el código de mi fichero de configuración:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp">(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">modus-themes</span>
+  <span style="color: #c586c0;">:init</span>
+  (<span style="color: #569cd6;">setq</span> modus-themes-italic-constructs t
+        modus-themes-bold-constructs nil
+        modus-themes-region '(bg-only no-extend))
+  <span style="color: #c586c0;">:bind</span> (<span style="color: #ce9178;">"&lt;f5&gt;"</span> . modus-themes-toggle))
+(load-theme 'modus-vivendi)
+</pre>
+</div>
+
+<p>
+También te recomiendo cambiar lo que se llama el modeline, que es la barra situada justo encima de donde escribes los comandos. Es que uso yo es <a href="https://github.com/seagle0128/doom-modeline">doom-modeline</a>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp">(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">doom-modeline</span>
+  <span style="color: #c586c0;">:init</span> (doom-modeline-mode 1))
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga2162da" class="outline-3">
+<h3 id="orga2162da">¿Cómo seguía el atajo de teclado?</h3>
+<div class="outline-text-3" id="text-orga2162da">
+<p>
+Emacs tiene muchos atajos de teclado. Básicamente está hecho para eso y poder olvidarse del ratón. Pero a veces es difícil saber cómo continuaba cierto atajo de teclado. Pues aquí llega para ayudarte la extensión <a href="https://github.com/justbur/emacs-which-key">which-key</a>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp">(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">which-key</span>
+  <span style="color: #c586c0;">:init</span> (<span style="color: #569cd6;">setq</span> which-key-idle-delay 3.0)
+  <span style="color: #c586c0;">:config</span> (which-key-mode))
+</pre>
+</div>
+
+<p>
+Cuando inicies un atajo de teclado y no te acuerdes de cómo sigue, espérate 3 segundo y emacs te abrirá una ventanita con todas las posibles continuaciones del atajo de teclado. Aquí un ejemplo:
+</p>
+
+
+<div id="orgb15949f" class="figure">
+<p><img src="../../images/instalacion/emacs-which-key.png" alt="emacs-which-key.png" />
+</p>
+<p><span class="figure-number">Figura 6: </span>Emacs y which-key</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orga501fe3" class="outline-3">
+<h3 id="orga501fe3">Autocompletado en tiempo real</h3>
+<div class="outline-text-3" id="text-orga501fe3">
+<p>
+Para esto necesitas un 3 en 1: <a href="https://github.com/abo-abo/swiper">ivy</a>, <a href="https://github.com/Yevgnen/ivy-rich">ivy-rich</a> y <a href="https://elpa.gnu.org/packages/counsel.html">counsel</a>. Yo no sé que hace cada extensión por separado y no me importa. Lo único que sé es que te lo tienes que instalar ya:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp">(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">ivy</span>
+  <span style="color: #c586c0;">:init</span> (ivy-mode)
+  <span style="color: #c586c0;">:bind</span> ((<span style="color: #ce9178;">"C-s"</span> . swiper)
+     (<span style="color: #ce9178;">"C-S-s"</span> . swiper-isearch-thing-at-point)
+         <span style="color: #c586c0;">:map</span> ivy-minibuffer-map
+         (<span style="color: #ce9178;">"TAB"</span> . ivy-alt-done)
+         (<span style="color: #ce9178;">"C-l"</span> . ivy-alt-done)
+         (<span style="color: #ce9178;">"C-j"</span> . ivy-next-line)
+         (<span style="color: #ce9178;">"C-k"</span> . ivy-previous-line)
+         <span style="color: #c586c0;">:map</span> ivy-switch-buffer-map
+         (<span style="color: #ce9178;">"C-k"</span> . ivy-previous-line)
+         (<span style="color: #ce9178;">"C-l"</span> . ivy-done)
+         (<span style="color: #ce9178;">"C-d"</span> . ivy-switch-buffer-kill)
+         <span style="color: #c586c0;">:map</span> ivy-reverse-i-search-map
+         (<span style="color: #ce9178;">"C-k"</span> . ivy-previous-line)
+         (<span style="color: #ce9178;">"C-d"</span> . ivy-reverse-i-search-kill))
+  <span style="color: #c586c0;">:config</span>
+  (ivy-mode 1))
+
+(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">ivy-rich</span>
+  <span style="color: #c586c0;">:config</span>
+  (ivy-rich-mode 1)
+  (setcdr (assq t ivy-format-functions-alist) 
+                   #'ivy-format-function-line))
+
+(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">counsel</span>
+  <span style="color: #c586c0;">:bind</span> ((<span style="color: #ce9178;">"M-x"</span> . counsel-M-x)
+     (<span style="color: #ce9178;">"C-x b"</span> . counsel-ibuffer)
+     (<span style="color: #ce9178;">"C-x C-f"</span> . counsel-find-file)
+         (<span style="color: #ce9178;">"C-x d"</span> . counsel-dired)
+     <span style="color: #c586c0;">:map</span> minibuffer-local-map
+     (<span style="color: #ce9178;">"C-r"</span> . 'counsel-minibuffer-history))
+  <span style="color: #c586c0;">:config</span>
+  (<span style="color: #569cd6;">setq</span> ivy-initial-inputs-alist nil))
+</pre>
+</div>
+
+<p>
+Simplemente pruébalo. Reinicia Emacs y presiona 'Alt+x'. Verás la lista de todos los comandos disponibles en Emacs y puedes seleccionar el que quieras usando las flechas. Y si escribes parte del comando que quieres la lista se va actualizando. Es una maravilla.
+</p>
+
+<p>
+Prueba también a buscar un fichero pulsando 'Ctrl+x Ctrl+f'. Te saldrá la lista de ficheros en tu directorio HOME. Si con las flechas seleccionas una carpeta y pulsas 'TAB' te meterás dentro de dicha carpeta para poder elegir algún fichero dentro de ella. ¿He dicho ya que es una maravilla?
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgfbc3ed3" class="outline-3">
+<h3 id="orgfbc3ed3">Facilidades para escribir código Common Lisp</h3>
+<div class="outline-text-3" id="text-orgfbc3ed3">
+<p>
+Yo uso principalmente dos extensiones que me hacen la vida más fácil a la hora de programar en Common Lisp: electric-pair y show-paren. El primero te cierra automáticamente los paréntesis que escribas, así como los corchetes o las llaves. Es decir, si escribo el carácter '(', Emacs me escribe automáticamente el carácter ')'. El segundo te cambia el color del paréntesis sobre el que está el cursor, así como su pareja. 
+</p>
+
+<p>
+Ambos están ya en Emacs, pero vale la pena decirle a Emacs que active estas extensiones siempre que vayamos a usar algún lenguaje de tipo Lisp.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp">(add-hook 'emacs-lisp-mode-hook       #'electric-pair-mode)
+(add-hook 'eval-expression-minibuffer-setup-hook #'electric-pair-mode)
+(add-hook 'ielm-mode-hook             #'electric-pair-mode)
+(add-hook 'lisp-mode-hook             #'electric-pair-mode)
+(add-hook 'lisp-interaction-mode-hook #'electric-pair-mode)
+(add-hook 'scheme-mode-hook           #'electric-pair-mode)
+
+(add-hook 'emacs-lisp-mode-hook       #'show-paren-mode)
+(add-hook 'eval-expression-minibuffer-setup-hook #'show-paren-mode)
+(add-hook 'ielm-mode-hook             #'show-paren-mode)
+(add-hook 'lisp-mode-hook             #'show-paren-mode)
+(add-hook 'lisp-interaction-mode-hook #'show-paren-mode)
+(add-hook 'scheme-mode-hook           #'show-paren-mode)
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org31b5445" class="outline-3">
+<h3 id="org31b5445">Gestionando proyectos</h3>
+<div class="outline-text-3" id="text-org31b5445">
+<p>
+Para esto la extensión estrella es <a href="https://docs.projectile.mx/projectile/index.html">projectile</a>. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp">(<span style="color: #569cd6;">use-package</span> <span style="color: #569cd6;">projectile</span>
+  <span style="color: #c586c0;">:init</span>
+  (projectile-mode +1)
+  <span style="color: #c586c0;">:bind</span> (<span style="color: #c586c0;">:map</span> projectile-mode-map
+              (<span style="color: #ce9178;">"s-p"</span> . projectile-command-map)
+              (<span style="color: #ce9178;">"C-c p"</span> . projectile-command-map)))
+</pre>
+</div>
+
+<p>
+Al principio puede ser un poco chocante cómo funciona, pero sólo necesitas acordarte de esto:
+</p>
+
+<ul class="org-ul">
+<li>Projectile entiende que algo es un proyecto si tiene algún fichero que lo identifique como tal. Por ejemplo, un archivo '.git'. Hay más ficheros de este tipo; puedes verlos en la <a href="https://docs.projectile.mx/projectile/projects.html">documentación</a> de Projectile.</li>
+<li>Para añadir un proyecto a Projectile abre de manera normal un fichero del proyecto y presiona 'Ctrl+c p f'.</li>
+<li>Para seleccionar un proyecto añadido anteriormente pulsa 'Ctrl+c p p'. Luego te saldrá la lista de ficheros en el proyecto seleccionado.</li>
+<li>Estando ya dentro de un fichero de algún proyecto, pulsa 'Ctrl+c p f' para seleccionar otro fichero del mismo proyecto (sí, es el mismo atajo de teclado que en el segundo punto).</li>
+</ul>
+
+<p>
+El 99% del uso que le doy a Projectile son los dos atajos anteriores. El 1% suele consistir en usar el comando 'projectile-invalidate-cache' cuando no se actualizan bien los ficheros.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org3fbd0a2" class="outline-2">
+<h2 id="org3fbd0a2">Conclusión</h2>
+<div class="outline-text-2" id="text-org3fbd0a2">
+<p>
+Espero haber explicado con claridad todo. Y también espero que las extensiones arriba mencionadas te hagan más fácil la entrada a Emacs. Y creo que voy a parar ya de escribir que este post se está quedando ya un poco largo.
+</p>
+
+<p>
+:D 
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p><a href="https://lispylambda.es">UP</a> | <a href="https://lispylambda.es">HOME</a></p><p></p><p>Autor: Héctor Galbis Sanchis <<a href="mailto:hectometrocuadrado@gmail.com">hectometrocuadrado@gmail.com</a>></p><p>Última edición: 29-07-2023</p>
+</div>
+</body>
+</html>

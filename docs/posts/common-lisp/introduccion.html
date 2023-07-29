@@ -1,0 +1,948 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+<!-- 29-07-2023 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Introducción al lenguaje Common Lisp (ahora sí)</title>
+<meta name="author" content="Héctor Galbis Sanchis" />
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+<link rel="stylesheet" href="/css/simple.css" type="text/css"/>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="https://lispylambda.es"> UP </a>
+ |
+ <a accesskey="H" href="https://lispylambda.es"> HOME </a>
+</div><div id="content" class="content">
+<h1 class="title">Introducción al lenguaje Common Lisp (ahora sí)</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>&Iacute;ndice</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#org7649c61">Introducción</a></li>
+<li><a href="#org654e1b2">Tipos de datos primitivos</a>
+<ul>
+<li><a href="#orgb987188">Números</a></li>
+<li><a href="#orgcdd1cc0">Booleanos</a></li>
+<li><a href="#org62c2326">Caracteres y cadenas de texto</a></li>
+</ul>
+</li>
+<li><a href="#org9c5339b">Control de flujo</a></li>
+<li><a href="#orgf45c1f9">Variables</a></li>
+<li><a href="#org098e578">Funciones</a></li>
+<li><a href="#org8510f02">Hello world!</a></li>
+<li><a href="#orge4ffe3c">Conclusión</a></li>
+</ul>
+</div>
+</div>
+
+<div id="outline-container-org7649c61" class="outline-2">
+<h2 id="org7649c61">Introducción</h2>
+<div class="outline-text-2" id="text-org7649c61">
+<p>
+Como ya sabrás, los lenguajes de programación nos sirven para comunicarnos con el ordenador y decirle cómo manipular datos. Es por ello que siempre vale la pena empezar viendo cómo funciona un lenguaje hablando sobre los tipos de datos que podemos manejar en él. Tras esto lo común es ver la sintaxis del lenguaje para realmente decirle a ordenador cómo manipulamos estos datos, pero con Common Lisp eso no va a ocurrir porque los propios datos ya son la sintaxis del lenguaje.
+</p>
+
+<p>
+Recordemos que para trabajar con Common Lisp se suele trabajar con un <i>REPL</i>.  Este <i>REPL</i> es lo que obtenemos al ejecutar cualquier implementación de Common Lisp. En él introducimos expresiones y el <i>REPL</i> las evalúa y devuelve el resultado. Al principio da la sensación de que sólo sirve para probar expresiones sencillas, pero poco a poco uno va descubriendo su verdadero potencial.
+</p>
+
+<p>
+Dicho esto, en esta introducción estaré usando continuamente el <i>REPL</i> para evaluar expresiones de Common Lisp, a no ser que se diga lo contrario.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org654e1b2" class="outline-2">
+<h2 id="org654e1b2">Tipos de datos primitivos</h2>
+<div class="outline-text-2" id="text-org654e1b2">
+<p>
+Como cualquier otro lenguaje de programación, Common Lisp dispone de los tipos de datos más primitivos. Entre ellos podemos encontrar:
+</p>
+
+<ul class="org-ul">
+<li>Números</li>
+<li>Booleanos</li>
+<li>Caracteres y cadenas de texto</li>
+</ul>
+
+<p>
+Hay muchísimos tipos de datos más que iremos introduciendo poco a poco.
+</p>
+</div>
+
+<div id="outline-container-orgb987188" class="outline-3">
+<h3 id="orgb987188">Números</h3>
+<div class="outline-text-3" id="text-orgb987188">
+<p>
+En cuanto a los números enteros no hay mucho misterio. Se escriben exactamente igual que en cualquier otro lenguaje:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">5    <span style="color: #6a9955;">; El entero 5</span>
+-6   <span style="color: #6a9955;">; El entero negativo -6</span>
+</pre>
+</div>
+
+<p>
+Lo que quizás no es tan común es que estos números enteros pueden usar, si es necesario, <i>bignums</i>. Esto quiere decir que podemos escribir cualquier número sea lo grande que sea y todo seguirá yendo bien. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">9999999999999999999999999999999999   <span style="color: #6a9955;">; Un n&#250;mero muy grande,</span>
+                                     <span style="color: #6a9955;">; pero todo va bien </span>
+</pre>
+</div>
+
+<p>
+Aunque aún no hayamos introducido las funciones, la siguiente expresión ejecuta la función <code>+</code> (función de suma):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(+ 3 4 5)
+</pre>
+</div>
+
+<pre class="example">
+12
+</pre>
+
+
+<p>
+Como se puede ver, para ejecutar una función debemos poner entre paréntesis la función (en este caso <code>+</code>) y seguidamente los argumentos (en este caso <code>3</code>, <code>4</code> y <code>5</code>). Podemos también multiplicar con la función <code>*</code>, dividir con <code>/</code>, y restar con <code>-</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(* 9999 9999 99999 999988877 123456 6656) 
+</pre>
+</div>
+
+<pre class="example">
+8215414458948896050459819081728
+</pre>
+
+
+<p>
+Estas funciones aceptan cualquier tipo numérico, incluidos los números con coma flotante.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(/ 5.0 2.0 2.0)  <span style="color: #6a9955;">; 5.0 / 2.0 / 2.0</span>
+</pre>
+</div>
+
+<pre class="example">
+1.25
+</pre>
+
+
+<p>
+Como ya ocurre en otros lenguajes, podemos usar notación científica para denotar números en coma flotante:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(- 6.e10 5.6e6)
+</pre>
+</div>
+
+<pre class="example">
+5.9994403e10
+</pre>
+
+
+<p>
+Un tipo de dato poco común y que debería estar presente en más lenguajes de programación son las fracciones:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(- 8/5 7/8 1/3)  <span style="color: #6a9955;">; 8/5 - 7/8 - 1/3</span>
+</pre>
+</div>
+
+<pre class="example">
+47/120
+</pre>
+
+
+<p>
+Common Lisp tiene el tipo <code>rational</code>. No lo confundas con la división que puedes encontrar en otros lenguajes como C++ o Java. Recuerda que para dividir dos números en Common Lisp usamos la expresión <code>(/ a b)</code> donde <code>a</code> y <code>b</code> son dos números. Por otro lado, la expresión <code>a/b</code> es la fracción <code>a</code> entre <code>b</code>. Mientras que la división acepta cualquier tipo de número (enteros, fracciones, números con coma flotante), las fracciones sólo pueden formarse a partir de dos enteros.
+</p>
+
+<p>
+También podemos usar números complejos. Usamos <code>#c(5 1)</code>, por ejemplo, para denotar al número <code>5+i</code>. Utilizando la función de exponenciación <code>expt</code> y la variable <code>pi</code> podemos calcular el valor <code>-1</code> con la famosa identidad de Euler.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(expt 2.718281828459045d0 (* pi #c(0 1)))  <span style="color: #6a9955;">; e^(&#960;i)</span>
+</pre>
+</div>
+
+<pre class="example">
+#C(-1.0d0 1.2246467991473532d-16) 
+</pre>
+
+
+<p>
+La <code>d</code> que hay al final del número en coma flotante sirve para indicar que queremos usar doble precisión (<code>double</code>). 
+</p>
+
+<p>
+Si quieres más información sobre los números en Common Lisp te recomiendo ir al libro <a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node16.html">Common Lisp the Language</a>.
+</p>
+
+<p>
+Por otro lado, si quieres ver qué operaciones matemáticas existen en Common Lisp puedes visitar el <a href="http://clhs.lisp.se/Body/12_aa.htm">HyperSpec</a>.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-orgcdd1cc0" class="outline-3">
+<h3 id="orgcdd1cc0">Booleanos</h3>
+<div class="outline-text-3" id="text-orgcdd1cc0">
+<p>
+No existen unos valores que podamos identificar únicamente como booleanos, sino que Common Lisp hace algo parecido al lenguaje C. En C, el número <code>0</code> significa falso y cualquier otra cosa significa verdadero. Por su lado, en Common Lisp, <code>NIL</code> es usado para indicar falsedad y cualquier otra cosa significa verdadero. Aunque, en particular, se usa el valor <code>T</code> para referirse al valor booleano que indica verdad. Es decir los valores que entran dentro del tipo <code>boolean</code> estrictamente hablando son:
+</p>
+
+<ul class="org-ul">
+<li><code>T</code>: Verdadero</li>
+<li><code>NIL</code>: Falso</li>
+</ul>
+
+<p>
+Como es de esperar tenemos disponibles las funciones que se corresponden con las puertas lógicas:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(not nil)
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(and (or t nil) nil)
+</pre>
+</div>
+
+<pre class="example">
+NIL
+</pre>
+
+
+<p>
+Quizás te estés preguntando por qué he escrito antes <code>NIL</code> y en el código he escrito <code>nil</code>. La respuesta es que da igual cuál uses, ambos son equivalentes, pues Common Lisp no distingue entre mayúsculas y minúsculas (<i>case-insensitive</i>). Normalmente el código se escribe en minúscula y los resultados se suelen escribir en mayúscula. Lo más seguro es que mezcle ambas formas de escribir los valores, pero debes de saber que al final son equivalentes y da igual cómo lo escribamos.
+</p>
+
+<p>
+Si quieres saber más sobre estas operaciones lógicas puedes volver al libro <a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node75.html">Common Lisp the Language</a>.
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org62c2326" class="outline-3">
+<h3 id="org62c2326">Caracteres y cadenas de texto</h3>
+<div class="outline-text-3" id="text-org62c2326">
+<p>
+Los caracteres en Common Lisp se denotan por <code>#\</code> seguidos del caracter que quieres representar. Por ejemplo, si queremos el caracter <code>g</code> utilizamos <code>#\g</code>. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">#\g
+</pre>
+</div>
+
+<p>
+Existen un conjunto de 96 caracteres presentes en el estándar de Common Lisp (es decir, cualquier implementación debe tenerlos). Eso quiere decir que existen caracteres que podrían o no estar dependiendo de la implementación que usemos, pero no nos vamos a meter ahí. 
+</p>
+
+<p>
+De entre esos 96 caracteres, 2 se refieren al espacio y a la nueva línea. Para referirnos a estos dos caracteres utilizamos lo que se llama un nombre de caracter. En particular, se usa <code>#\Space</code> y <code>#\Newline</code> (de nuevo, da igual usar minúsculas o mayúsculas). Puedes encontrar la lista completa de los caracteres en el <a href="http://www.lispworks.com/documentation/HyperSpec/Body/02_ac.htm">HyperSpec</a>. Sin embargo, los nombres de caracteres disponibles están en <a href="http://www.lispworks.com/documentation/HyperSpec/Body/13_ag.htm">otra sección</a>. Recuerda que los únicos nombres de caracter que están presentes en el estándar son los dos primeros (<code>#\Space</code> y <code>#\Newline</code>). 
+</p>
+
+<p>
+Tenemos bastantes funciones que trabajan sobre caracteres. Podemos comparar su orden, ver si dos caracteres son iguales, si es mayúscula o minúscula, si es un dígito, etc.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(char&lt;= #\a #\h)
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+
+
+<div class="org-src-container">
+<pre class="src src-lisp">(char-upcase #\y)
+</pre>
+</div>
+
+<pre class="example">
+#\Y
+</pre>
+
+
+<p>
+Puedes ver una lista de algunas de estas funciones en el <a href="http://www.lispworks.com/documentation/HyperSpec/Body/13_aa.htm">HyperSpec</a>.
+</p>
+
+<p>
+Por otro lado tenemos las cadenas de caracteres. Como en otros lenguajes de programación, las cadenas de texto, o strings, son arrays de caracteres. Las cadenas de texto se representan mediante una sucesión de caracteres puestos entre un par de dobles comillas (<i>"</i>).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #ce9178;">"Hola"</span>
+</pre>
+</div>
+
+<p>
+Recordemos que habían dos caracteres 'especiales' con los que nos teníamos que referir con un nombre de caracter: <code>#\Space</code> y <code>#\Newline</code>. Al igual que no usarías nunca <code>#\a</code> para escribir una <code>a</code> en un string, tampoco vas a usar <code>#\Space</code> y <code>#\Newline</code> para insertar un espacio o una nueva línea en un string. Y tampoco podemos usar <code>\b</code> o <code>\n</code>. Lo que tenemos que hacer es insertar literalmente un espacio (usando la barra espaciadora) o una nueva línea (usando la tecla <i>Enter</i>).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(string-upcase <span style="color: #ce9178;">"Pongo espacios entre la palabras.</span>
+<span style="color: #ce9178;">Y una nueva linea entre frases."</span>)
+</pre>
+</div>
+
+<pre class="example">
+"PONGO ESPACIOS ENTRE LA PALABRAS.
+Y UNA NUEVA LINEA ENTRE FRASES."
+</pre>
+
+
+<p>
+Al igual que con los caracteres, existen <a href="http://www.lispworks.com/documentation/HyperSpec/Body/f_stg_up.htm">algunas funciones que manipulan los strings</a>, y <a href="http://www.lispworks.com/documentation/HyperSpec/Body/f_stgeq_.htm">otras funciones que nos dan información</a>. También podemos concatenar varios strings:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(concatenate 'string <span style="color: #ce9178;">"Hola "</span> <span style="color: #ce9178;">"mundo"</span>)
+</pre>
+</div>
+
+<pre class="example">
+"Hola mundo"
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org9c5339b" class="outline-2">
+<h2 id="org9c5339b">Control de flujo</h2>
+<div class="outline-text-2" id="text-org9c5339b">
+<p>
+La operación más primitiva de control de flujo en Common Lisp es <code>if</code>. Como en cualquier otro lenguaje de programación, recibe una condición, y dependiendo de si esa condición es verdadera o falsa ejecutará una expresión u otra.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">if</span> condicion 
+  entonces 
+  en-otro-caso)
+</pre>
+</div>
+
+<p>
+Algo importante a tener en cuenta es que cualquier expresión de Common Lisp debe devolver algo, e <code>if</code> no es una excepción. En particular, <code>if</code> devolverá el valor que devuelva la expresión <code>entonces</code> o <code>en-otro-caso</code> dependiendo del valor de <code>condicion</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">if</span> (&gt; 5 0)
+  <span style="color: #ce9178;">"5 es positivo"</span>
+  <span style="color: #ce9178;">"5 no es positivo"</span>)
+</pre>
+</div>
+
+<pre class="example">
+"5 es positivo"
+</pre>
+
+
+<p>
+En este caso se ha evaluado la expresión <code>(&gt; 5 0)</code> que devuelve <code>T</code>, y por tanto se devuelve la expresión <code>"5 es positivo"</code> que está situado en el lugar del <code>then</code>.
+</p>
+
+<p>
+A partir de <code>if</code> se construye <code>cond</code>, que es la versión <code>if-else-if-else-if</code> de otros lenguajes. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">cond</span>
+  (cond1 expr1)
+  (cond2 expr2)
+  (cond3 expr3)
+  ...)
+</pre>
+</div>
+
+<p>
+Es decir, podríamos usar <code>if</code> para ver si un número es positivo, negativo o cero de esta forma:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">if</span> (&gt; -4 0)
+  <span style="color: #ce9178;">"-4 es positivo"</span>
+  (<span style="color: #569cd6;">if</span> (&lt; -4 0)
+    <span style="color: #ce9178;">"-4 es negativo"</span>
+    <span style="color: #ce9178;">"-4 es cero"</span>))
+</pre>
+</div>
+
+<pre class="example">
+"-4 es negativo"
+</pre>
+
+
+<p>
+Pero es más cómodo usar <code>cond</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">cond</span>
+  ((&gt; 0 0) <span style="color: #ce9178;">"0 es positivo"</span>)
+  ((&lt; 0 0) <span style="color: #ce9178;">"0 es negativo"</span>)
+  (t       <span style="color: #ce9178;">"0 es cero"</span>))
+</pre>
+</div>
+
+<pre class="example">
+"0 es cero"
+</pre>
+
+
+<p>
+En la expresión <code>cond</code> se van evaluando las condiciones, y en el momento que se encuentre algo que sea verdadero (es decir, que devuelva <code>T</code>) devuelve la expresión asociada a dicha condición. En este caso, se usa como tercera condición el valor <code>T</code>, de esta forma creamos un 'en-otro-caso' si el resto de condiciones falla.
+</p>
+
+<p>
+Ahora es cuando debería hablar de bucles <code>while</code> y <code>for</code>, pero en Common Lisp no hay. Y antes de que te lleves las manos a la cabeza te diré que hay algo muchísimo mejor: la expresión <code>loop</code>. Sin exagerar, engloba todas las expresiones típicas de bucles como <code>while</code>, <code>for</code>, <code>do-while</code>, <code>repeat</code>, &#x2026; y añade incluso más potencia. Es un pelín compleja y se merece un post entero para ella sola. Aun así, si tienes curiosidad, puedes encontrar su funcionamiento explicado con bastante detalle en el libro <a href="https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node235.html">Common Lisp the Language</a>.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf45c1f9" class="outline-2">
+<h2 id="orgf45c1f9">Variables</h2>
+<div class="outline-text-2" id="text-orgf45c1f9">
+<p>
+Las variables son una de las herramientas más básicas de la programación que nos permiten abstraer información. Dado un objeto relativamente complejo, podemos darle un nombre y así poder usarlo en cualquier otro momento.
+</p>
+
+<p>
+Para crear variables globales podemos usar <code>defvar</code>, <code>defparameter</code> y <code>defconstant</code> (entre otros un poco más raros). La mayor diferencia entre estas 3 expresiones es qué ocurre cuando reevaluamos la expresión con la misma variable pero con un valor diferente. Pero por ahora, nos quedaremos sólo con <code>defvar</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">defvar</span> <span style="color: #9cdcfe;">miVariable</span> 10)
+</pre>
+</div>
+
+<pre class="example">
+MIVARIABLE
+</pre>
+
+
+<p>
+Recuerda que cualquier expresión de Common Lisp debe devolver algo. En este caso se retorna un símbolo, algo que veremos en otro momento. Por ahora, se ha definido la variable <code>miVariable</code> y ya podemos usarla como queramos. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(+ miVariable 5)
+</pre>
+</div>
+
+<pre class="example">
+15
+</pre>
+
+
+<p>
+Otro ejemplo:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">defvar</span> <span style="color: #9cdcfe;">otraVariable</span> (+ miVariable 2))
+
+(/ miVariable otraVariable)  <span style="color: #6a9955;">; 10/12</span>
+</pre>
+</div>
+
+<pre class="example">
+5/6
+</pre>
+
+
+<p>
+En cuanto a las variables locales, hay que pensar que la localidad depende de algo. En lenguajes como C++ o Java las variables locales suelen serlo respecto de una función. Es decir, esa variable sólo puedes usarla dentro de la función. En Common Lisp es un poco diferente. Aquí, tenemos un poco más de control sobre cuándo se puede o no usar una variable. En particular, una variable (normalmente) será local con respecto a la expresión <code>let</code>. 
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">let</span> ((saludo <span style="color: #ce9178;">"Hola"</span>)
+      (nombre <span style="color: #ce9178;">"Juan"</span>))
+  (concatenate 'string saludo <span style="color: #ce9178;">", "</span> nombre <span style="color: #ce9178;">"."</span>))
+</pre>
+</div>
+
+<pre class="example">
+"Hola, Juan."
+</pre>
+
+
+<p>
+Una vez finaliza <code>let</code>, las variables <code>saludo</code> y <code>nombre</code> dejan de existir (a no ser que todo el <code>let</code> esté dentro de otro <code>let</code> con esas mismas variables o existan variables globales con esos nombres). Si ya existían variables con esos nombres, lo que hace <code>let</code> es ensombrecerlas (<i>shadowing</i>). Por ejemplo, recuerda que antes hemos definido la variable <code>miVariable</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">miVariable
+</pre>
+</div>
+
+<pre class="example">
+10
+</pre>
+
+
+<p>
+Usando <code>let</code> podemos ensombrecer la variable global:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">let</span> ((miVariable <span style="color: #ce9178;">"Ahora es un string"</span>))
+  (string-upcase miVariable))
+</pre>
+</div>
+
+<pre class="example">
+"AHORA ES UN STRING"
+</pre>
+
+
+<p>
+Una vez finaliza la expresión <code>let</code> la variable global <code>miVariable</code> deja de estar ensombrecida y vuelve a ser disponible con su valor original:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">miVariable
+</pre>
+</div>
+
+<pre class="example">
+10
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org098e578" class="outline-2">
+<h2 id="org098e578">Funciones</h2>
+<div class="outline-text-2" id="text-org098e578">
+<p>
+Si con las variables podemos dar nombre a los objetos, con las funciones le damos nombre a una serie de expresiones. Ya hemos usado algunas funciones como <code>+</code>, <code>-</code>, <code>concatenate</code> o <code>string-upcase</code>. Pero también estamos interesados en crear nuestras propias funciones. Para ello utilizamos <code>defun</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">defun</span> <span style="color: #dcdcaa;">suma2</span> (n)
+  (+ n 2))
+</pre>
+</div>
+
+<pre class="example">
+SUMA2
+</pre>
+
+
+<p>
+Al igual que pasaba con <code>defvar</code>, <code>defun</code> también devuelve el símbolo que representa a nuestra función. Cuando usamos <code>defun</code> debemos indicar el nombre de la función, que en este caso es <code>suma2</code>, unos argumentos de entrada como <code>n</code>, y luego el cuerpo de la función. En el cuerpo podemos escribir la cantidad de expresiones que queramos. Además, el valor devuelto por la función será el valor devuelto por la última expresión del cuerpo de la función.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(<span style="color: #569cd6;">defun</span> <span style="color: #dcdcaa;">saludar</span> (nombre)
+  (<span style="color: #569cd6;">let</span> ((saludo (concatenate 'string <span style="color: #ce9178;">"Hola, "</span> nombre <span style="color: #ce9178;">"."</span>)))
+    (princ saludo))
+  nombre) 
+</pre>
+</div>
+
+<pre class="example">
+SALUDAR
+</pre>
+
+
+<p>
+En la función saludar recibimos un <code>nombre</code> con el que creamos un <code>saludo</code>. Imprimimos el saludo con la función <code>princ</code> (también existe la función <code>print</code>). Por último, escribimos <code>nombre</code> al final de la función para devolver el nombre que hemos recibido.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(saludar <span style="color: #ce9178;">"Juan"</span>)
+</pre>
+</div>
+
+<pre class="example">
+Hola, Juan.
+"Juan"
+</pre>
+
+
+<p>
+En los resultados, primero se muestra qué se imprime por pantalla y luego se muestra el valor devuelto por la función.
+</p>
+
+<p>
+En otro momento veremos cómo sacarle el máximo provecho a las funciones, pues es posible indicar argumentos opcionales, e incluso una cantidad variable de argumentos. 
+</p>
+</div>
+</div>
+
+
+<div id="outline-container-org8510f02" class="outline-2">
+<h2 id="org8510f02">Hello world!</h2>
+<div class="outline-text-2" id="text-org8510f02">
+<p>
+Para terminar vamos a ver cómo podemos hacer un programa <i>Hello World</i>. Es claro que si en el <i>REPL</i> de <i>SLIME</i> escribimos simplemente <code>"Hello world"</code>, el propio <i>REPL</i> nos mostrará lo mismo.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #ce9178;">"Hello world"</span>
+</pre>
+</div>
+
+<pre class="example">
+"Hello world"
+</pre>
+
+
+<p>
+Pero eso no es lo que queremos. Un programa <i>Hello World</i> requiere al menos que escribamos el código en un fichero, que podamos cargar dicho fichero y así poder ejecutar una función que nos imprima <code>"Hello World"</code>. Pues eso es exactamente lo que vamos a hacer ahora.
+</p>
+
+<p>
+Los programas de Common Lisp se escriben en ficheros con extensión '<i>.lisp</i>'. Vamos entonces a crear un fichero en el directorio <i>HOME</i> (​~​) llamado '<i>hello-world.lisp</i>'. En él, escribiremos la definición de una función <code>main</code> que imprimirá <code>"Hello world!"</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #6a9955;">;;; </span><span style="color: #6a9955;">~/hellow-world.lisp</span>
+
+(<span style="color: #569cd6;">defun</span> <span style="color: #dcdcaa;">main</span> ()
+  (princ <span style="color: #ce9178;">"Hello world!"</span>))
+</pre>
+</div>
+
+<p>
+Ahora sólo falta cargar el fichero. Para ello usamos la función <code>load</code> desde nuestro <i>REPL</i> (sí, todo se hace desde el <i>REPL</i>).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(load <span style="color: #ce9178;">"~/hello-world.lisp"</span>)
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+
+
+<p>
+Si la función <code>load</code> devuelve el valor <code>T</code>, significa que todo ha ido bien. Eso, además, quiere decir que la función <code>main</code> ya se puede usar.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(main)
+</pre>
+</div>
+
+<pre class="example">
+Hello world!
+"Hello world!"
+</pre>
+
+
+<p>
+Quizás te sorprendas de que se haya impreso dos veces <code>Hello world!</code>. Eso es porque la función <code>princ</code>, que también tiene que devolver algo, devuelve el objeto que ha recibido. En este caso, <code>princ</code> recibe el objeto <code>"Hello world!"</code>​, por lo que primero se imprime <code>Hello world!</code>, y luego se muestra el valor devuelto por la función <code>main</code> que es el valor devuelto por <code>princ</code>, es decir, <code>"Hello world!"</code>.
+</p>
+
+<p>
+Podríamos ir un paso más y generar un ejecutable, aunque es un pelín más complicado. Pero qué carajos, vamos a hacerlo.
+</p>
+
+<p>
+Primero hay que tener en cuenta que en el estandar no se habla nada sobre ejecutables, por lo que su creación debe estar soportada por las implementaciones. Es más, cada implementación lo hará de una manera diferente. En el caso de SBCL, la creación de un ejecutable pasa por usar la función <code>sb-ext:save-lisp-and-die</code>. ¡Pero cuidado! Esta función debe ejecutarse cuando no hay hilos extra ejecutándose. Y, ¿cuál es el problema? SLIME ejecuta varios hilos al mismo tiempo. Es decir, no podemos usar esta función en Emacs con SLIME. Pero la solución es sencilla: No usar Emacs, sino usar la consola de comandos.
+</p>
+
+<p>
+Abre la consola de comandos y ejecuta SBCL:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">sbcl
+</pre>
+</div>
+
+<p>
+Se te abrirá un <i>REPL</i> en la terminal. Primero, como hemos creado una sesión nueva de Common Lisp, nuestra función <code>main</code> no está disponible. Así que, de nuevo, cargamos el fichero.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(load <span style="color: #ce9178;">"~/hello-world.lisp"</span>)
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+
+
+<p>
+Por si acaso, comprueba que ya está disponible usándola:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(main)
+</pre>
+</div>
+
+<pre class="example">
+Hello world!
+"Hello world!"
+</pre>
+
+
+<p>
+Si todo ha ido bien, ya podemos crear el ejecutable:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp">(sb-ext:save-lisp-and-die <span style="color: #ce9178;">"hello-world.out"</span> 
+                          <span style="color: #c586c0;">:toplevel</span> #'main 
+                          <span style="color: #c586c0;">:executable</span> t)
+</pre>
+</div>
+
+<p>
+El primer argumento es el nombre del nuevo fichero que queremos generar. El resto de argumentos son conocidos como <i>keyword arguments</i>. Cada argumento empezando por '<code>:</code>', como <code>:toplevel</code> es un <i>keyword.</i> Y el valor que le sucede es el valor asociado a ese <i>keyword</i>, en este caso, <code>#'main</code>. Con el <i>keyword argument</i> <code>:toplevel</code> indicamos la función que queremos que se llame cuando ejecutemos el ejecutable '<i>~​/​hello-world.out</i>'. Por último, con el <i>keyword argument</i> <code>:executable</code> indicamos si queremos que se cree un ejecutable, por eso le pasamos el valor <code>T</code>.
+</p>
+
+<p>
+Cuando ejecutes esta función, la sesión de Common Lisp se termina. Es decir, se cierra el <i>REPL</i> y volverás a la entrada de comandos de la terminal. Sólo queda probar nuestro programa:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-bash">./hello-world.out
+</pre>
+</div>
+
+<pre class="example">
+Hello world!
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orge4ffe3c" class="outline-2">
+<h2 id="orge4ffe3c">Conclusión</h2>
+<div class="outline-text-2" id="text-orge4ffe3c">
+<p>
+Con este post hemos echado un vistazo general a lo más básico de Common Lisp: Números, booleanos, variables, &#x2026; Pero no te relajes porque esto escala muy rápido. 
+</p>
+
+<p>
+:D
+</p>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p><a href="https://lispylambda.es">UP</a> | <a href="https://lispylambda.es">HOME</a></p><p></p><p>Autor: Héctor Galbis Sanchis <<a href="mailto:hectometrocuadrado@gmail.com">hectometrocuadrado@gmail.com</a>></p><p>Última edición: 29-07-2023</p>
+</div>
+</body>
+</html>
