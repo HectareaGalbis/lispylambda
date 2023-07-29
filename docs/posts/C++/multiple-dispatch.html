@@ -6,7 +6,7 @@
 <!-- 29-07-2023 -->
 <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Lispy lambda  </title>
+<title>Las soluciones buena, fea y mala del multiple dispatch en C++</title>
 <meta name="author" content="Héctor Galbis Sanchis" />
 <meta name="generator" content="Org Mode" />
 <style>
@@ -201,35 +201,94 @@
  |
  <a accesskey="H" href="https://hectarea1996.github.io/lispylambda/"> HOME </a>
 </div><div id="content" class="content">
-<h1 class="title">Lispy lambda  </h1>
+<h1 class="title">Las soluciones buena, fea y mala del multiple dispatch en C++</h1>
 <p>
-Bienvenido a Lispy Lambda! Este es un blog sobre cosillas que se me van ocurriendo sobre programación. Léete algo, que seguro que encuentras algo interesante.
+Una de las herramientas más importantes de la orientación a objetos es el polimorfismo, y es que la capacidad de elegir la función correcta a partir de un objeto del que sólo conocemos su clase abstracta ofrece bastante poder al programador. Así, en lugar de llamar a una función diferente para acelerar un coche, una furgoneta o un camión podemos llamar a la función acelerar de la clase abstracta vehículo. En lugar de llamar a una función distinta para obtener el área de un círculo, un triángulo o un rectaágulo podemos usar la función area de la clase abstracta figura.
 </p>
 
 <p>
-:D
+C++ usa los métodos virtules para conseguir el polimorfismo y en el momento en el que se efectúa la elección de la función se dice que se ha realizado un <b>single dispatch</b>.
 </p>
 
-<div id="outline-container-orgcdadf49" class="outline-2">
-<h2 id="orgcdadf49">Common Lisp</h2>
-<div class="outline-text-2" id="text-orgcdadf49">
-<ul class="org-ul">
-<li>(05-02-2023) <a href="posts/common-lisp/no-introduccion.html">Introducción a Common Lisp que no introduce nada</a></li>
-<li>(08-02-2023) <a href="posts/common-lisp/instalacion.html">Instalando Common Lisp</a></li>
-<li>(12-02-2023) <a href="posts/common-lisp/introduccion.html">Introducción al lenguaje Common Lisp (ahora sí)</a></li>
-<li>(18-02-2023) <a href="posts/common-lisp/datos-codigo.html">El código de Common Lisp son objetos</a></li>
-</ul>
-</div>
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #c586c0;">#include</span> <span style="color: #ce9178;">&lt;iostream&gt;</span>
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #569cd6;">virtual</span> <span style="color: #4ec9b0;">float</span> <span style="color: #dcdcaa;">area</span>() = 0;
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Circulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">radio</span>;
+
+    <span style="color: #dcdcaa;">Circulo</span>(<span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">_radio</span>)
+        : radio(_radio) {}
+
+    <span style="color: #4ec9b0;">float</span> <span style="color: #dcdcaa;">area</span>(){
+        <span style="color: #569cd6;">return</span> 3.14f*radio*radio;
+    }
+};
+
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">Rectangulo</span> : <span style="color: #569cd6;">public</span> <span style="color: #4ec9b0;">Figura</span>{
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">height</span>;
+    <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">width</span>;
+
+    <span style="color: #dcdcaa;">Rectangulo</span>(<span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">_height</span>, <span style="color: #4ec9b0;">float</span> <span style="color: #9cdcfe;">_width</span>)
+        : height(_height), width(_width) {}
+
+    <span style="color: #4ec9b0;">float</span> <span style="color: #dcdcaa;">area</span>(){
+        <span style="color: #569cd6;">return</span> height*width;
+    }
+};
+
+<span style="color: #4ec9b0;">int</span> <span style="color: #dcdcaa;">main</span>(){
+    <span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f1</span> = <span style="color: #569cd6;">new</span> <span style="color: #4ec9b0;">Circulo</span>(5.f);
+    <span style="color: #4ec9b0;">Figura</span>* <span style="color: #9cdcfe;">f2</span> = <span style="color: #569cd6;">new</span> <span style="color: #4ec9b0;">Rectangulo</span>(3.f,4.f);
+
+    <span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #ce9178;">"La figura 1 tiene &#225;rea: "</span> &lt;&lt; f1-&gt;area() &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+    <span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #ce9178;">"La figura 2 tiene &#225;rea: "</span> &lt;&lt; f2-&gt;area() &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+}
+</pre>
 </div>
 
-<div id="outline-container-org3ff1f16" class="outline-2">
-<h2 id="org3ff1f16">C++</h2>
-<div class="outline-text-2" id="text-org3ff1f16">
-<ul class="org-ul">
-<li>(29-07-2023) <a href="posts/C++/multiple-dispatch.html">Las soluciones buena, fea y mala del multiple dispatch en C++</a></li>
-</ul>
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">La</td>
+<td class="org-left">figura</td>
+<td class="org-right">1</td>
+<td class="org-left">tiene</td>
+<td class="org-left">área:</td>
+<td class="org-right">78.5</td>
+</tr>
+
+<tr>
+<td class="org-left">La</td>
+<td class="org-left">figura</td>
+<td class="org-right">2</td>
+<td class="org-left">tiene</td>
+<td class="org-left">área:</td>
+<td class="org-right">12</td>
+</tr>
+</tbody>
+</table>
 </div>
-</div>
+<div id="postamble" class="status">
+<p><a href="https://hectarea1996.github.io/lispylambda/">UP</a> | <a href="https://hectarea1996.github.io/lispylambda/">HOME</a></p><p></p><p>Autor: Héctor Galbis Sanchis <<a href="mailto:hectometrocuadrado@gmail.com">hectometrocuadrado@gmail.com</a>></p><p>Última edición: 29-07-2023</p>
 </div>
 </body>
 </html>

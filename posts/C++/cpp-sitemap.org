@@ -1,0 +1,3 @@
+#+TITLE: 
+
+- (29-07-2023) [[file:multiple-dispatch.org][Las soluciones buena, fea y mala del multiple dispatch en C++]]

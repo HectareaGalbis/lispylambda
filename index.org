@@ -1,7 +1,13 @@
 #+TITLE: Lispy lambda
 
-Bienvenido a Lispy Lambda! Este es mi proyecto personal en el que iré añadiendo todo lo que sé sobre Common Lisp. A medida que vaya aprendiendo HTML y CSS iré modernizando la página. 
+Bienvenido a Lispy Lambda! Este es un blog sobre cosillas que se me van ocurriendo sobre programación. Léete algo, que seguro que encuentras algo interesante.
+
+:D
 
 * Common Lisp
 
 #+include: posts/common-lisp/common-lisp-sitemap.org
+
+* C++
+
+#+include: posts/C++/cpp-sitemap.org

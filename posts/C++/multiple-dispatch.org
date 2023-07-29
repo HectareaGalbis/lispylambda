@@ -1,0 +1,49 @@
+#+TITLE: Las soluciones buena, fea y mala del multiple dispatch en C++
+#+date:<2023-07-29 sá.>
+
+Una de las herramientas más importantes de la orientación a objetos es el polimorfismo, y es que la capacidad de elegir la función correcta a partir de un objeto del que sólo conocemos su clase abstracta ofrece bastante poder al programador. Así, en lugar de llamar a una función diferente para acelerar un coche, una furgoneta o un camión podemos llamar a la función acelerar de la clase abstracta vehículo. En lugar de llamar a una función distinta para obtener el área de un círculo, un triángulo o un rectaágulo podemos usar la función area de la clase abstracta figura.
+
+C++ usa los métodos virtules para conseguir el polimorfismo y en el momento en el que se efectúa la elección de la función se dice que se ha realizado un *single dispatch*.
+
+#+begin_src C++ :exports both :eval never-export
+  #include <iostream>
+
+  struct Figura{
+	  virtual float area() = 0;
+  };
+
+  struct Circulo : public Figura{
+	  float radio;
+	
+	  Circulo(float _radio)
+		  : radio(_radio) {}
+
+	  float area(){
+		  return 3.14f*radio*radio;
+	  }
+  };
+
+  struct Rectangulo : public Figura{
+	  float height;
+	  float width;
+
+	  Rectangulo(float _height, float _width)
+		  : height(_height), width(_width) {}
+
+	  float area(){
+		  return height*width;
+	  }
+  };
+
+  int main(){
+	  Figura* f1 = new Circulo(5.f);
+	  Figura* f2 = new Rectangulo(3.f,4.f);
+
+	  std::cout << "La figura 1 tiene área: " << f1->area() << std::endl;
+	  std::cout << "La figura 2 tiene área: " << f2->area() << std::endl;
+  }
+#+end_src
+
+#+RESULTS:
+| La | figura | 1 | tiene | área: | 78.5 |
+| La | figura | 2 | tiene | área: |   12 |
