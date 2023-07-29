@@ -5,7 +5,7 @@ Una de las herramientas más importantes de la orientación a objetos es el poli
 
 C++ usa los métodos virtules para conseguir el polimorfismo y en el momento en el que se efectúa la elección de la función se dice que se ha realizado un *single dispatch*.
 
-#+begin_src C++ :exports both :eval never-export
+#+begin_src C++ :exports both :eval never-export :results output
   #include <iostream>
 
   struct Figura{
