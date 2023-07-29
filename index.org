@@ -4,6 +4,12 @@ Bienvenido a Lispy Lambda! Este es un blog sobre cosillas que se me van ocurrien
 
 :D
 
+Soy *Héctor Galbis Sanchis*. Acabé mis estudios de *Matemáticas e Ingeniería Informática* en Febrero de 2023. Me especializo en programación, aunque me siguen gustando las matemáticas y sobre todo su aplicación en la programación. De hecho, mi [[https://github.com/Hectarea1996/TFG/blob/main/TeoriaDeCategoriasAplicadaALaProgramacionFuncional.pdf][TFG]] va sobre la aplicación de la Teoría de Categorías a la programación funcional.
+
+- Email: hectometrocuadrado@gmail.com
+- Github: [[https://github.com/Hectarea1996][Hectarea]]
+- LinkedIn: [[https://www.linkedin.com/in/hector-galbis-sanchis/][Héctor Galbis Sanchis]]
+
 * Common Lisp
 
 #+include: posts/common-lisp/common-lisp-sitemap.org
