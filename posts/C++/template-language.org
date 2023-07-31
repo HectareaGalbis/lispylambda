@@ -1,0 +1,593 @@
+#+TITLE: T++: El lenguaje oculto tras los Templates
+#+date:<2023-07-30 do.>
+
+Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. Lo llamaremos *T++*. Es un lenguaje funcional puro, pero no te preocupes, iremos poco a poco si nunca te has enfrentado con algo así.
+
+T++ es un lenguaje que se usa sobre C++. Por ello, podemos crear una función ~main~ común y corriente para poder comprobar el código que vayamos haciendo. Además, incluiremos una librería indispensable para poder usar T++: *type_traits*.
+
+#+begin_src C++
+  #include <iostream>
+  #include <type_traits>
+
+  int main(){
+
+	  return 0;
+  }
+#+end_src
+
+* Tipos de datos primitivos
+En T++ los tipos de datos primitivos son estructuras creadas a partir de la expresión ~std::integral_constant~. Esta expresión recibe un tipo de C++ y un valor de dicho tipo. Entre los tipos permitidos se encuentran los tipos integrales, los punteros o incluso las referencias.
+
+#+begin_quote
+A partir de C++20 tenemos incluso tipos de coma flotante.
+#+end_quote
+
+ Pero empecemos por lo sencillo. Los tipos integrales incluyen los enteros, booleanos o caracteres, entre otros. En T++, para definir un tipo integral ya hemos dicho que debemos usar ~std::integral_constant<type,value>~. Por ejemplo, si queremos crear el entero ~5~ en T++, usamos la expresión ~std::integral_constant<int,5>~. Es más, con ~using~ podemos definir aliases para estos valores de T++.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   using cinco = std::integral_constant<int,5>;
+ #+end_src 
+
+Pero ojo, esto es un tipo en C++ que representa al valor ~5~. Si queremos *extraer* el valor que se encuentra en su interior, debemos añadir ~::value~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << cinco::value << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 5
+
+Podemos hacer lo mismo con un booleano:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   using myFalse = std::integral_constant<bool,false>;
+
+   std::cout << myFalse::value << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 0
+
+Pero observemos cómo hemos construido estos valores. Hemos usado ~std::integral_constant~. Pero, ¿qué es esta expresión en T++? Pues como veremos a continuación, es una función de T++. Aunque también se conocen como meta-funciones en C++.
+ 
+* Funciones
+Yendo al grano, una función en T++ va a ser una estructura (templatizada o no) que contenga al menos un atributo ~type~ y, opcionalmente, un atributo ~value~.
+
+Nosotros ya hemos usado una función, ~std::integral_constant~. De hecho, podríamos haber creado esta función de la siguiente manera:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename T, T v>
+   struct integral_constant{
+	   using type = integral_constant;
+	   static constexpr T value = v;
+   };
+ #+end_src
+
+Para empezar nuestra aventura con las funciones, vamos a crear una que nos permita crear un entero de T++ a partir de un entero de C++. Sin embargo, vamos a hacerlo un poco diferente a la posible ~integral_constant~ que acabamos de hacer. Recuerda que los atributos como ~type~ o ~value~ se pueden heredar. Por tanto sólo tenemos que heredar del tipo correcto para terminar hacer nuestra función.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int k>
+   struct int_constant : std::integral_constant<int,k>{};
+ #+end_src
+
+ Y listo! Si no te fías, recuerda la definición de función en T++. Hemos hecho una estructura templatizada que recibe un entero. Como heredamos de la estructura ~std::integral_constant<int,k>~, conseguimos gratuitamente todos sus atributos, incluidos el atributo ~type~ y su atributo ~value~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << int_constant<42>::value << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 42
+
+Al usar la expresión ~int_constant<42>~ estamos llamando a la función ~int_constant~ con el parámetro ~42~. Además accedemos a su valor usando el atributo ~value~.
+
+Usar el atributo ~value~ es tan común que para cada función de T++ suele crearse otro template que accede directamente a dicho atributo. Hagámos lo mismo.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int k>
+   constexpr int int_constant_v = int_constant<k>::value;
+ #+end_src
+
+ De esta forma es más cómo acceder a los valores que contienen nuestro valores de T++.
+ 
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << int_constant_v<-6> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : -6
+
+ Hasta ahora hemos usado ~value~, pero este era el atributo opcional. El atributo obligatorio es ~type~ y, sin embargo, no lo hemos usado aún. Pues te pido un poco de paciencia, pues será en nuestra siguiente función donde veamos la utilidad de ~type~. Por ahora, debemos quedarnos con que tenemos que crear otro template para cada función de T++ que acceda directamente al atributo ~type~. Hagámoslo con ~int_constant~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int k>
+   using int_constant_t = typename int_constant<k>::type;
+ #+end_src
+
+ Observa que este template no es una nueva estructura. Estamos usando ~using~ para crear un alias de ~int_constant<k>::type~.
+
+ Ahora sí, pasemos a la siguiente función. La función de suma de dos enteros. Debemos recibir dos enteros de T++ y devolver su suma.
+ 
+#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  template<typename A, typename B>
+  struct add : int_constant<A::value+B::value>{};
+ #+end_src
+
+ Recuerda que los valores en T++ siguen siendo tipos en C++, es por eso que el template recibe dos ~typename~. Cada uno debería ser un entero de T++. Y para indicar que devolvemos otro entero hacemos que ~add~ herede de ~int_constant~. De esta forma tendremos sus atributos ~value~ y ~type~. En este caso ~value~ tendrá el valor que recibe ~int_constant~, que es la suma de ~A~ y ~B~.
+
+Siguiendo la tradición, debemos crear los templates ~_v~ y ~_t~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  template<typename A, typename B>
+  constexpr int add_v = add<A,B>::value;
+
+  template<typename A, typename B>
+  using add_t = add<A,B>::type;
+ #+end_src
+
+ Y podemos probar nuestra nueva función para comprobar si es correcta:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   using tres = int_constant<3>;
+   using cinco = int_constant<5>;
+
+   std::cout << add_v<tres,cinco> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 8
+
+ Ahora bien, en el código anterior hay un detalle que hace que no sea del todo correcto. ¿Recuerdas cómo definimos el valor ~5~ en la sección anterior? Lo definimos usando ~std::integral_constant~. Pero ahora hemos usado ~int_constant~. A primera vista parecen lo mismo, porque hemos dicho que ~int_constant~ es una función que devolvía un valor en T++. Pero la realidad es que son tipos diferentes. Y esto puede ocasionar problemas más adelante. Aquí es cuando entra en juego el atributo ~type~. Este atributo es lo que nos permite realmente devolver el valor de una función en T++. En nuestro caso, recuerda que ~int_constant~ se definía heredando de ~std::integral_constant~, por lo que hereda su atributo ~type~, que se inicializaba al propio ~std::integral_constant~. Por tanto, en el ejemplo anterior, lo correcto es usar el atributo ~type~ para crear ~tres~ y ~cinco~. O, equivalentemente, el template que acaba en ~_t~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   using tres = int_constant_t<3>;
+   using cinco = int_constant_t<5>;
+
+   std::cout << add_v<tres,cinco> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 8
+
+ En este ejemplo ya hemos visto que el cambio no afecta al resultado, pero en ciertas funciones puede suponer el cambio entre la perfección y el desastre.
+
+* Más funciones
+Seguimos viendo ejemplos de algunas funciones un poco más avanzadas. Por ejemplo, estaría bien una función que nos diga si un entero es cero o no. Es decir, debe recibir un entero de T++ (~std::integral_constant~) y devolver un booleano de T++ (otro ~std::integral_constant~).
+
+Para esta función es necesario usar las especializaciones de templates. Date cuenta que no existe ningún tipo de ~if~ en templates. O mejor dicho, las especializaciones son nuestro ~if~. La idea general es poner lo que es falso en el template general, y lo verdadero en las especializaciones.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename T>
+   struct isZero
+	   : bool_constant<false> {};
+
+   template<>
+   struct isZero<std::integral_constant<int,0>>
+	   : bool_constant<true> {};
+ #+end_src
+
+Observa que hemos usado el tipo ~bool_constant~. Es como ~int_constant~, pero para booleanos. Se define de la misma forma.
+ 
+ Creamos también los correspondientes templates ~_v~ y ~_t~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  template<typename T>
+  constexpr bool isZero_v = isZero<T>::value;
+
+  template<typename T>
+  using isZero_t = typename isZero<T>::type;
+ #+end_src
+
+ Vamos a probar la función.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  std::cout << isZero_v<int_constant<0>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 0
+ 
+ Le pasamos a la función el valor ~0~ y la función nos devuelve verdadero. Espera... ha devuelto falso. ¡Claro! Recuerda lo que dijimos sobre ~type~. Le estamos pasando a ~isZero~ el tipo ~int_constant~ cuando realmente le tenemos que pasar ~std::integral_constant~. Basta aquí cambiar ~int_constant~ por ~int_constant_t~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  std::cout << isZero_v<int_constant_t<0>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 1
+
+Observa de nuevo la definición de ~isZero~. La especialización se realiza sobre el tipo ~integral_constant~. Es por ello que con ~int_constant~ se devolvía el valor falso. Lo mismo ocurriría si utilizásemos ~add~ en lugar de ~add_t~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   using cuatro = int_constant_t<4>;
+   using menosCuatro = int_constant_t<-4>;
+
+   std::cout << isZero_v<add<cuatro,menosCuatro>> << std::endl;
+
+   std::cout << isZero_v<add_t<cuatro,menosCuatro>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 0
+ : 1
+
+A partir de aquí podemos hacer todas las funciones que manejen valores primitivos de T++ que se nos ocurran. Aquí tienes unas cuantas:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   /// or operator
+   template<typename B, typename C>
+   struct or_bool : bool_constant<B::value || C::value> {};
+
+   template<typename B, typename C>
+   constexpr bool or_bool_v = or_bool<B,C>::value;
+
+   template<typename B, typename C>
+   using or_bool_t = typename or_bool<B,C>::type;
+
+
+   /// not operator
+   template<typename B>
+   struct not_bool : bool_constant<!B::value> {};
+
+   template<typename B>
+   constexpr bool not_bool_v = not_bool<B>::value;
+
+   template<typename B>
+   using not_bool_t = typename not_bool<B>::type;
+
+
+   /// add1
+   template<typename N>
+   struct add1 : int_constant<N::value + 1> {};
+
+   template<typename N>
+   constexpr int add1_v = add1<N>::value;
+
+   template<typename N>
+   using add1_t = typename add1<N>::type;
+
+
+   /// eql
+   template<typename N, typename M>
+   struct eql : bool_constant<N::value == M::value> {};
+
+   template<typename N, typename M>
+   constexpr bool eql_v = eql<N,M>::value;
+
+   template<typename N, typename M>
+   using eql_t = typename eql<N,M>::type;
+
+
+   /// mod operator
+   template<typename A, typename B>
+   struct mod : int_constant<A::value % B::value> {};
+
+   template<typename A, typename B>
+   constexpr int mod_v = mod<A,B>::value;
+
+   template<typename A, typename B>
+   using mod_t = typename mod<A,B>::type;
+
+
+   /// isDivisor
+   template<typename D, typename N>
+   struct isDivisor : isZero<mod_t<N,D>> {};
+
+   template<typename D, typename N>
+   constexpr bool isDivisor_v = isDivisor<D,N>::value;
+
+   template<typename D, typename N>
+   using isDivisor_t = typename isDivisor<D,N>::type;
+
+
+   /// hasDivisors
+   template<typename D, typename N>
+   struct hasDivisors_aux : or_bool<
+							   isDivisor_t<D,N>,
+							   typename hasDivisors_aux<add1_t<D>,N>::type> {};
+
+   template<typename N>
+   struct hasDivisors_aux<N,N> : bool_constant<false> {};
+
+   template<typename N>
+   struct hasDivisors : hasDivisors_aux<int_constant_t<2>,N> {};
+
+   template<typename N>
+   constexpr bool hasDivisors_v = hasDivisors<N>::value;
+
+   template<typename N>
+   using hasDivisors_t = typename hasDivisors<N>::type;
+
+
+   /// isPrime
+   template<typename N>
+   struct isPrime : not_bool<hasDivisors_t<N>> {};
+
+   template<typename N>
+   constexpr bool isPrime_v = isPrime<N>::value;
+
+   template<typename N>
+   using isPrime_t = typename isPrime<N>::type;
+
+
+   /// nextPrime
+   template<typename N, typename IsPrime>
+   struct nextPrimeAux : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
+
+   template<typename N>
+   struct nextPrimeAux<N,bool_constant_t<true>> : N {};
+
+   template<typename N>
+   struct nextPrime : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
+
+   template<typename N>
+   constexpr int nextPrime_v = nextPrime<N>::value;
+
+   template<typename N>
+   using nextPrime_t = typename nextPrime<N>::type;
+ #+end_src
+
+Vale, este código es duro de procesar. Pero nos quedamos al menos con la última, que nos permite obtener el siguiente número primo a partir de uno dado. Vamos a probarla.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << nextPrime_v<int_constant_t<13>> << std::endl;
+ #+end_src 
+
+ #+RESULTS:
+ : 17
+
+Todo esto está muy guay, pero falta algo. Con sólo tipos primitivos no conseguimos mucho. Vamos a ver si podemos crear algo más grande.
+
+* Estructuras de datos
+Al igual que existe ~std::integral_constant~, nosotros podemos crear nuevos tipos de datos usando estructuras de C++. Por ejemplo, supongamos que queremos crear en T++ un tipo de dato para representar vectores de dos coordenadas. En primer lugar debemos crear la estructura en C++.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   struct vector{
+	   int x;
+	   int y;
+   };
+ #+end_src 
+
+ En segundo lugar, creamos una función en T++ que cree el vector. Manteniendo la nomenclatura de los tipos primitivos, llamaremos a esta función ~vector_constant~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int x, int y>
+   struct vector_constant{
+	   static constexpr vector value = {x,y};
+	   using type = vector_constant;
+   };
+ #+end_src
+
+ Observa que esta función tiene el atributo ~type~, que era obligatorio, además del atributo value que es el ~vector~ que hemos declarado justo antes.
+
+Creamos también los templates ~_v~ y ~_t~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int x, int y>
+   constexpr vector vector_constant_v = vector_constant<x,y>::value;
+
+   template<int x, int y>
+   using vector_constant_t = typename vector_constant<x,y>::type;
+ #+end_src
+
+Para que sea más cómodo mostrar por pantalla un vector, vamos a sobrecargar el operador de extracción ~<<~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::ostream& operator<<(std::ostream& os, const vector& v){
+	   os << "(" << v.x << "," << v.y << ")";
+   }
+ #+end_src
+
+ Vamos a probar a imprimir un vector de T++.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << vector_constant_v<5,7> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : (5,7)
+ 
+¡Perfecto!
+
+Obviamente, la primera función que podemos hacer con un vector es el producto escalar de dos vectores. Aunque antes de hacerla creo que sería conveniente crear funciones para acceder a cada uno de los valores de un vector. Es decir, un par de ~getters~.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename P>
+   struct vector_x : int_constant<P::value.x> {};
+
+   template<typename P>
+   constexpr int vector_x_v = vector_x<P>::value;
+
+   template<typename P>
+   using vector_x_t = typename vector_x<P>::type;
+
+
+   template<typename P>
+   struct vector_y : int_constant<P::value.y> {};
+
+   template<typename P>
+   constexpr int vector_y_v = vector_y<P>::value;
+
+   template<typename P>
+   using vector_y_t = typename vector_y<P>::type;
+ #+end_src
+
+ Definimos también el producto de dos enteros.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename N, typename M>
+   struct mult : int_constant<N::value * M::value> {};
+
+   template<typename N, typename M>
+   constexpr int mult_v = mult<N,M>::value;
+
+   template<typename N, typename M>
+   using mult_t = typename mult<N,M>::type;
+ #+end_src
+
+ Ahora sí, el producto escalar.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename P, typename Q>
+   struct dot_product : add<
+						   mult_t<
+							   vector_x_t<P>,
+							   vector_x_t<Q>>,
+						   mult_t<
+							   vector_y_t<P>,
+							   vector_y_t<Q>>> {};
+
+   template<typename P, typename Q>
+   constexpr int dot_product_v = dot_product<P,Q>::value;
+
+   template<typename P, typename Q>
+   using dot_product_t = typename dot_product<P,Q>::type;
+ #+end_src
+
+Y lo probamos.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << dot_product_v<vector_constant_t<2,1>,vector_constant_t<3,5>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 11
+
+* Arrays y strings
+ Para arrays y string no hay mucho misterio. Todo se define igual que con las estructuras, excepto algunos detalles. En primer lugar, vamos a utilizar templates variádicos. Es decir, un template que recibe una cantidad arbitraria de parámetros.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int... NS>
+   struct int_array{
+	   static constexpr int value[] = {NS...};
+	   using type = int_array;
+   };
+
+   template<int... NS>
+   constexpr int int_array_v[] = int_array<NS...>::value;
+
+   template<int... NS>
+   using int_array_t = typename int_array<NS...>::type;
+ #+end_src
+
+ #+begin_src
+   error: initializer fails to determine size of 'int_array_v<NS ...>'
+ #+end_src
+
+¡Ups! ¿Qué ha pasado aquí? Parece que el compilador se queja cuando intentamos definir ~int_array_v~. El error nos indica que C++ no es capaz de deducir el tamaño del array. Podríamos intentar usar un puntero a ~value~ para evitar este error.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int... NS>
+   constexpr int* int_array_v = int_array<NS...>::value;
+ #+end_src
+
+ #+begin_src
+   error: invalid conversion from 'const int*' to 'int*'
+ #+end_src
+
+ Vale, a ver esto otro:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int... NS>
+   constexpr const int* int_array_v = int_array<NS...>::value;
+ #+end_src
+
+Vale, esto compila. Vamos a probarlo.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << int_array_v<2,4,6>[1] << std::endl;
+ #+end_src
+ 
+ #+begin_src
+   error: undefined reference to `int_array<2, 4, 6>::value'
+ #+end_src
+ 
+Pues vaya. Sinceramente, no estoy seguro del por qué de esto, pero mi intuición me dice que C++ intenta optimizar los atributos con calificadores ~static constexpr~. En este caso, ~value~ no tendría una dirección de memoria debido a esta optimización. Pero ya digo, si lees esto cógelo todo con pinzas.
+
+¿Qué hacemos entonces? No definir el template ~_v~. No nos vamos a morir por no tener este template. Al menos lo que sí podemos hacer, en cambio, es acceder directamente a algún valor del array usando ~value[n]~. 
+
+Antes de continuar, observa que cualquier otro array se definirá de la misma forma pero cambiando el tipo subyacente del array. En ese caso, podemos crear un array genérico en T++.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename T, T... TS>
+   struct array{
+	   static constexpr T value[] = {TS...};
+	   using type = array;
+   };
+
+   template<typename T, T... TS>
+   using array_t = typename array<T,TS...>::type;
+ #+end_src
+
+Lo probamos:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   std::cout << array_v<int,1,5,10>::value[2] << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 10
+
+ Podemos ahora redefinir los arrays de enteros a partir de estos arrays genéricos.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<int... TS>
+   struct int_array : array<int,TS...> {};
+
+   template<int... TS>
+   using int_array_t = typename int_array<TS...>::type;
+ #+end_src
+
+ Vamos a crear la función para poder acceder a los elementos del array. Al igual que con las estructuras, los valores devueltos por estas funciones van a ser tipos primitivos de T++, no de C++. La función para obtener un elemento de un array recibirá el array y un entero de T++ indicando el índice del elemento a devolver. Pero hay aún un problema por resolver. El array es de tipo genérico, así que no sabemos con certeza que tipo debemos devolver. Para ello vamos a crear un nuevo atributo en el array llamado ~value_type~. Este atributo también existe en el tipo ~std::integral_constant~ que hemos usado hasta ahora. Este atributo guarda su tipo subyacente. Para ~std::integral_constant<int,5>~, ~value_type~ vale ~int~. El array quedaría de la siguiente forma:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename T, T... TS>
+   struct array{
+	   static constexpr T value[] = {TS...};
+	   using type = array;
+	   using value_type = T;
+   };
+
+   template<typename T, T... TS>
+   using array_t = typename array<T,TS...>::type;
+ #+end_src
+
+ Ahora sí podemos hacer la función deseada.
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+   template<typename A, typename N>
+   struct aref
+	   : std::integral_constant<typename A::value_type,A::value[N::value]> {};
+
+   template<typename A, typename N>
+   constexpr typename A::value_type aref_v = aref<A,N>::value;
+
+   template<typename A, typename N>
+   using aref_t = typename aref<A,N>::type;
+ #+end_src
+
+ La función ~aref~ va a devolver un ~std::integral_constant~. El valor subyacente de este valor tiene que ser el mismo que el del array, por eso usamos ~A::value_type~. Luego, con ~A::value[]~ accedemos a algún valor del array. El índice elegido es ~N::value~, que será un entero de T++.
+
+ Por otro lado, observa cómo se crea ~aref_v~. Como el array es genérico, el único modo de saber el tipo a devolver es accediendo de nuevo a ~A::value_type~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  using miArray = array_t<int,1,1,2,3,5,8>;
+
+  std::cout << aref_v<miArray,int_constant_t<5>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 8
+ 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+
+ 
