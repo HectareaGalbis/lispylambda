@@ -1,0 +1,845 @@
+% Created 2023-08-01 ma. 18:10
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\author{Héctor Galbis Sanchis}
+\date{\textit{<2023-07-30 do.>}}
+\title{T++: El lenguaje oculto tras los Templates}
+\hypersetup{
+ pdfauthor={Héctor Galbis Sanchis},
+ pdftitle={T++: El lenguaje oculto tras los Templates},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 28.2 (Org mode 9.5.5)}, 
+ pdflang={Spanish}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. Lo llamaremos \textbf{T++}. Es un lenguaje funcional puro, pero no te preocupes, iremos poco a poco si nunca te has enfrentado con algo así.
+
+T++ es un lenguaje que se usa sobre C++. Por ello, podemos crear una función \texttt{main} común y corriente para poder comprobar el código que vayamos haciendo. Además, incluiremos una librería indispensable para poder usar T++: \textbf{type\textsubscript{traits}}.
+
+\begin{verbatim}
+#include <iostream>
+#include <type_traits>
+
+// Aqui declararemos todas las funciones
+
+int main(){
+
+	// Aquí porbaremos las funciones
+
+	return 0;
+}
+\end{verbatim}
+
+\section{Tipos de datos primitivos}
+\label{sec:orgad5b708}
+En T++ los tipos de datos primitivos son estructuras creadas a partir de la expresión \texttt{std::integral\_constant}. Esta expresión recibe un tipo de C++ y un valor de dicho tipo. Entre los tipos permitidos se encuentran los tipos integrales, los punteros o incluso las referencias.
+
+\begin{quote}
+A partir de C++20 tenemos incluso tipos de coma flotante.
+\end{quote}
+
+Pero empecemos por lo sencillo. Los tipos integrales incluyen los enteros, booleanos o caracteres, entre otros. En T++, para definir un tipo integral ya hemos dicho que debemos usar \texttt{std::integral\_constant<type,value>}. Por ejemplo, si queremos crear el entero \texttt{5} en T++, usamos la expresión \texttt{std::integral\_constant<int,5>}. Es más, con \texttt{using} podemos definir aliases para estos valores de T++.
+
+\begin{verbatim}
+using cinco = std::integral_constant<int,5>;
+\end{verbatim}
+
+Pero ojo, esto es un tipo en C++ que representa al valor \texttt{5}. Si queremos \textbf{extraer} el valor que se encuentra en su interior, debemos añadir \texttt{::value}.
+
+\begin{verbatim}
+std::cout << cinco::value << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+5
+\end{verbatim}
+
+
+Podemos hacer lo mismo con un booleano:
+
+\begin{verbatim}
+using myFalse = std::integral_constant<bool,false>;
+
+std::cout << myFalse::value << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+0
+\end{verbatim}
+
+
+Pero observemos cómo hemos construido estos valores. Hemos usado \texttt{std::integral\_constant}. Pero, ¿qué es esta expresión en T++? Pues como veremos a continuación, es una función de T++. Aunque también se conocen como meta-funciones en C++.
+
+\section{Funciones}
+\label{sec:org773b300}
+Yendo al grano, una función en T++ va a ser una estructura (templatizada o no) que contenga al menos un atributo \texttt{type} y, opcionalmente, un atributo \texttt{value}.
+
+Nosotros ya hemos usado una función, \texttt{std::integral\_constant}. De hecho, podríamos haber creado esta función de la siguiente manera:
+
+\begin{verbatim}
+template<typename T, T v>
+struct integral_constant{
+	using type = integral_constant;
+	static constexpr T value = v;
+};
+\end{verbatim}
+
+Para empezar nuestra aventura con las funciones, vamos a crear una que nos permita crear un entero de T++ a partir de un entero de C++. Sin embargo, vamos a hacerlo un poco diferente a la posible \texttt{integral\_constant} que acabamos de hacer. Recuerda que los atributos como \texttt{type} o \texttt{value} se pueden heredar. Por tanto sólo tenemos que heredar del tipo correcto para terminar hacer nuestra función.
+
+\begin{verbatim}
+template<int k>
+struct int_constant : std::integral_constant<int,k>{};
+\end{verbatim}
+
+Y listo! Si no te fías, recuerda la definición de función en T++. Hemos hecho una estructura templatizada que recibe un entero. Como heredamos de la estructura \texttt{std::integral\_constant<int,k>}, conseguimos gratuitamente todos sus atributos, incluidos el atributo \texttt{type} y su atributo \texttt{value}.
+
+\begin{verbatim}
+std::cout << int_constant<42>::value << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+42
+\end{verbatim}
+
+
+Al usar la expresión \texttt{int\_constant<42>} estamos llamando a la función \texttt{int\_constant} con el parámetro \texttt{42}. Además accedemos a su valor usando el atributo \texttt{value}.
+
+Usar el atributo \texttt{value} es tan común que para cada función de T++ suele crearse otro template que accede directamente a dicho atributo. Hagámos lo mismo.
+
+\begin{verbatim}
+template<int k>
+constexpr int int_constant_v = int_constant<k>::value;
+\end{verbatim}
+
+De esta forma es más cómo acceder a los valores que contienen nuestro valores de T++.
+
+\begin{verbatim}
+std::cout << int_constant_v<-6> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+-6
+\end{verbatim}
+
+
+Hasta ahora hemos usado \texttt{value}, pero este era el atributo opcional. El atributo obligatorio es \texttt{type} y, sin embargo, no lo hemos usado aún. Pues te pido un poco de paciencia, pues será en nuestra siguiente función donde veamos la utilidad de \texttt{type}. Por ahora, debemos quedarnos con que tenemos que crear otro template para cada función de T++ que acceda directamente al atributo \texttt{type}. Hagámoslo con \texttt{int\_constant}.
+
+\begin{verbatim}
+template<int k>
+using int_constant_t = typename int_constant<k>::type;
+\end{verbatim}
+
+Observa que este template no es una nueva estructura. Estamos usando \texttt{using} para crear un alias de \texttt{int\_constant<k>::type}.
+
+Ahora sí, pasemos a la siguiente función. La función de suma de dos enteros. Debemos recibir dos enteros de T++ y devolver su suma.
+
+\begin{verbatim}
+template<typename A, typename B>
+struct add : int_constant<A::value+B::value>{};
+\end{verbatim}
+
+Recuerda que los valores en T++ siguen siendo tipos en C++, es por eso que el template recibe dos \texttt{typename}. Cada uno debería ser un entero de T++. Y para indicar que devolvemos otro entero hacemos que \texttt{add} herede de \texttt{int\_constant}. De esta forma tendremos sus atributos \texttt{value} y \texttt{type}. En este caso \texttt{value} tendrá el valor que recibe \texttt{int\_constant}, que es la suma de \texttt{A} y \texttt{B}.
+
+Siguiendo la tradición, debemos crear los templates \texttt{\_v} y \texttt{\_t}:
+
+\begin{verbatim}
+template<typename A, typename B>
+constexpr int add_v = add<A,B>::value;
+
+template<typename A, typename B>
+using add_t = add<A,B>::type;
+\end{verbatim}
+
+Y podemos probar nuestra nueva función para comprobar si es correcta:
+
+\begin{verbatim}
+using tres = int_constant<3>;
+using cinco = int_constant<5>;
+
+std::cout << add_v<tres,cinco> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+8
+\end{verbatim}
+
+
+Ahora bien, en el código anterior hay un detalle que hace que no sea del todo correcto. ¿Recuerdas cómo definimos el valor \texttt{5} en la sección anterior? Lo definimos usando \texttt{std::integral\_constant}. Pero ahora hemos usado \texttt{int\_constant}. A primera vista parecen lo mismo, porque hemos dicho que \texttt{int\_constant} es una función que devolvía un valor en T++. Pero la realidad es que son tipos diferentes. Y esto puede ocasionar problemas más adelante. Aquí es cuando entra en juego el atributo \texttt{type}. Este atributo es lo que nos permite realmente devolver el valor de una función en T++. En nuestro caso, recuerda que \texttt{int\_constant} se definía heredando de \texttt{std::integral\_constant}, por lo que hereda su atributo \texttt{type}, que se inicializaba al propio \texttt{std::integral\_constant}. Por tanto, en el ejemplo anterior, lo correcto es usar el atributo \texttt{type} para crear \texttt{tres} y \texttt{cinco}. O, equivalentemente, el template que acaba en \texttt{\_t}.
+
+\begin{verbatim}
+using tres = int_constant_t<3>;
+using cinco = int_constant_t<5>;
+
+std::cout << add_v<tres,cinco> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+8
+\end{verbatim}
+
+
+En este ejemplo ya hemos visto que el cambio no afecta al resultado, pero en ciertas funciones puede suponer el cambio entre la perfección y el desastre.
+
+\section{Más funciones}
+\label{sec:orgca1c5e5}
+Seguimos viendo ejemplos de algunas funciones un poco más avanzadas. Por ejemplo, estaría bien una función que nos diga si un entero es cero o no. Es decir, debe recibir un entero de T++ (\texttt{std::integral\_constant}) y devolver un booleano de T++ (otro \texttt{std::integral\_constant}).
+
+Para esta función es necesario usar las especializaciones de templates. Date cuenta que no existe ningún tipo de \texttt{if} en templates. O mejor dicho, las especializaciones son nuestro \texttt{if}. La idea general es poner lo que es falso en el template general, y lo verdadero en las especializaciones.
+
+\begin{verbatim}
+template<typename T>
+struct isZero
+	: bool_constant<false> {};
+
+template<>
+struct isZero<std::integral_constant<int,0>>
+	: bool_constant<true> {};
+\end{verbatim}
+
+Observa que hemos usado el tipo \texttt{bool\_constant}. Es como \texttt{int\_constant}, pero para booleanos. Se define de la misma forma.
+
+Creamos también los correspondientes templates \texttt{\_v} y \texttt{\_t}.
+
+\begin{verbatim}
+template<typename T>
+constexpr bool isZero_v = isZero<T>::value;
+
+template<typename T>
+using isZero_t = typename isZero<T>::type;
+\end{verbatim}
+
+Vamos a probar la función.
+
+\begin{verbatim}
+std::cout << isZero_v<int_constant<0>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+0
+\end{verbatim}
+
+
+Le pasamos a la función el valor \texttt{0} y la función nos devuelve verdadero. Espera\ldots{} ha devuelto falso. ¡Claro! Recuerda lo que dijimos sobre \texttt{type}. Le estamos pasando a \texttt{isZero} el tipo \texttt{int\_constant} cuando realmente le tenemos que pasar \texttt{std::integral\_constant}. Basta aquí cambiar \texttt{int\_constant} por \texttt{int\_constant\_t}.
+
+\begin{verbatim}
+std::cout << isZero_v<int_constant_t<0>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+1
+\end{verbatim}
+
+
+Observa de nuevo la definición de \texttt{isZero}. La especialización se realiza sobre el tipo \texttt{integral\_constant}. Es por ello que con \texttt{int\_constant} se devolvía el valor falso. Lo mismo ocurriría si utilizásemos \texttt{add} en lugar de \texttt{add\_t}.
+
+\begin{verbatim}
+using cuatro = int_constant_t<4>;
+using menosCuatro = int_constant_t<-4>;
+
+std::cout << isZero_v<add<cuatro,menosCuatro>> << std::endl;
+
+std::cout << isZero_v<add_t<cuatro,menosCuatro>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+0
+1
+\end{verbatim}
+
+
+A partir de aquí podemos hacer todas las funciones que manejen valores primitivos de T++ que se nos ocurran. Aquí tienes unas cuantas:
+
+\begin{verbatim}
+/// or operator
+template<typename B, typename C>
+struct or_bool : bool_constant<B::value || C::value> {};
+
+template<typename B, typename C>
+constexpr bool or_bool_v = or_bool<B,C>::value;
+
+template<typename B, typename C>
+using or_bool_t = typename or_bool<B,C>::type;
+
+
+/// not operator
+template<typename B>
+struct not_bool : bool_constant<!B::value> {};
+
+template<typename B>
+constexpr bool not_bool_v = not_bool<B>::value;
+
+template<typename B>
+using not_bool_t = typename not_bool<B>::type;
+
+
+/// add1
+template<typename N>
+struct add1 : int_constant<N::value + 1> {};
+
+template<typename N>
+constexpr int add1_v = add1<N>::value;
+
+template<typename N>
+using add1_t = typename add1<N>::type;
+
+
+/// eql
+template<typename N, typename M>
+struct eql : bool_constant<N::value == M::value> {};
+
+template<typename N, typename M>
+constexpr bool eql_v = eql<N,M>::value;
+
+template<typename N, typename M>
+using eql_t = typename eql<N,M>::type;
+
+
+/// mod operator
+template<typename A, typename B>
+struct mod : int_constant<A::value % B::value> {};
+
+template<typename A, typename B>
+constexpr int mod_v = mod<A,B>::value;
+
+template<typename A, typename B>
+using mod_t = typename mod<A,B>::type;
+
+
+/// isDivisor
+template<typename D, typename N>
+struct isDivisor : isZero<mod_t<N,D>> {};
+
+template<typename D, typename N>
+constexpr bool isDivisor_v = isDivisor<D,N>::value;
+
+template<typename D, typename N>
+using isDivisor_t = typename isDivisor<D,N>::type;
+
+
+/// hasDivisors
+template<typename D, typename N>
+struct hasDivisors_aux : or_bool<
+							isDivisor_t<D,N>,
+							typename hasDivisors_aux<add1_t<D>,N>::type> {};
+
+template<typename N>
+struct hasDivisors_aux<N,N> : bool_constant<false> {};
+
+template<typename N>
+struct hasDivisors : hasDivisors_aux<int_constant_t<2>,N> {};
+
+template<typename N>
+constexpr bool hasDivisors_v = hasDivisors<N>::value;
+
+template<typename N>
+using hasDivisors_t = typename hasDivisors<N>::type;
+
+
+/// isPrime
+template<typename N>
+struct isPrime : not_bool<hasDivisors_t<N>> {};
+
+template<typename N>
+constexpr bool isPrime_v = isPrime<N>::value;
+
+template<typename N>
+using isPrime_t = typename isPrime<N>::type;
+
+
+/// nextPrime
+template<typename N, typename IsPrime>
+struct nextPrimeAux : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
+
+template<typename N>
+struct nextPrimeAux<N,bool_constant_t<true>> : N {};
+
+template<typename N>
+struct nextPrime : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
+
+template<typename N>
+constexpr int nextPrime_v = nextPrime<N>::value;
+
+template<typename N>
+using nextPrime_t = typename nextPrime<N>::type;
+\end{verbatim}
+
+Vale, este código es duro de procesar. Pero nos quedamos al menos con la última, que nos permite obtener el siguiente número primo a partir de uno dado. Vamos a probarla.
+
+\begin{verbatim}
+std::cout << nextPrime_v<int_constant_t<13>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+17
+\end{verbatim}
+
+
+Todo esto está muy guay, pero falta algo. Con sólo tipos primitivos no conseguimos mucho. Vamos a ver si podemos crear algo más grande.
+
+\section{Estructuras de datos}
+\label{sec:org367e309}
+Al igual que existe \texttt{std::integral\_constant}, nosotros podemos crear nuevos tipos de datos usando estructuras de C++. Por ejemplo, supongamos que queremos crear en T++ un tipo de dato para representar vectores de dos coordenadas. En primer lugar debemos crear la estructura en C++.
+
+\begin{verbatim}
+struct vector{
+	int x;
+	int y;
+};
+\end{verbatim}
+
+En segundo lugar, creamos una función en T++ que cree el vector. Manteniendo la nomenclatura de los tipos primitivos, llamaremos a esta función \texttt{vector\_constant}.
+
+\begin{verbatim}
+template<int x, int y>
+struct vector_constant{
+	static constexpr vector value = {x,y};
+	using type = vector_constant;
+};
+\end{verbatim}
+
+Observa que esta función tiene el atributo \texttt{type}, que era obligatorio, además del atributo value que es el \texttt{vector} que hemos declarado justo antes.
+
+Creamos también los templates \texttt{\_v} y \texttt{\_t}.
+
+\begin{verbatim}
+template<int x, int y>
+constexpr vector vector_constant_v = vector_constant<x,y>::value;
+
+template<int x, int y>
+using vector_constant_t = typename vector_constant<x,y>::type;
+\end{verbatim}
+
+Para que sea más cómodo mostrar por pantalla un vector, vamos a sobrecargar el operador de extracción \texttt{<<}.
+
+\begin{verbatim}
+std::ostream& operator<<(std::ostream& os, const vector& v){
+	os << "(" << v.x << "," << v.y << ")";
+}
+\end{verbatim}
+
+Vamos a probar a imprimir un vector de T++.
+
+\begin{verbatim}
+std::cout << vector_constant_v<5,7> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+(5,7)
+\end{verbatim}
+
+
+¡Perfecto!
+
+Obviamente, la primera función que podemos hacer con un vector es el producto escalar de dos vectores. Aunque antes de hacerla creo que sería conveniente crear funciones para acceder a cada uno de los valores de un vector. Es decir, un par de \texttt{getters}.
+
+\begin{verbatim}
+template<typename P>
+struct vector_x : int_constant<P::value.x> {};
+
+template<typename P>
+constexpr int vector_x_v = vector_x<P>::value;
+
+template<typename P>
+using vector_x_t = typename vector_x<P>::type;
+
+
+template<typename P>
+struct vector_y : int_constant<P::value.y> {};
+
+template<typename P>
+constexpr int vector_y_v = vector_y<P>::value;
+
+template<typename P>
+using vector_y_t = typename vector_y<P>::type;
+\end{verbatim}
+
+Definimos también el producto de dos enteros.
+
+\begin{verbatim}
+template<typename N, typename M>
+struct mult : int_constant<N::value * M::value> {};
+
+template<typename N, typename M>
+constexpr int mult_v = mult<N,M>::value;
+
+template<typename N, typename M>
+using mult_t = typename mult<N,M>::type;
+\end{verbatim}
+
+Ahora sí, el producto escalar.
+
+\begin{verbatim}
+template<typename P, typename Q>
+struct dot_product : add<
+						mult_t<
+							vector_x_t<P>,
+							vector_x_t<Q>>,
+						mult_t<
+							vector_y_t<P>,
+							vector_y_t<Q>>> {};
+
+template<typename P, typename Q>
+constexpr int dot_product_v = dot_product<P,Q>::value;
+
+template<typename P, typename Q>
+using dot_product_t = typename dot_product<P,Q>::type;
+\end{verbatim}
+
+Y lo probamos.
+
+\begin{verbatim}
+std::cout << dot_product_v<vector_constant_t<2,1>,vector_constant_t<3,5>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+11
+\end{verbatim}
+
+\section{Arrays}
+\label{sec:org7d48da7}
+Los arrays no tienen mucho misterio. Todo se define igual que con las estructuras, excepto algunos detalles. En primer lugar, vamos a utilizar templates variádicos. Es decir, un template que recibe una cantidad arbitraria de parámetros.
+
+\begin{verbatim}
+template<int... NS>
+struct int_array{
+	static constexpr int value[] = {NS...};
+	using type = int_array;
+};
+
+template<int... NS>
+constexpr int int_array_v[] = int_array<NS...>::value;
+
+template<int... NS>
+using int_array_t = typename int_array<NS...>::type;
+\end{verbatim}
+
+\begin{verbatim}
+error: initializer fails to determine size of 'int_array_v<NS ...>'
+\end{verbatim}
+
+¡Ups! ¿Qué ha pasado aquí? Parece que el compilador se queja cuando intentamos definir \texttt{int\_array\_v}. El error nos indica que C++ no es capaz de deducir el tamaño del array. Podríamos intentar usar un puntero a \texttt{value} para evitar este error.
+
+\begin{verbatim}
+template<int... NS>
+constexpr int* int_array_v = int_array<NS...>::value;
+\end{verbatim}
+
+\begin{verbatim}
+error: invalid conversion from 'const int*' to 'int*'
+\end{verbatim}
+
+Vale, a ver esto otro:
+
+\begin{verbatim}
+template<int... NS>
+constexpr const int* int_array_v = int_array<NS...>::value;
+\end{verbatim}
+
+Vale, esto compila. Vamos a probarlo.
+
+\begin{verbatim}
+std::cout << int_array_v<2,4,6>[1] << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+error: undefined reference to `int_array<2, 4, 6>::value'
+\end{verbatim}
+
+Una última prueba. Creo recordar que los arrays que son \texttt{static constexpr} tienen que estar definidos (además de estar declarados). Así que vamos a añadir lo siguiente:
+
+\begin{verbatim}
+template<int... NS>
+constexpr int int_array<NS...>::value[];
+\end{verbatim}
+
+Probamos de nuevo\ldots{}
+
+\begin{verbatim}
+std::cout << int_array_v<2,4,6>[1] << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+4
+\end{verbatim}
+
+
+¡Sí, perfecto!
+
+Antes de continuar, observa que cualquier otro array se definirá de la misma forma pero cambiando el tipo subyacente del array. En ese caso, podemos crear un array genérico en T++.
+
+\begin{verbatim}
+template<typename T, T... TS>
+struct integral_array{
+	static constexpr T value[] = {TS...};
+	using type = integral_array;
+};
+
+template<typename T, T... TS>
+constexpr T integral_array<T, TS...>::value[];
+
+template <typename T, T... TS>
+constexpr const T* integral_array_v = integral_array<T,TS...>::value;
+
+template<typename T, T... TS>
+using integral_array_t = typename integral_array<T,TS...>::type;
+\end{verbatim}
+
+Lo probamos:
+
+\begin{verbatim}
+std::cout << integral_array_v<int,1,5,10>[2] << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+10
+\end{verbatim}
+
+
+Podemos ahora redefinir los arrays de enteros a partir de estos arrays genéricos.
+
+\begin{verbatim}
+template<int... TS>
+struct int_array : integral_array<int,TS...> {};
+
+template <int... TS>
+constexpr const int* int_array_v = int_array<TS...>::value;
+
+template<int... TS>
+using int_array_t = typename int_array<TS...>::type;
+\end{verbatim}
+
+Vamos a crear la función para poder acceder a los elementos del array. Al igual que con las estructuras, los valores devueltos por estas funciones van a ser tipos primitivos de T++, no de C++. La función para obtener un elemento de un array recibirá el array y un entero de T++ indicando el índice del elemento a devolver. Pero hay aún un problema por resolver. El array es de tipo genérico, así que no sabemos con certeza que tipo debemos devolver. Para ello vamos a crear un nuevo atributo en el array llamado \texttt{value\_type}. Este atributo también existe en el tipo \texttt{std::integral\_constant} que hemos usado hasta ahora. Este atributo guarda su tipo subyacente. Para \texttt{std::integral\_constant<int,5>}, \texttt{value\_type} vale \texttt{int}. El array quedaría de la siguiente forma:
+
+\begin{verbatim}
+template<typename T, T... TS>
+struct integral_array{
+	static constexpr T value[] = {TS...};
+	using type = integral_array;
+	using value_type = T;
+};
+
+template<typename T, T... TS>
+constexpr T integral_array<T, TS...>::value[];
+
+template <typename T, T... TS>
+constexpr const T* integral_array_v = integral_array<T,TS...>::value;
+
+template<typename T, T... TS>
+using integral_array_t = typename integral_array<T,TS...>::type;
+\end{verbatim}
+
+Ahora sí podemos hacer la función deseada.
+
+\begin{verbatim}
+template<typename A, typename N>
+struct aref
+	: std::integral_constant<typename A::value_type,A::value[N::value]> {};
+
+template<typename A, typename N>
+constexpr typename A::value_type aref_v = aref<A,N>::value;
+
+template<typename A, typename N>
+using aref_t = typename aref<A,N>::type;
+\end{verbatim}
+
+La función \texttt{aref} va a devolver un \texttt{std::integral\_constant}. El valor subyacente de este valor tiene que ser el mismo que el del array, por eso usamos \texttt{A::value\_type}. Luego, con \texttt{A::value[]} accedemos a algún valor del array. El índice elegido es \texttt{N::value}, que será un entero de T++.
+
+Por otro lado, observa cómo se crea \texttt{aref\_v}. Como el array es genérico, el único modo de saber el tipo a devolver es accediendo de nuevo a \texttt{A::value\_type}.
+
+\begin{verbatim}
+using miArray = integral_array_t<int,1,1,2,3,5,8>;
+
+std::cout << aref_v<miArray,int_constant_t<5>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+8
+\end{verbatim}
+
+
+Por mostrar alguna función usando los arrays, vamos a crear una que calcule la suma de todos los elementos de un array dado. Esta función recibirá un array de enteros, además del número de elementos a sumar.
+
+\begin{verbatim}
+template<typename A, typename N>
+struct sum_array : add<
+						aref_t<A,sub1_t<N>>,
+						typename sum_array<A,sub1_t<N>>::type> {};
+
+template<typename A>
+struct sum_array<A,int_constant_t<0>> : int_constant_t<0> {};
+
+template<typename A, typename N>
+constexpr int sum_array_v = sum_array<A,N>::value;
+
+template<typename A, typename N>
+using sum_array_t = typename sum_array<A,N>::type;
+\end{verbatim}
+
+Para no complicar mucho la implementación de esta función, los elementos se van sumando de derecha a izquierda. Además, se ha usado la función \texttt{sub1} que habíamos definido antes. Es equivalente a \texttt{add1}, pero en vez de sumar \texttt{1}, resta \texttt{1}.
+
+Vamos a probarla.
+
+\begin{verbatim}
+std::cout << sum_array_v<int_array_t<1,4,3>,int_constant_t<3>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+8
+\end{verbatim}
+
+
+Perfecto.
+
+Una pregunta obligatoria tras definir los arrays es, ¿y los strings?. Los strings son arrays de caracteres. Así que podríamos definir el tipo \texttt{char\_array} para definir strings.
+
+\begin{verbatim}
+template<char... cs>
+struct char_array : integral_array<char,cs...> {};
+
+template <char... cs>
+constexpr const char* char_array_v = char_array<cs...>::value;
+
+template<char... cs>
+using char_array_t = typename char_array<cs...>::type;
+\end{verbatim}
+
+Pero vamos a reflexionar un poco. Si pensamos en los arrays de caracteres de C o C++, éstos tienen una forma en particular cuando los inicializamos. Estoy hablando del caracter nulo que nos encontramos al final de cada string. Cuando inicializamos un string, C++ añade automáticamente un caracter adicional, el caracter nulo. Nosotros deberíamos hacer lo mismo. Para ello vamos a especializar \texttt{integral\_array} para el tipo \texttt{char}.
+
+\begin{verbatim}
+template<char... TS>
+struct integral_array<char,TS...>{
+	static constexpr char value[] = {TS...,'\0'};
+	using type = integral_array;
+	using value_type = char;
+};
+\end{verbatim}
+
+A pesar de esto, uno ya puede preveer que crear strings no va a ser muy cómodo, pues tendremos que pasar los caracteres uno a uno.
+
+\begin{verbatim}
+using holaMundo = char_array_t<'H','o','l','a',' ','m','u','n','d','o','!'>;
+
+std::cout << holaMundo::value << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+Hola mundo!
+\end{verbatim}
+
+
+Sin embargo, sí podemos crear una función que reciba un puntero a \texttt{char} y que devuelva un string de T++. Aunque hay que hacer algo de trabajo extra. Las siguientes funciones se salen un poco del objetivo de este trabajo, así que no las explicaré. He dejado un breve comentario indicando para qué sirven.
+
+\begin{verbatim}
+/// int_collection
+/// define una coleccion de enteros
+template<int... ns>
+struct int_collection {
+	using type = int_collection;
+};
+
+template<int... ns>
+using int_collection_t = typename int_collection<ns...>::type;
+
+
+/// range_collection
+/// devuelve una coleccion de enteros de 0 a n
+template<int n, int... ns>
+struct range_collection_aux : range_collection_aux<n-1,n-1,ns...> {};
+
+template<int... ns>
+struct range_collection_aux<0,ns...> : int_collection<ns...> {};
+
+template<int n>
+struct range_collection : range_collection_aux<n> {};
+
+template<int n>
+using range_collection_t = typename range_collection<n>::type;
+
+
+/// aref_str
+/// devuelve el caracter de un string de C++ con indice i
+template<const char* str, int i>
+struct aref_str{
+	static constexpr char value = str[i];
+};
+
+template<const char* str, int i>
+constexpr char aref_str_v = aref_str<str,i>::value;
+
+
+/// length_str
+/// devuelve la longitud de un string de C++
+template<const char* str, int i, bool nullchar>
+struct length_str_aux : length_str_aux<str,i+1,str[i]=='\0'> {};
+
+template<const char* str, int i>
+struct length_str_aux<str,i,true>{
+	static constexpr int value = i;
+};
+
+template<const char* str>
+struct length_str : length_str_aux<str,0,str[0]=='\0'> {};
+
+template<const char* str>
+constexpr int length_str_v = length_str<str>::value;
+
+
+/// Crea un string de T++ a partir de uno de C++
+template<const char* str, typename C>
+struct make_string_aux {};
+
+template<const char* str, int... ns>
+struct make_string_aux<str,int_collection<ns...>> : integral_array<char,aref_str_v<str,ns>...> {};
+
+template<const char* str>
+struct make_string : make_string_aux<str,range_collection_t<length_str_v<str>>> {};
+
+template<const char* str>
+constexpr const char* make_string_v = make_string<str>::value;
+
+template<const char* str>
+using make_string_t = typename make_string<str>::type;
+\end{verbatim}
+
+Para poder pasar un string como argumento de un template, necesitamos crear el string como una variable global \texttt{constexpr}.
+
+\begin{verbatim}
+constexpr char holaMundo[] = "Hola mundo!";
+\end{verbatim}
+
+Lo probamos.
+
+\begin{verbatim}
+std::cout << make_string_v<holaMundo> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+Hola mundo!
+\end{verbatim}
+
+
+Y por si no convence mucho el ejemplo, vamos a utilizar la función \texttt{aref}.
+
+\begin{verbatim}
+std::cout << aref_v<make_string_t<holaMundo>,int_constant_t<5>> << std::endl;
+\end{verbatim}
+
+\begin{verbatim}
+m
+\end{verbatim}
+\end{document}

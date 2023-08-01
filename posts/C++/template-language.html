@@ -1,0 +1,1243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="es" xml:lang="es">
+<head>
+<!-- 01-08-2023 -->
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>T++: El lenguaje oculto tras los Templates</title>
+<meta name="author" content="Héctor Galbis Sanchis" />
+<meta name="generator" content="Org Mode" />
+<style>
+  #content { max-width: 60em; margin: auto; }
+  .title  { text-align: center;
+             margin-bottom: .2em; }
+  .subtitle { text-align: center;
+              font-size: medium;
+              font-weight: bold;
+              margin-top:0; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { font-family: monospace; color: green; }
+  .priority { font-family: monospace; color: orange; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .org-right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .org-left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .org-center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #e6e6e6;
+    border-radius: 3px;
+    background-color: #f2f2f2;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: auto;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+  }
+  pre.src:hover:before { display: inline; margin-top: 14px;}
+  /* Languages per Org manual */
+  pre.src-asymptote:before { content: 'Asymptote'; }
+  pre.src-awk:before { content: 'Awk'; }
+  pre.src-authinfo::before { content: 'Authinfo'; }
+  pre.src-C:before { content: 'C'; }
+  /* pre.src-C++ doesn't work in CSS */
+  pre.src-clojure:before { content: 'Clojure'; }
+  pre.src-css:before { content: 'CSS'; }
+  pre.src-D:before { content: 'D'; }
+  pre.src-ditaa:before { content: 'ditaa'; }
+  pre.src-dot:before { content: 'Graphviz'; }
+  pre.src-calc:before { content: 'Emacs Calc'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-fortran:before { content: 'Fortran'; }
+  pre.src-gnuplot:before { content: 'gnuplot'; }
+  pre.src-haskell:before { content: 'Haskell'; }
+  pre.src-hledger:before { content: 'hledger'; }
+  pre.src-java:before { content: 'Java'; }
+  pre.src-js:before { content: 'Javascript'; }
+  pre.src-latex:before { content: 'LaTeX'; }
+  pre.src-ledger:before { content: 'Ledger'; }
+  pre.src-lisp:before { content: 'Lisp'; }
+  pre.src-lilypond:before { content: 'Lilypond'; }
+  pre.src-lua:before { content: 'Lua'; }
+  pre.src-matlab:before { content: 'MATLAB'; }
+  pre.src-mscgen:before { content: 'Mscgen'; }
+  pre.src-ocaml:before { content: 'Objective Caml'; }
+  pre.src-octave:before { content: 'Octave'; }
+  pre.src-org:before { content: 'Org mode'; }
+  pre.src-oz:before { content: 'OZ'; }
+  pre.src-plantuml:before { content: 'Plantuml'; }
+  pre.src-processing:before { content: 'Processing.js'; }
+  pre.src-python:before { content: 'Python'; }
+  pre.src-R:before { content: 'R'; }
+  pre.src-ruby:before { content: 'Ruby'; }
+  pre.src-sass:before { content: 'Sass'; }
+  pre.src-scheme:before { content: 'Scheme'; }
+  pre.src-screen:before { content: 'Gnu Screen'; }
+  pre.src-sed:before { content: 'Sed'; }
+  pre.src-sh:before { content: 'shell'; }
+  pre.src-sql:before { content: 'SQL'; }
+  pre.src-sqlite:before { content: 'SQLite'; }
+  /* additional languages in org.el's org-babel-load-languages alist */
+  pre.src-forth:before { content: 'Forth'; }
+  pre.src-io:before { content: 'IO'; }
+  pre.src-J:before { content: 'J'; }
+  pre.src-makefile:before { content: 'Makefile'; }
+  pre.src-maxima:before { content: 'Maxima'; }
+  pre.src-perl:before { content: 'Perl'; }
+  pre.src-picolisp:before { content: 'Pico Lisp'; }
+  pre.src-scala:before { content: 'Scala'; }
+  pre.src-shell:before { content: 'Shell Script'; }
+  pre.src-ebnf2ps:before { content: 'ebfn2ps'; }
+  /* additional language identifiers per "defun org-babel-execute"
+       in ob-*.el */
+  pre.src-cpp:before  { content: 'C++'; }
+  pre.src-abc:before  { content: 'ABC'; }
+  pre.src-coq:before  { content: 'Coq'; }
+  pre.src-groovy:before  { content: 'Groovy'; }
+  /* additional language identifiers from org-babel-shell-names in
+     ob-shell.el: ob-shell is the only babel language using a lambda to put
+     the execution function name together. */
+  pre.src-bash:before  { content: 'bash'; }
+  pre.src-csh:before  { content: 'csh'; }
+  pre.src-ash:before  { content: 'ash'; }
+  pre.src-dash:before  { content: 'dash'; }
+  pre.src-ksh:before  { content: 'ksh'; }
+  pre.src-mksh:before  { content: 'mksh'; }
+  pre.src-posh:before  { content: 'posh'; }
+  /* Additional Emacs modes also supported by the LaTeX listings package */
+  pre.src-ada:before { content: 'Ada'; }
+  pre.src-asm:before { content: 'Assembler'; }
+  pre.src-caml:before { content: 'Caml'; }
+  pre.src-delphi:before { content: 'Delphi'; }
+  pre.src-html:before { content: 'HTML'; }
+  pre.src-idl:before { content: 'IDL'; }
+  pre.src-mercury:before { content: 'Mercury'; }
+  pre.src-metapost:before { content: 'MetaPost'; }
+  pre.src-modula-2:before { content: 'Modula-2'; }
+  pre.src-pascal:before { content: 'Pascal'; }
+  pre.src-ps:before { content: 'PostScript'; }
+  pre.src-prolog:before { content: 'Prolog'; }
+  pre.src-simula:before { content: 'Simula'; }
+  pre.src-tcl:before { content: 'tcl'; }
+  pre.src-tex:before { content: 'TeX'; }
+  pre.src-plain-tex:before { content: 'Plain TeX'; }
+  pre.src-verilog:before { content: 'Verilog'; }
+  pre.src-vhdl:before { content: 'VHDL'; }
+  pre.src-xml:before { content: 'XML'; }
+  pre.src-nxml:before { content: 'XML'; }
+  /* add a generic configuration mode; LaTeX export needs an additional
+     (add-to-list 'org-latex-listings-langs '(conf " ")) in .emacs */
+  pre.src-conf:before { content: 'Configuration File'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.org-right  { text-align: center;  }
+  th.org-left   { text-align: center;   }
+  th.org-center { text-align: center; }
+  td.org-right  { text-align: right;  }
+  td.org-left   { text-align: left;   }
+  td.org-center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara { display: inline; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .equation-container {
+    display: table;
+    text-align: center;
+    width: 100%;
+  }
+  .equation {
+    vertical-align: middle;
+  }
+  .equation-label {
+    display: table-cell;
+    text-align: right;
+    vertical-align: middle;
+  }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  .org-svg { }
+</style>
+</head>
+<body>
+<div id="org-div-home-and-up">
+ <a accesskey="h" href="https://hectarea1996.github.io/lispylambda/"> UP </a>
+ |
+ <a accesskey="H" href="https://hectarea1996.github.io/lispylambda/"> HOME </a>
+</div><div id="content" class="content">
+<h1 class="title">T++: El lenguaje oculto tras los Templates</h1>
+<div id="table-of-contents" role="doc-toc">
+<h2>&Iacute;ndice</h2>
+<div id="text-table-of-contents" role="doc-toc">
+<ul>
+<li><a href="#orgca6755d">1. Tipos de datos primitivos</a></li>
+<li><a href="#org79bff09">2. Funciones</a></li>
+<li><a href="#org4bb0544">3. Más funciones</a></li>
+<li><a href="#orga6b8fa7">4. Estructuras de datos</a></li>
+<li><a href="#org2461f64">5. Arrays</a></li>
+</ul>
+</div>
+</div>
+<p>
+Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. Lo llamaremos <b>T++</b>. Es un lenguaje funcional puro, pero no te preocupes, iremos poco a poco si nunca te has enfrentado con algo así.
+</p>
+
+<p>
+T++ es un lenguaje que se usa sobre C++. Por ello, podemos crear una función <code>main</code> común y corriente para poder comprobar el código que vayamos haciendo. Además, incluiremos una librería indispensable para poder usar T++: <b>type<sub>traits</sub></b>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #c586c0;">#include</span> <span style="color: #ce9178;">&lt;iostream&gt;</span>
+<span style="color: #c586c0;">#include</span> <span style="color: #ce9178;">&lt;type_traits&gt;</span>
+
+<span style="color: #6a9955;">// </span><span style="color: #6a9955;">Aqui declararemos todas las funciones</span>
+
+<span style="color: #4ec9b0;">int</span> <span style="color: #dcdcaa;">main</span>(){
+
+    <span style="color: #6a9955;">// </span><span style="color: #6a9955;">Aqu&#237; porbaremos las funciones</span>
+
+    <span style="color: #569cd6;">return</span> 0;
+}
+</pre>
+</div>
+
+<div id="outline-container-orgca6755d" class="outline-2">
+<h2 id="orgca6755d"><span class="section-number-2">1.</span> Tipos de datos primitivos</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+En T++ los tipos de datos primitivos son estructuras creadas a partir de la expresión <code>std::integral_constant</code>. Esta expresión recibe un tipo de C++ y un valor de dicho tipo. Entre los tipos permitidos se encuentran los tipos integrales, los punteros o incluso las referencias.
+</p>
+
+<blockquote>
+<p>
+A partir de C++20 tenemos incluso tipos de coma flotante.
+</p>
+</blockquote>
+
+<p>
+Pero empecemos por lo sencillo. Los tipos integrales incluyen los enteros, booleanos o caracteres, entre otros. En T++, para definir un tipo integral ya hemos dicho que debemos usar <code>std::integral_constant&lt;type,value&gt;</code>. Por ejemplo, si queremos crear el entero <code>5</code> en T++, usamos la expresión <code>std::integral_constant&lt;int,5&gt;</code>. Es más, con <code>using</code> podemos definir aliases para estos valores de T++.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">cinco</span> = <span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">integral_constant</span>&lt;<span style="color: #4ec9b0;">int</span>,5&gt;;
+</pre>
+</div>
+
+<p>
+Pero ojo, esto es un tipo en C++ que representa al valor <code>5</code>. Si queremos <b>extraer</b> el valor que se encuentra en su interior, debemos añadir <code>::value</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #569cd6;">cinco</span>::value &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+5
+</pre>
+
+
+<p>
+Podemos hacer lo mismo con un booleano:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">myFalse</span> = <span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">integral_constant</span>&lt;<span style="color: #4ec9b0;">bool</span>,<span style="color: #569cd6;">false</span>&gt;;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #569cd6;">myFalse</span>::value &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+0
+</pre>
+
+
+<p>
+Pero observemos cómo hemos construido estos valores. Hemos usado <code>std::integral_constant</code>. Pero, ¿qué es esta expresión en T++? Pues como veremos a continuación, es una función de T++. Aunque también se conocen como meta-funciones en C++.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org79bff09" class="outline-2">
+<h2 id="org79bff09"><span class="section-number-2">2.</span> Funciones</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Yendo al grano, una función en T++ va a ser una estructura (templatizada o no) que contenga al menos un atributo <code>type</code> y, opcionalmente, un atributo <code>value</code>.
+</p>
+
+<p>
+Nosotros ya hemos usado una función, <code>std::integral_constant</code>. De hecho, podríamos haber creado esta función de la siguiente manera:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span> <span style="color: #9cdcfe;">v</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">integral_constant</span>{
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = integral_constant;
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">T</span> <span style="color: #9cdcfe;">value</span> = v;
+};
+</pre>
+</div>
+
+<p>
+Para empezar nuestra aventura con las funciones, vamos a crear una que nos permita crear un entero de T++ a partir de un entero de C++. Sin embargo, vamos a hacerlo un poco diferente a la posible <code>integral_constant</code> que acabamos de hacer. Recuerda que los atributos como <code>type</code> o <code>value</code> se pueden heredar. Por tanto sólo tenemos que heredar del tipo correcto para terminar hacer nuestra función.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">k</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">int_constant</span> : <span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">integral_constant</span>&lt;<span style="color: #4ec9b0;">int</span>,k&gt;{};
+</pre>
+</div>
+
+<p>
+Y listo! Si no te fías, recuerda la definición de función en T++. Hemos hecho una estructura templatizada que recibe un entero. Como heredamos de la estructura <code>std::integral_constant&lt;int,k&gt;</code>, conseguimos gratuitamente todos sus atributos, incluidos el atributo <code>type</code> y su atributo <code>value</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #569cd6;">int_constant</span>&lt;42&gt;::value &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+42
+</pre>
+
+
+<p>
+Al usar la expresión <code>int_constant&lt;42&gt;</code> estamos llamando a la función <code>int_constant</code> con el parámetro <code>42</code>. Además accedemos a su valor usando el atributo <code>value</code>.
+</p>
+
+<p>
+Usar el atributo <code>value</code> es tan común que para cada función de T++ suele crearse otro template que accede directamente a dicho atributo. Hagámos lo mismo.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">k</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">int_constant_v</span> = <span style="color: #569cd6;">int_constant</span>&lt;k&gt;::value;
+</pre>
+</div>
+
+<p>
+De esta forma es más cómo acceder a los valores que contienen nuestro valores de T++.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">int_constant_v</span>&lt;-6&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+-6
+</pre>
+
+
+<p>
+Hasta ahora hemos usado <code>value</code>, pero este era el atributo opcional. El atributo obligatorio es <code>type</code> y, sin embargo, no lo hemos usado aún. Pues te pido un poco de paciencia, pues será en nuestra siguiente función donde veamos la utilidad de <code>type</code>. Por ahora, debemos quedarnos con que tenemos que crear otro template para cada función de T++ que acceda directamente al atributo <code>type</code>. Hagámoslo con <code>int_constant</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">k</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">int_constant_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">int_constant</span>&lt;k&gt;::type;
+</pre>
+</div>
+
+<p>
+Observa que este template no es una nueva estructura. Estamos usando <code>using</code> para crear un alias de <code>int_constant&lt;k&gt;::type</code>.
+</p>
+
+<p>
+Ahora sí, pasemos a la siguiente función. La función de suma de dos enteros. Debemos recibir dos enteros de T++ y devolver su suma.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">add</span> : <span style="color: #4ec9b0;">int_constant</span>&lt;<span style="color: #569cd6;">A</span>::value+<span style="color: #569cd6;">B</span>::value&gt;{};
+</pre>
+</div>
+
+<p>
+Recuerda que los valores en T++ siguen siendo tipos en C++, es por eso que el template recibe dos <code>typename</code>. Cada uno debería ser un entero de T++. Y para indicar que devolvemos otro entero hacemos que <code>add</code> herede de <code>int_constant</code>. De esta forma tendremos sus atributos <code>value</code> y <code>type</code>. En este caso <code>value</code> tendrá el valor que recibe <code>int_constant</code>, que es la suma de <code>A</code> y <code>B</code>.
+</p>
+
+<p>
+Siguiendo la tradición, debemos crear los templates <code>_v</code> y <code>_t</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">add_v</span> = <span style="color: #569cd6;">add</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">B</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">add_t</span> = <span style="color: #569cd6;">add</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">B</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Y podemos probar nuestra nueva función para comprobar si es correcta:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">tres</span> = <span style="color: #4ec9b0;">int_constant</span>&lt;3&gt;;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">cinco</span> = <span style="color: #4ec9b0;">int_constant</span>&lt;5&gt;;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">add_v</span>&lt;tres,cinco&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+8
+</pre>
+
+
+<p>
+Ahora bien, en el código anterior hay un detalle que hace que no sea del todo correcto. ¿Recuerdas cómo definimos el valor <code>5</code> en la sección anterior? Lo definimos usando <code>std::integral_constant</code>. Pero ahora hemos usado <code>int_constant</code>. A primera vista parecen lo mismo, porque hemos dicho que <code>int_constant</code> es una función que devolvía un valor en T++. Pero la realidad es que son tipos diferentes. Y esto puede ocasionar problemas más adelante. Aquí es cuando entra en juego el atributo <code>type</code>. Este atributo es lo que nos permite realmente devolver el valor de una función en T++. En nuestro caso, recuerda que <code>int_constant</code> se definía heredando de <code>std::integral_constant</code>, por lo que hereda su atributo <code>type</code>, que se inicializaba al propio <code>std::integral_constant</code>. Por tanto, en el ejemplo anterior, lo correcto es usar el atributo <code>type</code> para crear <code>tres</code> y <code>cinco</code>. O, equivalentemente, el template que acaba en <code>_t</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">tres</span> = <span style="color: #4ec9b0;">int_constant_t</span>&lt;3&gt;;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">cinco</span> = <span style="color: #4ec9b0;">int_constant_t</span>&lt;5&gt;;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">add_v</span>&lt;tres,cinco&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+8
+</pre>
+
+
+<p>
+En este ejemplo ya hemos visto que el cambio no afecta al resultado, pero en ciertas funciones puede suponer el cambio entre la perfección y el desastre.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org4bb0544" class="outline-2">
+<h2 id="org4bb0544"><span class="section-number-2">3.</span> Más funciones</h2>
+<div class="outline-text-2" id="text-3">
+<p>
+Seguimos viendo ejemplos de algunas funciones un poco más avanzadas. Por ejemplo, estaría bien una función que nos diga si un entero es cero o no. Es decir, debe recibir un entero de T++ (<code>std::integral_constant</code>) y devolver un booleano de T++ (otro <code>std::integral_constant</code>).
+</p>
+
+<p>
+Para esta función es necesario usar las especializaciones de templates. Date cuenta que no existe ningún tipo de <code>if</code> en templates. O mejor dicho, las especializaciones son nuestro <code>if</code>. La idea general es poner lo que es falso en el template general, y lo verdadero en las especializaciones.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">isZero</span>
+    : <span style="color: #4ec9b0;">bool_constant</span>&lt;<span style="color: #569cd6;">false</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">isZero</span>&lt;<span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">integral_constant</span>&lt;<span style="color: #4ec9b0;">int</span>,0&gt;&gt;
+    : <span style="color: #4ec9b0;">bool_constant</span>&lt;<span style="color: #569cd6;">true</span>&gt; {};
+</pre>
+</div>
+
+<p>
+Observa que hemos usado el tipo <code>bool_constant</code>. Es como <code>int_constant</code>, pero para booleanos. Se define de la misma forma.
+</p>
+
+<p>
+Creamos también los correspondientes templates <code>_v</code> y <code>_t</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">isZero_v</span> = <span style="color: #569cd6;">isZero</span>&lt;<span style="color: #4ec9b0;">T</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">isZero_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">isZero</span>&lt;<span style="color: #4ec9b0;">T</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Vamos a probar la función.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">isZero_v</span>&lt;<span style="color: #4ec9b0;">int_constant</span>&lt;0&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+0
+</pre>
+
+
+<p>
+Le pasamos a la función el valor <code>0</code> y la función nos devuelve verdadero. Espera&#x2026; ha devuelto falso. ¡Claro! Recuerda lo que dijimos sobre <code>type</code>. Le estamos pasando a <code>isZero</code> el tipo <code>int_constant</code> cuando realmente le tenemos que pasar <code>std::integral_constant</code>. Basta aquí cambiar <code>int_constant</code> por <code>int_constant_t</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">isZero_v</span>&lt;<span style="color: #4ec9b0;">int_constant_t</span>&lt;0&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+1
+</pre>
+
+
+<p>
+Observa de nuevo la definición de <code>isZero</code>. La especialización se realiza sobre el tipo <code>integral_constant</code>. Es por ello que con <code>int_constant</code> se devolvía el valor falso. Lo mismo ocurriría si utilizásemos <code>add</code> en lugar de <code>add_t</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">cuatro</span> = <span style="color: #4ec9b0;">int_constant_t</span>&lt;4&gt;;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">menosCuatro</span> = <span style="color: #4ec9b0;">int_constant_t</span>&lt;-4&gt;;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">isZero_v</span>&lt;<span style="color: #4ec9b0;">add</span>&lt;cuatro,menosCuatro&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">isZero_v</span>&lt;<span style="color: #4ec9b0;">add_t</span>&lt;cuatro,menosCuatro&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+0
+1
+</pre>
+
+
+<p>
+A partir de aquí podemos hacer todas las funciones que manejen valores primitivos de T++ que se nos ocurran. Aquí tienes unas cuantas:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #6a9955;">/// </span><span style="color: #6a9955;">or operator</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">C</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">or_bool</span> : <span style="color: #4ec9b0;">bool_constant</span>&lt;<span style="color: #569cd6;">B</span>::value || <span style="color: #569cd6;">C</span>::value&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">C</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">or_bool_v</span> = <span style="color: #569cd6;">or_bool</span>&lt;<span style="color: #4ec9b0;">B</span>,<span style="color: #4ec9b0;">C</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">C</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">or_bool_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">or_bool</span>&lt;<span style="color: #4ec9b0;">B</span>,<span style="color: #4ec9b0;">C</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">not operator</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">not_bool</span> : <span style="color: #4ec9b0;">bool_constant</span>&lt;<span style="color: #569cd6;">!</span><span style="color: #569cd6;">B</span>::value&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">not_bool_v</span> = <span style="color: #569cd6;">not_bool</span>&lt;<span style="color: #4ec9b0;">B</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">not_bool_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">not_bool</span>&lt;<span style="color: #4ec9b0;">B</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">add1</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">add1</span> : <span style="color: #4ec9b0;">int_constant</span>&lt;<span style="color: #569cd6;">N</span>::value + 1&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">add1_v</span> = <span style="color: #569cd6;">add1</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">add1_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">add1</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">eql</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">M</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">eql</span> : <span style="color: #4ec9b0;">bool_constant</span>&lt;<span style="color: #569cd6;">N</span>::value == <span style="color: #569cd6;">M</span>::value&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">M</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">eql_v</span> = <span style="color: #569cd6;">eql</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">M</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">M</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">eql_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">eql</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">M</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">mod operator</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">mod</span> : <span style="color: #4ec9b0;">int_constant</span>&lt;<span style="color: #569cd6;">A</span>::value % <span style="color: #569cd6;">B</span>::value&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">mod_v</span> = <span style="color: #569cd6;">mod</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">B</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">B</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">mod_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">mod</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">B</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">isDivisor</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">D</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">isDivisor</span> : <span style="color: #4ec9b0;">isZero</span>&lt;<span style="color: #4ec9b0;">mod_t</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">D</span>&gt;&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">D</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">isDivisor_v</span> = <span style="color: #569cd6;">isDivisor</span>&lt;<span style="color: #4ec9b0;">D</span>,<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">D</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">isDivisor_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">isDivisor</span>&lt;<span style="color: #4ec9b0;">D</span>,<span style="color: #4ec9b0;">N</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">hasDivisors</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">D</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">hasDivisors_aux</span> : <span style="color: #4ec9b0;">or_bool</span>&lt;
+                            <span style="color: #4ec9b0;">isDivisor_t</span>&lt;<span style="color: #4ec9b0;">D</span>,<span style="color: #4ec9b0;">N</span>&gt;,
+                            <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">hasDivisors_aux</span>&lt;<span style="color: #4ec9b0;">add1_t</span>&lt;<span style="color: #4ec9b0;">D</span>&gt;,<span style="color: #4ec9b0;">N</span>&gt;::<span style="color: #4ec9b0;">type</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">hasDivisors_aux</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">N</span>&gt; : <span style="color: #4ec9b0;">bool_constant</span>&lt;<span style="color: #569cd6;">false</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">hasDivisors</span> : <span style="color: #4ec9b0;">hasDivisors_aux</span>&lt;<span style="color: #4ec9b0;">int_constant_t</span>&lt;2&gt;,<span style="color: #4ec9b0;">N</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">hasDivisors_v</span> = <span style="color: #569cd6;">hasDivisors</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">hasDivisors_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">hasDivisors</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">isPrime</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">isPrime</span> : <span style="color: #4ec9b0;">not_bool</span>&lt;<span style="color: #4ec9b0;">hasDivisors_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">isPrime_v</span> = <span style="color: #569cd6;">isPrime</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">isPrime_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">isPrime</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">nextPrime</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">IsPrime</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">nextPrimeAux</span> : <span style="color: #4ec9b0;">nextPrimeAux</span>&lt;<span style="color: #4ec9b0;">add1_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;,<span style="color: #4ec9b0;">isPrime_t</span>&lt;<span style="color: #4ec9b0;">add1_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;&gt;&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">nextPrimeAux</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">bool_constant_t</span>&lt;<span style="color: #569cd6;">true</span>&gt;&gt; : N {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">nextPrime</span> : <span style="color: #4ec9b0;">nextPrimeAux</span>&lt;<span style="color: #4ec9b0;">add1_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;,<span style="color: #4ec9b0;">isPrime_t</span>&lt;<span style="color: #4ec9b0;">add1_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;&gt;&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">nextPrime_v</span> = <span style="color: #569cd6;">nextPrime</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">nextPrime_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">nextPrime</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Vale, este código es duro de procesar. Pero nos quedamos al menos con la última, que nos permite obtener el siguiente número primo a partir de uno dado. Vamos a probarla.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">nextPrime_v</span>&lt;<span style="color: #4ec9b0;">int_constant_t</span>&lt;13&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+17
+</pre>
+
+
+<p>
+Todo esto está muy guay, pero falta algo. Con sólo tipos primitivos no conseguimos mucho. Vamos a ver si podemos crear algo más grande.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orga6b8fa7" class="outline-2">
+<h2 id="orga6b8fa7"><span class="section-number-2">4.</span> Estructuras de datos</h2>
+<div class="outline-text-2" id="text-4">
+<p>
+Al igual que existe <code>std::integral_constant</code>, nosotros podemos crear nuevos tipos de datos usando estructuras de C++. Por ejemplo, supongamos que queremos crear en T++ un tipo de dato para representar vectores de dos coordenadas. En primer lugar debemos crear la estructura en C++.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">vector</span>{
+    <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">x</span>;
+    <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">y</span>;
+};
+</pre>
+</div>
+
+<p>
+En segundo lugar, creamos una función en T++ que cree el vector. Manteniendo la nomenclatura de los tipos primitivos, llamaremos a esta función <code>vector_constant</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">x</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">y</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">vector_constant</span>{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">vector</span> <span style="color: #9cdcfe;">value</span> = {x,y};
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = vector_constant;
+};
+</pre>
+</div>
+
+<p>
+Observa que esta función tiene el atributo <code>type</code>, que era obligatorio, además del atributo value que es el <code>vector</code> que hemos declarado justo antes.
+</p>
+
+<p>
+Creamos también los templates <code>_v</code> y <code>_t</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">x</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">y</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">vector</span> <span style="color: #9cdcfe;">vector_constant_v</span> = <span style="color: #569cd6;">vector_constant</span>&lt;x,y&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">x</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">y</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">vector_constant_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">vector_constant</span>&lt;x,y&gt;::type;
+</pre>
+</div>
+
+<p>
+Para que sea más cómodo mostrar por pantalla un vector, vamos a sobrecargar el operador de extracción <code>&lt;&lt;</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">ostream</span>&amp; <span style="color: #569cd6;">operator</span><span style="color: #dcdcaa;">&lt;&lt;</span>(<span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">ostream</span>&amp; <span style="color: #9cdcfe;">os</span>, <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">vector</span>&amp; <span style="color: #9cdcfe;">v</span>){
+    os &lt;&lt; <span style="color: #ce9178;">"("</span> &lt;&lt; v.x &lt;&lt; <span style="color: #ce9178;">","</span> &lt;&lt; v.y &lt;&lt; <span style="color: #ce9178;">")"</span>;
+}
+</pre>
+</div>
+
+<p>
+Vamos a probar a imprimir un vector de T++.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">vector_constant_v</span>&lt;5,7&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+(5,7)
+</pre>
+
+
+<p>
+¡Perfecto!
+</p>
+
+<p>
+Obviamente, la primera función que podemos hacer con un vector es el producto escalar de dos vectores. Aunque antes de hacerla creo que sería conveniente crear funciones para acceder a cada uno de los valores de un vector. Es decir, un par de <code>getters</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">vector_x</span> : <span style="color: #4ec9b0;">int_constant</span>&lt;<span style="color: #569cd6;">P</span>::value.x&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">vector_x_v</span> = <span style="color: #569cd6;">vector_x</span>&lt;<span style="color: #4ec9b0;">P</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">vector_x_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">vector_x</span>&lt;<span style="color: #4ec9b0;">P</span>&gt;::type;
+
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">vector_y</span> : <span style="color: #4ec9b0;">int_constant</span>&lt;<span style="color: #569cd6;">P</span>::value.y&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">vector_y_v</span> = <span style="color: #569cd6;">vector_y</span>&lt;<span style="color: #4ec9b0;">P</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">vector_y_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">vector_y</span>&lt;<span style="color: #4ec9b0;">P</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Definimos también el producto de dos enteros.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">M</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">mult</span> : <span style="color: #4ec9b0;">int_constant</span>&lt;<span style="color: #569cd6;">N</span>::value * <span style="color: #569cd6;">M</span>::value&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">M</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">mult_v</span> = <span style="color: #569cd6;">mult</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">M</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">M</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">mult_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">mult</span>&lt;<span style="color: #4ec9b0;">N</span>,<span style="color: #4ec9b0;">M</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Ahora sí, el producto escalar.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">Q</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">dot_product</span> : <span style="color: #4ec9b0;">add</span>&lt;
+                        <span style="color: #4ec9b0;">mult_t</span>&lt;
+                            <span style="color: #4ec9b0;">vector_x_t</span>&lt;<span style="color: #4ec9b0;">P</span>&gt;,
+                            <span style="color: #4ec9b0;">vector_x_t</span>&lt;<span style="color: #4ec9b0;">Q</span>&gt;&gt;,
+                        <span style="color: #4ec9b0;">mult_t</span>&lt;
+                            <span style="color: #4ec9b0;">vector_y_t</span>&lt;<span style="color: #4ec9b0;">P</span>&gt;,
+                            <span style="color: #4ec9b0;">vector_y_t</span>&lt;<span style="color: #4ec9b0;">Q</span>&gt;&gt;&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">Q</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">dot_product_v</span> = <span style="color: #569cd6;">dot_product</span>&lt;<span style="color: #4ec9b0;">P</span>,<span style="color: #4ec9b0;">Q</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">P</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">Q</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">dot_product_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">dot_product</span>&lt;<span style="color: #4ec9b0;">P</span>,<span style="color: #4ec9b0;">Q</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Y lo probamos.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">dot_product_v</span>&lt;<span style="color: #4ec9b0;">vector_constant_t</span>&lt;2,1&gt;,<span style="color: #4ec9b0;">vector_constant_t</span>&lt;3,5&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+11
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org2461f64" class="outline-2">
+<h2 id="org2461f64"><span class="section-number-2">5.</span> Arrays</h2>
+<div class="outline-text-2" id="text-5">
+<p>
+Los arrays no tienen mucho misterio. Todo se define igual que con las estructuras, excepto algunos detalles. En primer lugar, vamos a utilizar templates variádicos. Es decir, un template que recibe una cantidad arbitraria de parámetros.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">NS</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">int_array</span>{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">value</span>[] = {NS...};
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = int_array;
+};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">NS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">int_array_v</span>[] = <span style="color: #569cd6;">int_array</span>&lt;NS...&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">NS</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">int_array_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">int_array</span>&lt;NS...&gt;::type;
+</pre>
+</div>
+
+<pre class="example">
+error: initializer fails to determine size of 'int_array_v&lt;NS ...&gt;'
+</pre>
+
+<p>
+¡Ups! ¿Qué ha pasado aquí? Parece que el compilador se queja cuando intentamos definir <code>int_array_v</code>. El error nos indica que C++ no es capaz de deducir el tamaño del array. Podríamos intentar usar un puntero a <code>value</code> para evitar este error.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">NS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span>* <span style="color: #9cdcfe;">int_array_v</span> = <span style="color: #569cd6;">int_array</span>&lt;NS...&gt;::value;
+</pre>
+</div>
+
+<pre class="example">
+error: invalid conversion from 'const int*' to 'int*'
+</pre>
+
+<p>
+Vale, a ver esto otro:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">NS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">int</span>* <span style="color: #9cdcfe;">int_array_v</span> = <span style="color: #569cd6;">int_array</span>&lt;NS...&gt;::value;
+</pre>
+</div>
+
+<p>
+Vale, esto compila. Vamos a probarlo.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">int_array_v</span>&lt;2,4,6&gt;[1] &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+error: undefined reference to `int_array&lt;2, 4, 6&gt;::value'
+</pre>
+
+<p>
+Una última prueba. Creo recordar que los arrays que son <code>static constexpr</code> tienen que estar definidos (además de estar declarados). Así que vamos a añadir lo siguiente:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">NS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #569cd6;">int_array</span>&lt;NS...&gt;::<span style="color: #9cdcfe;">value</span>[];
+</pre>
+</div>
+
+<p>
+Probamos de nuevo&#x2026;
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">int_array_v</span>&lt;2,4,6&gt;[1] &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+4
+</pre>
+
+
+<p>
+¡Sí, perfecto!
+</p>
+
+<p>
+Antes de continuar, observa que cualquier otro array se definirá de la misma forma pero cambiando el tipo subyacente del array. En ese caso, podemos crear un array genérico en T++.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">integral_array</span>{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">T</span> <span style="color: #9cdcfe;">value</span>[] = {TS...};
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = integral_array;
+};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">T</span> <span style="color: #569cd6;">integral_array</span>&lt;<span style="color: #4ec9b0;">T</span>, TS...&gt;::<span style="color: #9cdcfe;">value</span>[];
+
+<span style="color: #569cd6;">template</span> &lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">T</span>* <span style="color: #9cdcfe;">integral_array_v</span> = <span style="color: #569cd6;">integral_array</span>&lt;<span style="color: #4ec9b0;">T</span>,TS...&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">integral_array_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">integral_array</span>&lt;<span style="color: #4ec9b0;">T</span>,TS...&gt;::type;
+</pre>
+</div>
+
+<p>
+Lo probamos:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">integral_array_v</span>&lt;<span style="color: #4ec9b0;">int</span>,1,5,10&gt;[2] &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+10
+</pre>
+
+
+<p>
+Podemos ahora redefinir los arrays de enteros a partir de estos arrays genéricos.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">int_array</span> : <span style="color: #4ec9b0;">integral_array</span>&lt;<span style="color: #4ec9b0;">int</span>,TS...&gt; {};
+
+<span style="color: #569cd6;">template</span> &lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">int</span>* <span style="color: #9cdcfe;">int_array_v</span> = <span style="color: #569cd6;">int_array</span>&lt;TS...&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">int_array_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">int_array</span>&lt;TS...&gt;::type;
+</pre>
+</div>
+
+<p>
+Vamos a crear la función para poder acceder a los elementos del array. Al igual que con las estructuras, los valores devueltos por estas funciones van a ser tipos primitivos de T++, no de C++. La función para obtener un elemento de un array recibirá el array y un entero de T++ indicando el índice del elemento a devolver. Pero hay aún un problema por resolver. El array es de tipo genérico, así que no sabemos con certeza que tipo debemos devolver. Para ello vamos a crear un nuevo atributo en el array llamado <code>value_type</code>. Este atributo también existe en el tipo <code>std::integral_constant</code> que hemos usado hasta ahora. Este atributo guarda su tipo subyacente. Para <code>std::integral_constant&lt;int,5&gt;</code>, <code>value_type</code> vale <code>int</code>. El array quedaría de la siguiente forma:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">integral_array</span>{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">T</span> <span style="color: #9cdcfe;">value</span>[] = {TS...};
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = integral_array;
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">value_type</span> = T;
+};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">T</span> <span style="color: #569cd6;">integral_array</span>&lt;<span style="color: #4ec9b0;">T</span>, TS...&gt;::<span style="color: #9cdcfe;">value</span>[];
+
+<span style="color: #569cd6;">template</span> &lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">T</span>* <span style="color: #9cdcfe;">integral_array_v</span> = <span style="color: #569cd6;">integral_array</span>&lt;<span style="color: #4ec9b0;">T</span>,TS...&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">T</span>, <span style="color: #4ec9b0;">T</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">integral_array_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">integral_array</span>&lt;<span style="color: #4ec9b0;">T</span>,TS...&gt;::type;
+</pre>
+</div>
+
+<p>
+Ahora sí podemos hacer la función deseada.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">aref</span>
+    : <span style="color: #569cd6;">std</span>::<span style="color: #4ec9b0;">integral_constant</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">A</span>::<span style="color: #4ec9b0;">value_type</span>,<span style="color: #569cd6;">A</span>::value[<span style="color: #569cd6;">N</span>::value]&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">A</span>::<span style="color: #4ec9b0;">value_type</span> <span style="color: #9cdcfe;">aref_v</span> = <span style="color: #569cd6;">aref</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">aref_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">aref</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">N</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+La función <code>aref</code> va a devolver un <code>std::integral_constant</code>. El valor subyacente de este valor tiene que ser el mismo que el del array, por eso usamos <code>A::value_type</code>. Luego, con <code>A::value[]</code> accedemos a algún valor del array. El índice elegido es <code>N::value</code>, que será un entero de T++.
+</p>
+
+<p>
+Por otro lado, observa cómo se crea <code>aref_v</code>. Como el array es genérico, el único modo de saber el tipo a devolver es accediendo de nuevo a <code>A::value_type</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">miArray</span> = <span style="color: #4ec9b0;">integral_array_t</span>&lt;<span style="color: #4ec9b0;">int</span>,1,1,2,3,5,8&gt;;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">aref_v</span>&lt;miArray,<span style="color: #4ec9b0;">int_constant_t</span>&lt;5&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+8
+</pre>
+
+
+<p>
+Por mostrar alguna función usando los arrays, vamos a crear una que calcule la suma de todos los elementos de un array dado. Esta función recibirá un array de enteros, además del número de elementos a sumar.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">sum_array</span> : <span style="color: #4ec9b0;">add</span>&lt;
+                        <span style="color: #4ec9b0;">aref_t</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">sub1_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;&gt;,
+                        <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">sum_array</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">sub1_t</span>&lt;<span style="color: #4ec9b0;">N</span>&gt;&gt;::<span style="color: #4ec9b0;">type</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">sum_array</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">int_constant_t</span>&lt;0&gt;&gt; : <span style="color: #4ec9b0;">int_constant_t</span>&lt;0&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">sum_array_v</span> = <span style="color: #569cd6;">sum_array</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">N</span>&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">A</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">N</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">sum_array_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">sum_array</span>&lt;<span style="color: #4ec9b0;">A</span>,<span style="color: #4ec9b0;">N</span>&gt;::type;
+</pre>
+</div>
+
+<p>
+Para no complicar mucho la implementación de esta función, los elementos se van sumando de derecha a izquierda. Además, se ha usado la función <code>sub1</code> que habíamos definido antes. Es equivalente a <code>add1</code>, pero en vez de sumar <code>1</code>, resta <code>1</code>.
+</p>
+
+<p>
+Vamos a probarla.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">sum_array_v</span>&lt;<span style="color: #4ec9b0;">int_array_t</span>&lt;1,4,3&gt;,<span style="color: #4ec9b0;">int_constant_t</span>&lt;3&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+8
+</pre>
+
+
+<p>
+Perfecto.
+</p>
+
+<p>
+Una pregunta obligatoria tras definir los arrays es, ¿y los strings?. Los strings son arrays de caracteres. Así que podríamos definir el tipo <code>char_array</code> para definir strings.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">char</span>... <span style="color: #9cdcfe;">cs</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">char_array</span> : <span style="color: #4ec9b0;">integral_array</span>&lt;<span style="color: #4ec9b0;">char</span>,cs...&gt; {};
+
+<span style="color: #569cd6;">template</span> &lt;<span style="color: #4ec9b0;">char</span>... <span style="color: #9cdcfe;">cs</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">char_array_v</span> = <span style="color: #569cd6;">char_array</span>&lt;cs...&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">char</span>... <span style="color: #9cdcfe;">cs</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">char_array_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">char_array</span>&lt;cs...&gt;::type;
+</pre>
+</div>
+
+<p>
+Pero vamos a reflexionar un poco. Si pensamos en los arrays de caracteres de C o C++, éstos tienen una forma en particular cuando los inicializamos. Estoy hablando del caracter nulo que nos encontramos al final de cada string. Cuando inicializamos un string, C++ añade automáticamente un caracter adicional, el caracter nulo. Nosotros deberíamos hacer lo mismo. Para ello vamos a especializar <code>integral_array</code> para el tipo <code>char</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">char</span>... <span style="color: #9cdcfe;">TS</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">integral_array</span>&lt;<span style="color: #4ec9b0;">char</span>,TS...&gt;{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">char</span> <span style="color: #9cdcfe;">value</span>[] = {TS...,<span style="color: #ce9178;">'\0'</span>};
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = integral_array;
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">value_type</span> = <span style="color: #4ec9b0;">char</span>;
+};
+</pre>
+</div>
+
+<p>
+A pesar de esto, uno ya puede preveer que crear strings no va a ser muy cómodo, pues tendremos que pasar los caracteres uno a uno.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">holaMundo</span> = <span style="color: #4ec9b0;">char_array_t</span>&lt;<span style="color: #ce9178;">'H'</span>,<span style="color: #ce9178;">'o'</span>,<span style="color: #ce9178;">'l'</span>,<span style="color: #ce9178;">'a'</span>,<span style="color: #ce9178;">' '</span>,<span style="color: #ce9178;">'m'</span>,<span style="color: #ce9178;">'u'</span>,<span style="color: #ce9178;">'n'</span>,<span style="color: #ce9178;">'d'</span>,<span style="color: #ce9178;">'o'</span>,<span style="color: #ce9178;">'!'</span>&gt;;
+
+<span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #569cd6;">holaMundo</span>::value &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+Hola mundo!
+</pre>
+
+
+<p>
+Sin embargo, sí podemos crear una función que reciba un puntero a <code>char</code> y que devuelva un string de T++. Aunque hay que hacer algo de trabajo extra. Las siguientes funciones se salen un poco del objetivo de este trabajo, así que no las explicaré. He dejado un breve comentario indicando para qué sirven.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #6a9955;">/// </span><span style="color: #6a9955;">int_collection</span>
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">define una coleccion de enteros</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">ns</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">int_collection</span> {
+    <span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">type</span> = int_collection;
+};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">ns</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">int_collection_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">int_collection</span>&lt;ns...&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">range_collection</span>
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">devuelve una coleccion de enteros de 0 a n</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">n</span>, <span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">ns</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">range_collection_aux</span> : <span style="color: #4ec9b0;">range_collection_aux</span>&lt;n-1,n-1,ns...&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">ns</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">range_collection_aux</span>&lt;0,ns...&gt; : <span style="color: #4ec9b0;">int_collection</span>&lt;ns...&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">n</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">range_collection</span> : <span style="color: #4ec9b0;">range_collection_aux</span>&lt;n&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">n</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">range_collection_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">range_collection</span>&lt;n&gt;::type;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">aref_str</span>
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">devuelve el caracter de un string de C++ con indice i</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">i</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">aref_str</span>{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">char</span> <span style="color: #9cdcfe;">value</span> = str[i];
+};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">i</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">char</span> <span style="color: #9cdcfe;">aref_str_v</span> = <span style="color: #569cd6;">aref_str</span>&lt;str,i&gt;::value;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">length_str</span>
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">devuelve la longitud de un string de C++</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">i</span>, <span style="color: #4ec9b0;">bool</span> <span style="color: #9cdcfe;">nullchar</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">length_str_aux</span> : <span style="color: #4ec9b0;">length_str_aux</span>&lt;str,i+1,str[i]==<span style="color: #ce9178;">'\0'</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>, <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">i</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">length_str_aux</span>&lt;str,i,<span style="color: #569cd6;">true</span>&gt;{
+    <span style="color: #569cd6;">static</span> <span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">value</span> = i;
+};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">length_str</span> : <span style="color: #4ec9b0;">length_str_aux</span>&lt;str,0,str[0]==<span style="color: #ce9178;">'\0'</span>&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">int</span> <span style="color: #9cdcfe;">length_str_v</span> = <span style="color: #569cd6;">length_str</span>&lt;str&gt;::value;
+
+
+<span style="color: #6a9955;">/// </span><span style="color: #6a9955;">Crea un string de T++ a partir de uno de C++</span>
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>, <span style="color: #569cd6;">typename</span> <span style="color: #4ec9b0;">C</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">make_string_aux</span> {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>, <span style="color: #4ec9b0;">int</span>... <span style="color: #9cdcfe;">ns</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">make_string_aux</span>&lt;str,<span style="color: #4ec9b0;">int_collection</span>&lt;ns...&gt;&gt; : <span style="color: #4ec9b0;">integral_array</span>&lt;<span style="color: #4ec9b0;">char</span>,<span style="color: #4ec9b0;">aref_str_v</span>&lt;str,ns&gt;...&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>&gt;
+<span style="color: #569cd6;">struct</span> <span style="color: #4ec9b0;">make_string</span> : <span style="color: #4ec9b0;">make_string_aux</span>&lt;str,<span style="color: #4ec9b0;">range_collection_t</span>&lt;<span style="color: #4ec9b0;">length_str_v</span>&lt;str&gt;&gt;&gt; {};
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>&gt;
+<span style="color: #569cd6;">constexpr</span> <span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">make_string_v</span> = <span style="color: #569cd6;">make_string</span>&lt;str&gt;::value;
+
+<span style="color: #569cd6;">template</span>&lt;<span style="color: #569cd6;">const</span> <span style="color: #4ec9b0;">char</span>* <span style="color: #9cdcfe;">str</span>&gt;
+<span style="color: #569cd6;">using</span> <span style="color: #4ec9b0;">make_string_t</span> = <span style="color: #569cd6;">typename</span> <span style="color: #569cd6;">make_string</span>&lt;str&gt;::type;
+</pre>
+</div>
+
+<p>
+Para poder pasar un string como argumento de un template, necesitamos crear el string como una variable global <code>constexpr</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">constexpr</span> <span style="color: #4ec9b0;">char</span> <span style="color: #9cdcfe;">holaMundo</span>[] = <span style="color: #ce9178;">"Hola mundo!"</span>;
+</pre>
+</div>
+
+<p>
+Lo probamos.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">make_string_v</span>&lt;holaMundo&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+Hola mundo!
+</pre>
+
+
+<p>
+Y por si no convence mucho el ejemplo, vamos a utilizar la función <code>aref</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #569cd6;">std</span>::cout &lt;&lt; <span style="color: #4ec9b0;">aref_v</span>&lt;<span style="color: #4ec9b0;">make_string_t</span>&lt;holaMundo&gt;,<span style="color: #4ec9b0;">int_constant_t</span>&lt;5&gt;&gt; &lt;&lt; <span style="color: #569cd6;">std</span>::endl;
+</pre>
+</div>
+
+<pre class="example">
+m
+</pre>
+</div>
+</div>
+</div>
+<div id="postamble" class="status">
+<p class="date">Fecha: 30-07-2023</p>
+<p class="author">Autor: Héctor Galbis Sanchis</p>
+<p class="date">Created: 01-08-2023</p>
+<p class="validation"><a href="https://validator.w3.org/check?uri=referer">Validate</a></p>
+</div>
+</body>
+</html>
