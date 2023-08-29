@@ -28,13 +28,13 @@ A partir de C++20 tenemos incluso tipos de coma flotante.
 
  Pero empecemos por lo sencillo. Los tipos integrales incluyen los enteros, booleanos o caracteres, entre otros. En T++, para definir un tipo integral ya hemos dicho que debemos usar ~std::integral_constant<type,value>~. Por ejemplo, si queremos crear el entero ~5~ en T++, usamos la expresión ~std::integral_constant<int,5>~. Es más, con ~using~ podemos definir aliases para estos valores de T++.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    using cinco = std::integral_constant<int,5>;
  #+end_src 
 
 Pero ojo, esto es un tipo en C++ que representa al valor ~5~. Si queremos *extraer* el valor que se encuentra en su interior, debemos añadir ~::value~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << cinco::value << std::endl;
  #+end_src
 
@@ -43,7 +43,7 @@ Pero ojo, esto es un tipo en C++ que representa al valor ~5~. Si queremos *extra
 
 Podemos hacer lo mismo con un booleano:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    using myFalse = std::integral_constant<bool,false>;
 
    std::cout << myFalse::value << std::endl;
@@ -59,7 +59,7 @@ Yendo al grano, una función en T++ va a ser una estructura (templatizada o no) 
 
 Nosotros ya hemos usado una función, ~std::integral_constant~. De hecho, podríamos haber creado esta función de la siguiente manera:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename T, T v>
    struct integral_constant{
 	   using type = integral_constant;
@@ -69,14 +69,14 @@ Nosotros ya hemos usado una función, ~std::integral_constant~. De hecho, podrí
 
 Para empezar nuestra aventura con las funciones, vamos a crear una que nos permita crear un entero de T++ a partir de un entero de C++. Sin embargo, vamos a hacerlo un poco diferente a la posible ~integral_constant~ que acabamos de hacer. Recuerda que los atributos como ~type~ o ~value~ se pueden heredar. Por tanto sólo tenemos que heredar del tipo correcto para terminar hacer nuestra función.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int k>
    struct int_constant : std::integral_constant<int,k>{};
  #+end_src
 
  Y listo! Si no te fías, recuerda la definición de función en T++. Hemos hecho una estructura templatizada que recibe un entero. Como heredamos de la estructura ~std::integral_constant<int,k>~, conseguimos gratuitamente todos sus atributos, incluidos el atributo ~type~ y su atributo ~value~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << int_constant<42>::value << std::endl;
  #+end_src
 
@@ -87,14 +87,14 @@ Al usar la expresión ~int_constant<42>~ estamos llamando a la función ~int_con
 
 Usar el atributo ~value~ es tan común que para cada función de T++ suele crearse otro template que accede directamente a dicho atributo. Hagámos lo mismo.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int k>
    constexpr int int_constant_v = int_constant<k>::value;
  #+end_src
 
  De esta forma es más cómo acceder a los valores que contienen nuestro valores de T++.
  
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << int_constant_v<-6> << std::endl;
  #+end_src
 
@@ -103,7 +103,7 @@ Usar el atributo ~value~ es tan común que para cada función de T++ suele crear
 
  Hasta ahora hemos usado ~value~, pero este era el atributo opcional. El atributo obligatorio es ~type~ y, sin embargo, no lo hemos usado aún. Pues te pido un poco de paciencia, pues será en nuestra siguiente función donde veamos la utilidad de ~type~. Por ahora, debemos quedarnos con que tenemos que crear otro template para cada función de T++ que acceda directamente al atributo ~type~. Hagámoslo con ~int_constant~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int k>
    using int_constant_t = typename int_constant<k>::type;
  #+end_src
@@ -112,7 +112,7 @@ Usar el atributo ~value~ es tan común que para cada función de T++ suele crear
 
  Ahora sí, pasemos a la siguiente función. La función de suma de dos enteros. Debemos recibir dos enteros de T++ y devolver su suma.
  
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename A, typename B>
   struct add : int_constant<A::value+B::value>{};
  #+end_src
@@ -121,7 +121,7 @@ Usar el atributo ~value~ es tan común que para cada función de T++ suele crear
 
 Siguiendo la tradición, debemos crear los templates ~_v~ y ~_t~:
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename A, typename B>
   constexpr int add_v = add<A,B>::value;
 
@@ -131,7 +131,7 @@ Siguiendo la tradición, debemos crear los templates ~_v~ y ~_t~:
 
  Y podemos probar nuestra nueva función para comprobar si es correcta:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    using tres = int_constant<3>;
    using cinco = int_constant<5>;
 
@@ -143,7 +143,7 @@ Siguiendo la tradición, debemos crear los templates ~_v~ y ~_t~:
 
  Ahora bien, en el código anterior hay un detalle que hace que no sea del todo correcto. ¿Recuerdas cómo definimos el valor ~5~ en la sección anterior? Lo definimos usando ~std::integral_constant~. Pero ahora hemos usado ~int_constant~. A primera vista parecen lo mismo, porque hemos dicho que ~int_constant~ es una función que devolvía un valor en T++. Pero la realidad es que son tipos diferentes. Y esto puede ocasionar problemas más adelante. Aquí es cuando entra en juego el atributo ~type~. Este atributo es lo que nos permite realmente devolver el valor de una función en T++. En nuestro caso, recuerda que ~int_constant~ se definía heredando de ~std::integral_constant~, por lo que hereda su atributo ~type~, que se inicializaba al propio ~std::integral_constant~. Por tanto, en el ejemplo anterior, lo correcto es usar el atributo ~type~ para crear ~tres~ y ~cinco~. O, equivalentemente, el template que acaba en ~_t~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    using tres = int_constant_t<3>;
    using cinco = int_constant_t<5>;
 
@@ -155,12 +155,31 @@ Siguiendo la tradición, debemos crear los templates ~_v~ y ~_t~:
 
  En este ejemplo ya hemos visto que el cambio no afecta al resultado, pero en ciertas funciones puede suponer el cambio entre la perfección y el desastre.
 
+La función ~add~ definida anteriormente puede ser extendida para aceptar un número variable de argumentos. Usaremos la versión extendida a partir de ahora:
+
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+   template<typename... NS>
+   struct add : int_constant<0>{};
+
+   template<typename N, typename... NS>
+   struct add<N,NS...> : int_constant<N::value+add<NS...>::value> {};
+
+   template<typename... NS>
+   constexpr int add_v = add<NS...>::value;
+
+   template<typename... NS>
+   using add_t = typename add<NS...>::type;
+
+   using add_f = function<add>;
+ #+end_src
+
+
 * Más funciones
 Seguimos viendo ejemplos de algunas funciones un poco más avanzadas. Por ejemplo, estaría bien una función que nos diga si un entero es cero o no. Es decir, debe recibir un entero de T++ (~std::integral_constant~) y devolver un booleano de T++ (otro ~std::integral_constant~).
 
 Para esta función es necesario usar las especializaciones de templates. Date cuenta que no existe ningún tipo de ~if~ en templates. O mejor dicho, las especializaciones son nuestro ~if~. La idea general es poner lo que es falso en el template general, y lo verdadero en las especializaciones.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename T>
    struct isZero
 	   : bool_constant<false> {};
@@ -174,7 +193,7 @@ Observa que hemos usado el tipo ~bool_constant~. Es como ~int_constant~, pero pa
  
  Creamos también los correspondientes templates ~_v~ y ~_t~.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename T>
   constexpr bool isZero_v = isZero<T>::value;
 
@@ -184,7 +203,7 @@ Observa que hemos usado el tipo ~bool_constant~. Es como ~int_constant~, pero pa
 
  Vamos a probar la función.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   std::cout << isZero_v<int_constant<0>> << std::endl;
  #+end_src
 
@@ -193,7 +212,7 @@ Observa que hemos usado el tipo ~bool_constant~. Es como ~int_constant~, pero pa
  
  Le pasamos a la función el valor ~0~ y la función nos devuelve verdadero. Espera... ha devuelto falso. ¡Claro! Recuerda lo que dijimos sobre ~type~. Le estamos pasando a ~isZero~ el tipo ~int_constant~ cuando realmente le tenemos que pasar ~std::integral_constant~. Basta aquí cambiar ~int_constant~ por ~int_constant_t~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   std::cout << isZero_v<int_constant_t<0>> << std::endl;
  #+end_src
 
@@ -202,7 +221,7 @@ Observa que hemos usado el tipo ~bool_constant~. Es como ~int_constant~, pero pa
 
 Observa de nuevo la definición de ~isZero~. La especialización se realiza sobre el tipo ~integral_constant~. Es por ello que con ~int_constant~ se devolvía el valor falso. Lo mismo ocurriría si utilizásemos ~add~ en lugar de ~add_t~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    using cuatro = int_constant_t<4>;
    using menosCuatro = int_constant_t<-4>;
 
@@ -217,7 +236,7 @@ Observa de nuevo la definición de ~isZero~. La especialización se realiza sobr
 
 A partir de aquí podemos hacer todas las funciones que manejen valores primitivos de T++ que se nos ocurran. Aquí tienes unas cuantas:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    /// or operator
    template<typename B, typename C>
    struct or_bool : bool_constant<B::value || C::value> {};
@@ -333,7 +352,7 @@ A partir de aquí podemos hacer todas las funciones que manejen valores primitiv
 
 Vale, este código es duro de procesar. Pero nos quedamos al menos con la última, que nos permite obtener el siguiente número primo a partir de uno dado. Vamos a probarla.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << nextPrime_v<int_constant_t<13>> << std::endl;
  #+end_src 
 
@@ -345,7 +364,7 @@ Todo esto está muy guay, pero falta algo. Con sólo tipos primitivos no consegu
 * Estructuras de datos
 Al igual que existe ~std::integral_constant~, nosotros podemos crear nuevos tipos de datos usando estructuras de C++. Por ejemplo, supongamos que queremos crear en T++ un tipo de dato para representar vectores de dos coordenadas. En primer lugar debemos crear la estructura en C++.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    struct vector{
 	   int x;
 	   int y;
@@ -354,7 +373,7 @@ Al igual que existe ~std::integral_constant~, nosotros podemos crear nuevos tipo
 
  En segundo lugar, creamos una función en T++ que cree el vector. Manteniendo la nomenclatura de los tipos primitivos, llamaremos a esta función ~vector_constant~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int x, int y>
    struct vector_constant{
 	   static constexpr vector value = {x,y};
@@ -366,7 +385,7 @@ Al igual que existe ~std::integral_constant~, nosotros podemos crear nuevos tipo
 
 Creamos también los templates ~_v~ y ~_t~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int x, int y>
    constexpr vector vector_constant_v = vector_constant<x,y>::value;
 
@@ -376,7 +395,7 @@ Creamos también los templates ~_v~ y ~_t~.
 
 Para que sea más cómodo mostrar por pantalla un vector, vamos a sobrecargar el operador de extracción ~<<~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::ostream& operator<<(std::ostream& os, const vector& v){
 	   os << "(" << v.x << "," << v.y << ")";
    }
@@ -384,7 +403,7 @@ Para que sea más cómodo mostrar por pantalla un vector, vamos a sobrecargar el
 
  Vamos a probar a imprimir un vector de T++.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << vector_constant_v<5,7> << std::endl;
  #+end_src
 
@@ -395,7 +414,7 @@ Para que sea más cómodo mostrar por pantalla un vector, vamos a sobrecargar el
 
 Obviamente, la primera función que podemos hacer con un vector es el producto escalar de dos vectores. Aunque antes de hacerla creo que sería conveniente crear funciones para acceder a cada uno de los valores de un vector. Es decir, un par de ~getters~.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename P>
    struct vector_x : int_constant<P::value.x> {};
 
@@ -418,7 +437,7 @@ Obviamente, la primera función que podemos hacer con un vector es el producto e
 
  Definimos también el producto de dos enteros.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename N, typename M>
    struct mult : int_constant<N::value * M::value> {};
 
@@ -431,7 +450,7 @@ Obviamente, la primera función que podemos hacer con un vector es el producto e
 
  Ahora sí, el producto escalar.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename P, typename Q>
    struct dot_product : add<
 						   mult_t<
@@ -450,7 +469,7 @@ Obviamente, la primera función que podemos hacer con un vector es el producto e
 
 Y lo probamos.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << dot_product_v<vector_constant_t<2,1>,vector_constant_t<3,5>> << std::endl;
  #+end_src
 
@@ -460,7 +479,7 @@ Y lo probamos.
 * Arrays
 Los arrays no tienen mucho misterio. Todo se define igual que con las estructuras, excepto algunos detalles. En primer lugar, vamos a utilizar templates variádicos. Es decir, un template que recibe una cantidad arbitraria de parámetros.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int... NS>
    struct int_array{
 	   static constexpr int value[] = {NS...};
@@ -480,7 +499,7 @@ Los arrays no tienen mucho misterio. Todo se define igual que con las estructura
 
 ¡Ups! ¿Qué ha pasado aquí? Parece que el compilador se queja cuando intentamos definir ~int_array_v~. El error nos indica que C++ no es capaz de deducir el tamaño del array. Podríamos intentar usar un puntero a ~value~ para evitar este error.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int... NS>
    constexpr int* int_array_v = int_array<NS...>::value;
  #+end_src
@@ -491,14 +510,14 @@ Los arrays no tienen mucho misterio. Todo se define igual que con las estructura
 
  Vale, a ver esto otro:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int... NS>
    constexpr const int* int_array_v = int_array<NS...>::value;
  #+end_src
 
 Vale, esto compila. Vamos a probarlo.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << int_array_v<2,4,6>[1] << std::endl;
  #+end_src
  
@@ -508,14 +527,14 @@ Vale, esto compila. Vamos a probarlo.
 
 Una última prueba. Creo recordar que los arrays que son ~static constexpr~ tienen que estar definidos (además de estar declarados). Así que vamos a añadir lo siguiente:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int... NS>
    constexpr int int_array<NS...>::value[];
  #+end_src
 
  Probamos de nuevo...
 
-  #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+  #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << int_array_v<2,4,6>[1] << std::endl;
  #+end_src
 
@@ -526,7 +545,7 @@ Una última prueba. Creo recordar que los arrays que son ~static constexpr~ tien
 
 Antes de continuar, observa que cualquier otro array se definirá de la misma forma pero cambiando el tipo subyacente del array. En ese caso, podemos crear un array genérico en T++.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename T, T... TS>
    struct integral_array{
 	   static constexpr T value[] = {TS...};
@@ -545,7 +564,7 @@ Antes de continuar, observa que cualquier otro array se definirá de la misma fo
 
 Lo probamos:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    std::cout << integral_array_v<int,1,5,10>[2] << std::endl;
  #+end_src
 
@@ -554,7 +573,7 @@ Lo probamos:
 
  Podemos ahora redefinir los arrays de enteros a partir de estos arrays genéricos.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<int... TS>
    struct int_array : integral_array<int,TS...> {};
 
@@ -567,7 +586,7 @@ Lo probamos:
 
  Vamos a crear la función para poder acceder a los elementos del array. Al igual que con las estructuras, los valores devueltos por estas funciones van a ser tipos primitivos de T++, no de C++. La función para obtener un elemento de un array recibirá el array y un entero de T++ indicando el índice del elemento a devolver. Pero hay aún un problema por resolver. El array es de tipo genérico, así que no sabemos con certeza que tipo debemos devolver. Para ello vamos a crear un nuevo atributo en el array llamado ~value_type~. Este atributo también existe en el tipo ~std::integral_constant~ que hemos usado hasta ahora. Este atributo guarda su tipo subyacente. Para ~std::integral_constant<int,5>~, ~value_type~ vale ~int~. El array quedaría de la siguiente forma:
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename T, T... TS>
    struct integral_array{
 	   static constexpr T value[] = {TS...};
@@ -587,7 +606,7 @@ Lo probamos:
 
  Ahora sí podemos hacer la función deseada.
 
- #+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+ #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename A, typename N>
    struct aref
 	   : std::integral_constant<typename A::value_type,A::value[N::value]> {};
@@ -603,7 +622,7 @@ Lo probamos:
 
  Por otro lado, observa cómo se crea ~aref_v~. Como el array es genérico, el único modo de saber el tipo a devolver es accediendo de nuevo a ~A::value_type~.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   using miArray = integral_array_t<int,1,1,2,3,5,8>;
 
   std::cout << aref_v<miArray,int_constant_t<5>> << std::endl;
@@ -614,7 +633,7 @@ Lo probamos:
  
 Por mostrar alguna función usando los arrays, vamos a crear una que calcule la suma de todos los elementos de un array dado. Esta función recibirá un array de enteros, además del número de elementos a sumar.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename A, typename N>
   struct sum_array : add<
 						  aref_t<A,sub1_t<N>>,
@@ -634,7 +653,7 @@ Para no complicar mucho la implementación de esta función, los elementos se va
 
 Vamos a probarla.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   std::cout << sum_array_v<int_array_t<1,4,3>,int_constant_t<3>> << std::endl;
  #+end_src
 
@@ -645,7 +664,7 @@ Perfecto.
 
 Una pregunta obligatoria tras definir los arrays es, ¿y los strings?. Los strings son arrays de caracteres. Así que podríamos definir el tipo ~char_array~ para definir strings.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<char... cs>
   struct char_array : integral_array<char,cs...> {};
 
@@ -658,7 +677,7 @@ Una pregunta obligatoria tras definir los arrays es, ¿y los strings?. Los strin
 
 Pero vamos a reflexionar un poco. Si pensamos en los arrays de caracteres de C o C++, éstos tienen una forma en particular cuando los inicializamos. Estoy hablando del caracter nulo que nos encontramos al final de cada string. Cuando inicializamos un string, C++ añade automáticamente un caracter adicional, el caracter nulo. Nosotros deberíamos hacer lo mismo. Para ello vamos a especializar ~integral_array~ para el tipo ~char~.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<char... TS>
   struct integral_array<char,TS...>{
 	  static constexpr char value[] = {TS...,'\0'};
@@ -669,7 +688,7 @@ Pero vamos a reflexionar un poco. Si pensamos en los arrays de caracteres de C o
  
  A pesar de esto, uno ya puede preveer que crear strings no va a ser muy cómodo, pues tendremos que pasar los caracteres uno a uno.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   using holaMundo = char_array_t<'H','o','l','a',' ','m','u','n','d','o','!'>;
 
   std::cout << holaMundo::value << std::endl;
@@ -680,7 +699,7 @@ Pero vamos a reflexionar un poco. Si pensamos en los arrays de caracteres de C o
 
 Sin embargo, sí podemos crear una función que reciba un puntero a ~char~ y que devuelva un string de T++. Aunque hay que hacer algo de trabajo extra. Las siguientes funciones se salen un poco del objetivo de este trabajo, así que no las explicaré. He dejado un breve comentario indicando para qué sirven.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   /// int_collection
   /// define una coleccion de enteros
   template<int... ns>
@@ -754,13 +773,13 @@ Sin embargo, sí podemos crear una función que reciba un puntero a ~char~ y que
 
 Para poder pasar un string como argumento de un template, necesitamos crear el string como una variable global ~constexpr~.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   constexpr char holaMundo[] = "Hola mundo!";
  #+end_src
 
  Lo probamos.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   std::cout << make_string_v<holaMundo> << std::endl;
  #+end_src
 
@@ -769,7 +788,7 @@ Para poder pasar un string como argumento de un template, necesitamos crear el s
  
 Y por si no convence mucho el ejemplo, vamos a utilizar la función ~aref~.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   std::cout << aref_v<make_string_t<holaMundo>,int_constant_t<5>> << std::endl;
  #+end_src
 
@@ -781,7 +800,7 @@ Y por si no convence mucho el ejemplo, vamos a utilizar la función ~aref~.
 * Colecciones
 Hasta ahora nos hemos centrado en valores primitivos y arrays de estos valores. Pero podemos crear también contenedores de tipos. Uno de estos contenedores los llamaremos colecciones. Aquí va la definición.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename... TS>
   struct collection{
 	  using type = collection;
@@ -795,7 +814,7 @@ Hasta ahora nos hemos centrado en valores primitivos y arrays de estos valores. 
  
 Como ejemplo podemos crear una función que nos diga si una colección está o no vacía.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename C>
   struct is_empty {};
 
@@ -816,7 +835,7 @@ Observa que, como otras funciones que hemos implementado, se usa la especializac
 
 Probamos la función.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   std::cout << is_empty_v<collection_t<>> << std::endl;
   std::cout << is_empty_v<collection_t<int,float,char>> << std::endl;
  #+end_src
@@ -827,7 +846,7 @@ Probamos la función.
 
 Concatenar colecciones también es muy sencillo.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename C, typename D>
   struct concatenate {};
 
@@ -840,14 +859,14 @@ Concatenar colecciones también es muy sencillo.
 
 Y ahora es cuando tenemos el problema de que no podemos imprimir una colección de tipos. En algunos editores, pasando el ratón por encima de una directiva ~using~, es posible que veas el tipo resultante de aplicar estas funciones. Aunque también hay otro truquillo. Vamos a definir la estructura ~debug~ que nos permitirá ver el resultado de nuestras funciones cuando devuelvan tipos en lugar de valores.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename T>
   struct debug {};
  #+end_src
 
  Te estarás preguntando qué tiene de especial esta estructura para conseguir visualizar el resultado de nuestras funciones. La respuesta es nada. De hecho, puedes llamar a esta estructura como quieras. Lo que vamos a hacer es forzar un error intentando acceder a un miembro inexistente de la estructura ~debug~. Esto se ve mejor con un ejemplo.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   using foo = debug<concatenate_t<collection_t<int,float>,collection_t<char,double>>>::type;
  #+end_src
 
@@ -859,7 +878,7 @@ Vaya vaya. Así que no existe el atributo ~type~ en la estructura ~debug<collect
 
 Sé que no es el método de debug más elegante, pero al menos funciona. Y si has pensado en usar la librería ~<typeinfo>~... no, no funciona. Aquí una prueba.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<typeinfo> "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h")
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<typeinfo> '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\""))
   std::cout << typeid(concatenate_t<collection_t<int,float>,collection_t<char,double>>).name() << std::endl;
  #+end_src
 
@@ -870,7 +889,7 @@ Yo la verdad es que no entiendo muy bien lo que pone ahí.
 
 Vamos a detenernos de nuevo en la función concatenate.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename C, typename D>
   struct concatenate {};
 
@@ -885,7 +904,7 @@ Vamos a detenernos de nuevo en la función concatenate.
 
  Otro ejemplo interesante es la función para invertir el orden de los elementos de una colección.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename C, typename D>
   struct reverse_collection_aux {};
 
@@ -907,7 +926,7 @@ Vamos a detenernos de nuevo en la función concatenate.
 
  De nuevo, la especialización de los templates nos permite dar identificadores a los elementos de una colección, incluso a elementos concretos como en este caso, donde se le da el identificador ~c~ al primer elemento de la colección. Observa que la clave de esta función está en la segunda especialización, donde el elemento ~c~ pasa de la primera colección a la segunda. 
 
-#+begin_src C++ :exports both :eval never-export :results output :includes "C:/Users/hecto/Documents/GitHub/lispylambda/posts/C++/prueba.h"
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   using foo = debug<reverse_collection_t<collection_t<float,char,int>>>::type;
  #+end_src
 
@@ -915,11 +934,127 @@ Vamos a detenernos de nuevo en la función concatenate.
   error: 'type' in 'struct debug<collection<int, char, float> >' does not name a type
  #+end_src
 
+Podríamos seguir definiendo funciones para las colecciones, pero sería mejor si llevásemos todo esto un poco más lejos. Sin embargo, necesitamos un tipo de dato que, aunque ya hemos visto, no lo hemos explotado lo suficiente. Me refiero a las funciones.
 
- 
- 
- 
- 
- 
+* Funciones de primera clase
+En cualquier lenguaje funcional, las funciones son elementos de primera clase. Tienen su propio tipo y no los hace ni más ni menos especiales que cualquier otro tipo de dato. Sin embargo, en T++, los datos y las funciones se deben de tratar de diferente manera. Basta ver las diferencias entre un entero y la función ~add~. Al definir un entero en T++, estamos definiendo una estructura en C++. Sin embargo, la función ~add~ es una estructura templatizada, y a menos que le proporcionemos los argumentos necesarios, no será una estructura como tal. Todo esto se puede apreciar mejor cuando intentamos crear una función que acepte cada uno de los dos tipos de argumentos.
 
+Esta sería la posible implementación de una función que puede recibir como argumento una función como ~add~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  template<template<typename,typename> typename F>
+  struct receiving_function : ... {};
+ #+end_src
+
+Y otra que recibiría un entero:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  template<typename I>
+  struct receiving_integer : ... {};
+ #+end_src
+
+Es clara la diferencia. Mientras que en una debemos recibir un ~template<template<typename,typename> typename>~, en la otra recibimos ~template<typename>~.
+
+Lo ideal sería tener un tipo de dato que nos permita manejar funciones al igual que los enteros. De esta forma podremos tener colecciones de funciones, por ejemplo.
+
+Pues manos a la obra. Como no podemos predecir cuántos argumentos podrá recibir una función, podemos indicar que nuestro tipo de dato aceptará funciones con cualquier número de argumentos. Además, al igual que con ~integral_constant~ o las estructuras, definiremos el atributo ~type~ para que sea igual al propio tipo de la función.
+
+También necesitaremos un atributo extra que nos permita ejecutar la función. Dicho atributo lo llamaré ~call~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  template<template<typename...> typename F>
+  struct function{
+	using type = function;
+
+	template<typename... A>
+	using call = typename F<A...>::type;
+  };
+ #+end_src
+
+Observa que ~call~ es un atributo templatizado. Simplemente recibe los argumentos que tiene que pasarle a la función ~F~.
+
+Crear ahora un objeto de tipo ~function~ es muy sencillo. Por ejemplo, si queremos almacenar la función ~add~, basta usar ~function<add>~. De hecho, algo que deberíamos hacer a partir de ahora, es añadir una nueva definición cada vez que creemos una función nueva. Por ejemplo, para ~add~ deberíamos añadir lo siguiente:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  using add_f = function<add>;
+ #+end_src
+
+A partir de ahora, supondremos que todas las funciones definidas hasta ahora tienen definida su versión ~_f~. 
+
+Ahora, podemos crear una función que ejecute un objeto de tipo ~function~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  template<typename F, typename... A>
+  struct funcall : F::template call<A...> {};
+
+  template<typename F, typename... A>
+  using funcall_t = typename funcall<F,A...>::type;
+
+  template<typename F, typename... A>
+  static constexpr typename funcall<F,A...>::value_type funcall_v = funcall<F,A...>::value;
+
+  using funcall_f = function<funcall>;
+ #+end_src
+
+En lugar de acceder al atributo templatizado ~call~ cada vez que queramos ejecutar una función, usaremos la función ~funcall~. Esta función recibe un objeto de tipo ~function~ y sus argumentos. Devolverá el resultado de ejecutar la función con esos argumentos.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  std::cout << funcall_v<add_f,int_constant<5>,int_constant<6>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 11
  
+Otra función parecida a ~funcall~ es ~apply~. La diferencia está en que el último argumento debe ser una colección de argumentos. De esta forma, la función pasada a ~apply~ es ejecutada con los primeros argumentos pasados más los encontrados en la colección del último argumento.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  template<typename F, typename C, typename... A>
+  struct apply_aux {};
+
+  template<typename F, typename... CS, typename A, typename B, typename... AS>
+  struct apply_aux<F,collection<CS...>,A,B,AS...> : apply_aux<F,collection<CS...,A>,B,AS...> {};
+
+  template<typename F, typename... CS, typename... AS>
+  struct apply_aux<F,collection<CS...>,collection<AS...>> : funcall<F,CS...,AS...> {};
+
+  template<typename F, typename... A>
+  struct apply : apply_aux<F,collection<>,A...> {};
+
+  template<typename F, typename... A>
+  using apply_t = typename apply<F,A...>::type;
+
+  template<typename F, typename... A>
+  static constexpr typename apply<F,A...>::value_type apply_v = apply<F,A...>::value;
+
+  using apply_f = function<apply>;
+ #+end_src
+
+Como no podemos obtener directamente el último argumento de una colección, debemos ir guardando cada uno de los argumentos anteriores hasta que sepamos que sólo nos queda uno (el último). En ese momento, ejecutamos la función usando ~funcall~.
+
+Para probarla, podemos definir una nueva función que sume todos los enteros de una colección. Normalmente necesitaríamos recorrer la colección usando recursividad, pero con ~apply~, es innecesario:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  template<typename C>
+  struct sum : apply<add_f,C> {};
+
+  template<typename C>
+  using sum_t = typename sum<C>::type;
+
+  template<typename C>
+  static constexpr int sum_v = sum<C>::value;
+
+  using sum_f = function<sum>;
+ #+end_src
+
+Demasiado fácil para ser verdad. Pero funciona.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+  using myList = collection_t<int_constant<1>,int_constant<2>,int_constant<3>>;
+
+  std::cout << sum_v<myList> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 6
+
+
