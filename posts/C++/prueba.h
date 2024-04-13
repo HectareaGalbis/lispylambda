@@ -4,6 +4,29 @@
 #include <type_traits>
 #include <iostream>
 
+
+/// function
+template<template<typename...> typename F>
+struct function{
+  using type = function;
+
+  template<typename... A>
+  using call = typename F<A...>::type;
+};
+
+
+/// canonicalize
+#define EXPAND(X) X
+#define canonicalize(name, tempArgs, call, valType)                     \
+  EXPAND tempArgs                                                       \
+  using name##_t = typename EXPAND call ::type;                         \
+                                                                        \
+  EXPAND tempArgs                                                       \
+  static constexpr EXPAND valType name##_v = EXPAND call ::value;       \
+                                                                        \
+  using name##_f = function<name>;
+
+
 /// cinco
 using cinco = std::integral_constant<int,5>;
 
@@ -470,3 +493,14 @@ struct reverse_collection
 
 template<typename C>
 using reverse_collection_t = typename reverse_collection<C>::type;
+
+
+
+/// first
+template<typename C>
+struct first {};
+
+template<typename C, typename... CS>
+struct first<collection<C,CS...>> : C {};
+
+canonicalize(first, (template<typename C>), (first<C>), (typename first_t<C>::value_type));

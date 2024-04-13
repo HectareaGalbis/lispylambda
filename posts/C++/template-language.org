@@ -1057,4 +1057,120 @@ Demasiado fácil para ser verdad. Pero funciona.
  #+RESULTS:
  : 6
 
+* Mucho texto...
+
+Asumámoslo, definir una función en T++ requiere mucho texto. En particular, es bastante tedioso tener que escribir cada vez esas versiones cortas acabadas en ~_t~, ~_v~ o ~_f~. ¿Podemos ponerle algún remedio? Pues claro. Si no pudiésemos o no se me hubiese ocurrido nada, no existiría esta sección que estás leyendo. 
+
+A pesar de no tener un buen sistema de macros como sí tienen los lenguajes de la familia Lisp (Common Lisp, Scheme, Clojure o Scheme, entro otros), de algo nos pueden servir en este caso. Además, el simple hecho de tener el nombre de 'Macro' es una gran injusticia. El sistema de """"""Macros"""""" de C++ no le llega ni  a la suela de los zapatos a uno de verdad. Ahora que ya me he desahogado, podemos proseguir ~:D~.
+
+Si nos fijamos en estas versiones cortas que hemos ido escribiendo, podemos ver algunos patrones que van a ser claves para crear una """"""Macro"""""" (vale, ya paro) que nos facilite un poco la vida. Veamos dos ejemplos:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+   template<typename N, typename M>
+   struct mult : int_constant<N::value * M::value> {};
+
+   template<typename N, typename M>
+   using mult_t = typename mult<N,M>::type;  
+
+   template<typename N, typename M>
+   constexpr int mult_v = mult<N,M>::value;
+
+   using mult_f = function<mult>;
+ #+end_src
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
+   // ....
+
+  template<typename F, typename... A>
+  struct apply : apply_aux<F,collection<>,A...> {};
+
+  template<typename F, typename... A>
+  using apply_t = typename apply<F,A...>::type;
+
+  template<typename F, typename... A>
+  static constexpr typename apply<F,A...>::value_type apply_v = apply<F,A...>::value;
+
+  using apply_f = function<apply>;
+ #+end_src
+
+Observa, que a pesar de tener diferencias, la definición de las abreviaciones es bastante parecida en ambos casos. Si nos fijamos únicamente en dichas diferencias sabremos qué debe recibir nuestra macro. Es decir, nuestra macro recibirá esas partes que cambian de función a función.
+
+Podemos apreciar ~4~ diferencias en total: El nombre de la función, la declaración de los argumentos de cada template, cómo se pasan dichos argumentos a la función, y el tipo del valor devuelto por la abreviación ~_v~. Por tanto, la macro podría ser de la siguiente manera:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+#define canonicalize(name, tempArg, call, valType)      \
+  tempArgs                                              \
+  using name##_t = typename call##::type;               \
+                                                        \
+  tempArgs                                              \
+  static constexpr valType name##_v = call##::value;    \
+                                                        \
+  using name##_f = function<name>
+ #+end_src
+
+Y podríamos usarla de la siguiente manera...
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+canonicalize(apply, template<typename F, typename... A>, apply<F,A...>, typename apply<F,A...>::value_type);
+ #+end_src
+
+ #+begin_src
+ error: macro "canonicalize" passed 7 arguments, but takes just 4
+ #+end_src
+ 
+...si no fuese por las comas entre los argumentos de los templates. ¡Pero no nos rendimos! Además, ¡esta sección existe! ¡debe ser posible! ... ¿verdad?
+
+A ver, busquemos en [[https://en.cppreference.com/w/cpp/preprocessor/replace][cppreference]]: ~Note: if an argument of a function-like macro includes commas that are not protected by matched pairs of left and right parentheses (most commonly found in template argument lists, as in assert(std::is_same_v<int, int>); or BOOST_FOREACH(std::pair<int, int> p, m)), the comma is interpreted as macro argument separator, causing a compilation failure due to argument count mismatch.~
+
+¡Bien! Es lo que nos está ocurriendo y además nos dice cómo podemos solucionarlo. De alguna manera tenemos que introducir las comas entre paréntesis. Pero de alguna manera tenemos que eliminarlos después de que se expanda la macro. ¡Ya sé! Podemos poner dicho argumento entre paréntesis justo al lado de una macro. De esta forma, se ejecutará dicha macro que devolverá el argumento que está recibiendo. Sé que me explico fatal. Por lo que veamos paso a paso cómo hacerlo.
+
+1. Primero definimos la macro ~EXPAND~. Recibe un argumento y lo devuelve, sin más:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+#define EXPAND(X) X
+ #+end_src
+
+Ahora, sólo tenemos que cambiar ~canonicalize~ introduciendo una llamada a ~EXPAND~ cada vez que usemos un argumento:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+#define canonicalize(name, tempArgs, call, valType)                      \
+  EXPAND tempArgs                                                       \
+  using name##_t = typename EXPAND call ::type;                         \
+                                                                        \
+  EXPAND tempArgs                                                       \
+  static constexpr EXPAND valType name##_v = EXPAND call ::value;       \
+                                                                        \
+  using name##_f = function<name>;
+ #+end_src
+
+El único argumento que no necesita ~EXPAND~ es ~name~, pues nunca podrá tener una coma al tener que referirse siempre al nombre de una función.
+
+Probemos la macro definiendo una función sencilla. Esta función que llamaremos ~first~ debe devolver el primer elemento de una colección. Si la función recibe una colección vacía se generará un error.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+template<typename C>
+struct first {};
+
+template<typename C, typename... CS>
+struct first<collection<C,CS...>> : C {};
+ #+end_src
+
+Y definimos las funciones cortas con la nueva macro:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+canonicalize(first, (template<typename C>), (first<C>), (typename first_t<C>::value_type));
+ #+end_src
+
+Veamos si funciona:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << first_v<collection<int_constant<10>, int_constant<2>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 10
+
+¡Perfecto! Ya te dije que esta sección estaba aquí por algo.
+
+
 
