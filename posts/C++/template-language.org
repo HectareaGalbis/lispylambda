@@ -1346,7 +1346,7 @@ std::cout << length_v<range_t<int_constant<5>>> << std::endl;
 
 Perfecto.
 
-A partir de aquí se vienen un poco de curvas. Vamos a definir las funciones ~zip~, ~unzip~ y ~map~. El problema está en que ~map~ es fácil de implementar si tenemos ~zip~, pero ~zip~ es fácil de implementar si tienemos ~map~. Así que de alguna manera tenemos que ensuciarnos las manos con recursividad en alguna de las funciones. 
+A partir de aquí se vienen un poco de curvas. Vamos a definir las funciones ~zip~ y ~map~. El problema está en que ~map~ es fácil de implementar si tenemos ~zip~, pero ~zip~ es fácil de implementar si tienemos ~map~. Así que de alguna manera tenemos que ensuciarnos las manos con recursividad en alguna de las funciones. 
 
 Empezaremos con una versión simplificada de ~map~: ~map_single~. Esta función crea una colección con los resultados de aplicar una función recibida a cada uno de los elementos de una colección recibida.
 
@@ -1443,7 +1443,53 @@ struct zip_aux<true, CS...>
 
 template<typename... CS>
 struct zip : zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,CS...>>,
-                     CS...>
+                     CS...> {};
+
+canonize(zip);
  #+end_src
 
 Observa que para llamar a ~zip_aux~ en ~zip~ tenemos que comprobar también si alguna de las colecciones está vacía. Al menos no tenemos que eliminar el elemento inicial, por lo que la llamada es más sencilla.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+debug<zip_t<range_t<int_constant<3>>, range_t<int_constant<3>>>>::type;
+ #+end_src
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+error: ‘type’ is not a member of 
+‘debug<collection<
+      collection<std::integral_constant<int, 0>, std::integral_constant<int, 0> >,                    
+      collection<std::integral_constant<int, 1>, std::integral_constant<int, 1> >, 
+      collection<std::integral_constant<int, 2>, std::integral_constant<int, 2> > > >
+ #+end_src
+
+Perfecto. 
+
+Ahora ya podemos definir la función ~map~. Esta función recibe una función y una cantidad variable de colecciones. Todos los primeros elementos de cada colección son pasados a la función recibida generando un valor que se almacena en una nueva colección. Y lo mismo ocurre para todos los segundos elementos, todos los terceros, etc. La forma de agrupar cada uno de esos elementos es sencilla ahora que disponemos de la función ~zip~. Luego, basta aplicar la función con los elementos de cada colección devuelta por ~zip~. Para esta última parte definiremos una función auxiliar ~map_aux~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename F, typename C>
+struct map_aux {};
+
+template<typename F, typename... CS>
+struct map_aux<F, collection<CS...>> : collection<apply_t<F,CS>...> {};
+
+template<typename F, typename... CS>
+struct map : map_aux<F, zip_t<CS...>> {};
+
+canonize(map);
+ #+end_src
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << apply_v<add_f,map_t<add_f, range_t<int_constant<3>>, range_t<int_constant<3>>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 6
+
+Lo que acabamos de hacer es generar con ~map_t~ una coleccion con 3 elementos. Cada elemento tiene la suma de los dos primeros, dos segundos y dos terceros elementos de cada ~range_t~. Es decir, devuelve la colección con los elementos ~0~, ~2~ y ~4~ que son el resultado de ~0+0~, ~1+1~ y ~2+2~. Luego se aplica la función de suma sobre esta colección obteniendo así el valor ~6~.
+
+Espero que no te duela la cabeza... Porque todo esto ha sido sencillo, ¿verdad? Además, los templates son bastante legibles... Bueno, mira el lado positivo, con ~canonize~ tenemos que escribir menos.
+
+* Curryficación
+
+

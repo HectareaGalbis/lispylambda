@@ -463,6 +463,8 @@ constexpr bool is_empty_v = is_empty<C>::value;
 template<typename C>
 using is_empty_t = typename is_empty<C>::type;
 
+using is_empty_f = function<is_empty>;
+
 
 /// concatenate
 template<typename C, typename D>
@@ -635,26 +637,41 @@ struct and_bool<> : bool_constant<true> {};
 template<typename B>
 struct and_bool<B> : B {};
 
-template<bool a, bool b, typename... BS>
-struct and_bool<bool_constant<a>, bool_constant<b>, BS...>
-  : and_bool<bool_constant<a && b>, BS...> {};
+template<typename A, typename B, typename... BS>
+struct and_bool<A, B, BS...>
+  : and_bool<bool_constant<A::value && B::value>, BS...> {};
 
 canonize(and_bool);
 
 
-/// zip_aux
+/// zip
 template<bool stop, typename... CS>
 struct zip_aux {};
 
 template<typename... CS>
-struct zip_aux<false, CS...> : collection<> {};
+struct zip_aux<true, CS...> : collection<> {};
 
 template<typename... CS>
-struct zip_aux<true, CS...> 
+struct zip_aux<false, CS...> 
   : cons<collection<first_t<CS>...>, 
          typename zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>,
                           rest_t<CS>...>::type> {};
 
 template<typename... CS>
-struct zip : zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,CS...>>,
-                     CS...>
+struct zip : zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,collection<CS...>>>,
+                     CS...> {};
+
+canonize(zip);
+
+
+/// map
+template<typename F, typename C>
+struct map_aux {};
+
+template<typename F, typename... CS>
+struct map_aux<F, collection<CS...>> : collection<apply_t<F,CS>...> {};
+
+template<typename F, typename... CS>
+struct map : map_aux<F, zip_t<CS...>> {};
+
+canonize(map);
