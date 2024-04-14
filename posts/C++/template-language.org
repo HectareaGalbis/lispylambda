@@ -1098,7 +1098,7 @@ Observa, que a pesar de tener diferencias, la definición de las abreviaciones e
 Podemos apreciar ~4~ diferencias en total: El nombre de la función, la declaración de los argumentos de cada template, cómo se pasan dichos argumentos a la función, y el tipo del valor devuelto por la abreviación ~_v~. Por tanto, la macro podría ser de la siguiente manera:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
-#define canonicalize(name, tempArg, call, valType)      \
+#define canonize(name, tempArg, call, valType)      \
   tempArgs                                              \
   using name##_t = typename call##::type;               \
                                                         \
@@ -1111,11 +1111,11 @@ Podemos apreciar ~4~ diferencias en total: El nombre de la función, la declarac
 Y podríamos usarla de la siguiente manera...
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-canonicalize(apply, template<typename F, typename... A>, apply<F,A...>, typename apply<F,A...>::value_type);
+canonize(apply, template<typename F, typename... A>, apply<F,A...>, typename apply<F,A...>::value_type);
  #+end_src
 
  #+begin_src
- error: macro "canonicalize" passed 7 arguments, but takes just 4
+ error: macro "canonize" passed 7 arguments, but takes just 4
  #+end_src
  
 ...si no fuese por las comas entre los argumentos de los templates. ¡Pero no nos rendimos! Además, ¡esta sección existe! ¡debe ser posible! ... ¿verdad?
@@ -1130,10 +1130,11 @@ A ver, busquemos en [[https://en.cppreference.com/w/cpp/preprocessor/replace][cp
 #define EXPAND(X) X
  #+end_src
 
-Ahora, sólo tenemos que cambiar ~canonicalize~ introduciendo una llamada a ~EXPAND~ cada vez que usemos un argumento:
+Ahora, sólo tenemos que cambiar ~canonize~ introduciendo una llamada a ~EXPAND~ cada vez que usemos un argumento:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
-#define canonicalize(name, tempArgs, call, valType)                      \
+#define EXPAND(X) X
+#define canonize(name, tempArgs, call, valType)                      \
   EXPAND tempArgs                                                       \
   using name##_t = typename EXPAND call ::type;                         \
                                                                         \
@@ -1158,7 +1159,7 @@ struct first<collection<C,CS...>> : C {};
 Y definimos las funciones cortas con la nueva macro:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-canonicalize(first, (template<typename C>), (first<C>), (typename first_t<C>::value_type));
+canonize(first, (template<typename C>), (first<C>), (typename first_t<C>::value_type));
  #+end_src
 
 Veamos si funciona:
@@ -1172,5 +1173,277 @@ std::cout << first_v<collection<int_constant<10>, int_constant<2>>> << std::endl
 
 ¡Perfecto! Ya te dije que esta sección estaba aquí por algo.
 
+Pero podemos hacerlo mejor. Observa el segundo argumento que le pasamos a ~canonize~. Siempre le vamos a pasar la palabra ~template~ al inicio, además de los símbolos ~<~ y ~>~. Por otro lado, en el tercer argumento ocurre algo parecido, siempre vamos a utilizar el nombre de la función para realizar la llamada, pero dicho nombre ya lo estamos recibiendo como primer argumento. Cambiemos un poco la definición:
 
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+#define EXPAND(X) X
+#define canonize(name, tempArgs, call, valType)                      \
+  template<EXPAND tempArgs>                                                       \
+  using name##_t = typename name<EXPAND call> ::type;                         \
+                                                                        \
+  EXPAND tempArgs                                                       \
+  static constexpr EXPAND valType name##_v = name<EXPAND call> ::value;       \
+                                                                        \
+  using name##_f = function<name>;
+ #+end_src
 
+Su uso quedaria ahora de la siguiente manera:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+canonize(first, (typename C), (C), (typename first_t<C>::value_type));
+ #+end_src
+
+Usando otro ejemplo, para la función ~add~ quedaria así:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+canonize(add, (typename A, typename B), (A,B), (int));
+ #+end_src
+
+Bastante mejor que antes. Cuanto menos haya que escribir, mejor. Pero podemos hacerlo aún mejor. En C++ podemos usar la directiva ~auto~ para dejarle que deduzca el tipo de dato de una variable. Si la usamos, ya no tendremos que pasarle a nuestra macro el último argumento.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+#define EXPAND(X) X
+#define canonize(name, tempArgs, call)                      \
+  template<EXPAND tempArgs>                                                       \
+  using name##_t = typename name<EXPAND call> ::type;                         \
+                                                                        \
+  EXPAND tempArgs                                                       \
+  static constexpr auto name##_v = name<EXPAND call> ::value;       \
+                                                                        \
+  using name##_f = function<name>;
+ #+end_src
+
+Ahora su uso es más corto aún:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+canonize(first, (typename C), (C));
+canonize(add, (typename A, typename B), (A,B));
+ #+end_src
+
+¡Pero podemos hacerlo aún mejor! Los argumentos de nuestros templates siempre van a ser tipos. Podemos hacer que todos los templates reciban siempre una cantidad variable de argumentos. Esto es válido, pues hasta que no se use un template, éste no se instancia y C++ no sabrá hasta entonces si la cantidad de argumentos que se ha pasado es correcta o no. Cambiemos de nuevo la definición.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+#define EXPAND(X) X
+#define canonize(name)                                  \
+  template<typename... TS>                              \
+  using name##_t = typename name<TS...> ::type;         \
+                                                        \
+  template<typename... TS>                              \
+  static constexpr auto name##_v = name<TS...> ::value; \
+                                                        \
+  using name##_f = function<name>;
+ #+end_src
+
+Espera un momento... Nos hemos quedado con... ¡¿sólo un argumento?! ¡Genial!
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+canonize(first);
+canonize(add);
+ #+end_src
+
+Crear ahora estas abreviaciones es ¡demasiado fácil! ¡Pero funciona!
+
+Lo mejor de todo, es que si en un futuro no muy lejano se nos ocurre añadir alguna nueva abreviación, sólo tendremos que añadirla a nuestra macro, y automáticamente ¡todas nuestras funciones tendrán esa nueva abreviación!  
+
+* Más colecciones
+
+Las colecciones son bastante útiles y por eso vale la pena seguir definiendo funciones que nos permitan manipularlas con facilidad. Por ahora tenemos ~is_empty~, ~concatenate~, ~reverse_collection~ y ~first~. Vamos a intentar definir aquellas que son básicas, aquellas que nos permitan añadir elementos, contarlos, etc.
+
+Empezamos con ~cons~. Esta función añade un elemento al inicio de una colección.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+template<typename V, typename C>
+struct cons {};
+
+template<typename V, typename... CS>
+struct cons<V, collection<CS...>> : collection<V,CS...> {};
+
+canonize(cons);
+ #+end_src
+
+El argumento ~V~ es el elemento que queremos insertar, y el segundo argumento es la colección donde queremos insertar el elemento.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << first_v<cons_t<int_constant<5>,collection<int_constant<7>>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 5
+
+Si podemos añadir elementos, también deberíamos poder eliminarlos. Creamos la función ~rest~.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
+template<typename C>
+struct rest {};
+
+template<typename C, typename... CS>
+struct rest<collection<C,CS...>> : collection<CS...> {};
+
+template<typename... CS>
+struct rest<collection<CS...>> : collection<CS...> {};
+
+canonize(rest);
+ #+end_src
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << first_v<rest_t<collection<int_constant<5>, int_constant<7>>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 7
+
+Otra función que es bastante común es ~range~. Recibe un entero y devuelve una colección con todos los números no negativos menores que él.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename N, typename I>
+struct range_aux {};
+
+template<int k>
+struct range_aux<int_constant<k>,int_constant<k>> : collection<> {};
+
+template<int n, int i>
+struct range_aux<int_constant<n>, int_constant<i>>
+  : cons<int_constant<n>, typename range_aux<int_constant<n+1>, int_constant<i>>::type> {};
+
+template<typename I>
+struct range : range_aux<int_constant<0>, I> {};
+
+canonize(range);
+ #+end_src
+
+Ahora podemos, por ejemplo, calcular la suma de los 100 primeros números naturales:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << sum_v<range_t<int_constant<101>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 5050
+
+Otra función más: ~length~. Creo que no es necesario ni explicar qué va a hacer.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename C>
+struct length {};
+
+template<>
+struct length<collection<>> : int_constant<0> {};
+
+template<typename C, typename... CS>
+struct length<collection<C,CS...>> : add1<typename length<collection<CS...>>::type> {};
+
+canonize(length);
+ #+end_src
+
+Podemos comprobar su validez con ~range~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << length_v<range_t<int_constant<5>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 5
+
+Perfecto.
+
+A partir de aquí se vienen un poco de curvas. Vamos a definir las funciones ~zip~, ~unzip~ y ~map~. El problema está en que ~map~ es fácil de implementar si tenemos ~zip~, pero ~zip~ es fácil de implementar si tienemos ~map~. Así que de alguna manera tenemos que ensuciarnos las manos con recursividad en alguna de las funciones. 
+
+Empezaremos con una versión simplificada de ~map~: ~map_single~. Esta función crea una colección con los resultados de aplicar una función recibida a cada uno de los elementos de una colección recibida.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename F, typename C>
+struct map_single {};
+
+template<typename F, typename... CS>
+struct map_single<F, collection<>> : collection<> {};
+
+template<typename F, typename C, typename... CS>
+struct map_single<F, collection<C,CS..>>
+  : cons<funcall_t<F,C>, typename map_single<F, collection<CS...>>::type> {};
+
+canonize(map_single);
+ #+end_src
+
+Vamos a hacer una pequeña prueba:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << sum_v<map_single_t<add1_f, range_t<int_constant<3>>>> << std::endl;
+ #+end_src
+
+ #+RESULTS:
+ : 6
+
+Perfecto. La llamada a ~range_t<int_constant<3>>~ ha creado el tipo ~collection<int_constant<0>,int_constant<1>,int_constant<2>>~. Al sumarle ~1~ a cada uno de estos elementos con ~add1_f~ conseguimos una colección con los números ~1~, ~2~ y ~3~. Y la suma de estos 3 números es, efectivamente, ~6~.
+
+Vamos a necesitar también la función ~and_bool~. En los primeros capítulos definimos ~or_bool~ que aplicaba la operación lógica ~or~ sobre dos ~bool_constant~. Vamos a generalizar estas funciones para que acepten una cantidad variable de argumentos.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename... BS>
+struct and_bool {};
+
+template<>
+struct and_bool<> : bool_constant<true> {};
+
+template<typename B>
+struct and_bool<B> : B {};
+
+template<bool a, bool b, typename... BS>
+struct and_bool<bool_constant<a>, bool_constant<b>, BS...>
+  : and_bool<bool_constant<a && b>, BS...> {};
+
+canonize(and_bool);
+ #+end_src
+
+Con esto ya tenemos herramientas para crear ~zip~ de manera relativamente cómoda. Esta función recibe una cantidad variable de colecciones y creará una colección de colecciones. La primera colección contiene los primeros elementos de las colecciones recibidas. La segunda, los segundos elementos. Y así, hasta que alguna colección recibida no tenga más elementos. La complicación de esta función reside principalmente en ir comprobando que alguna de las colecciones se quede vacía para terminar la evaluación. Para ello, usamos una función ~zip_aux~ que recibe además un booleano indicando si debemos terminar o no, es decir, si alguna colección ya no tiene elementos.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<bool stop, typename... CS>
+struct zip_aux {};
+ #+end_src
+
+Si debemos parar devolvemos una colección vacía.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename... CS>
+struct zip_aux<false, CS...> : collection<> {};
+ #+end_src
+
+Si debemos seguir, necesitamos calcular varias cosas. 
+
+Primero, debemos determinar si en la siguiente llamada deberemos continuar o no. Para ello, para cada una de las colecciones debemos eliminar el primer elemento y comprobar que la colección resultante está vacía. Si alguna de esas colecciones es vacía entonces debemos indicar con el valor ~true~ que debemos parar. Parecen muchas cosas, pero tenemos bastantes herramientas. Para poder eliminar el primer elemento de una colección usamos ~rest~. Y si queremos hacerlo para cada colección basta usar ~map_single~. Es decir, si ~CS...~ son nuestras colecciones, entonces basta evaluar ~map_single_t<rest_f,collection<CS...>>~. Ahora queremos saber si alguna de las colecciones que está dentro de la colección devuelta por la anterior llamada está vacía. Para saber si una colección está vacía usamos ~is_empty~. Si queremos usar la función para cada colección usamos de nuevo ~map_single_t~. La llamada a realizar, por ahora, sería ~map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>~. Esto nos devuelve una colección de ~bool_constant~. Si alguno de estos booleanos es ~false~, entonces devolvemos ~false~. Eso es aplicar la operación lógica ~and~. Y aquí entra ~and_bool~. Pero ~and_bool~ acepta una cantidad variable de booleanos, no una colección. No pasa nada, porque podemos usar ~apply~. Con todo esto la llamada final sería ~apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>~. 
+
+En segundo lugar, debemos coger los primeros elementos de cada colección e introducirlos en una nueva. Como ~CS...~ son las colecciones que hemos recibido habría que evaluar los siguiente: ~collection<first_t<CS>...>~. Sencillo.
+
+Por último, la parte de recursividad. Debemos llamar a la propia función ~zip~ con las colecciones recibidas habiendo eliminado el primer elemento. La llamada sería ~zip_aux<'el booleano de antes', rest_t<CS>...>~. 
+
+Ahora, para juntarlo todo, debemos coger la colección obtenida del segundo punto y añadirlo como primer elemento a la colección de colecciones obtenida por el tercer punto. 
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename... CS>
+struct zip_aux<true, CS...> 
+  : cons<collection<first_t<CS>...>, 
+         typename zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>,
+                          rest_t<CS>...>::type> {};
+ #+end_src
+
+Ya solo queda crear ~zip~ usando ~zip_aux~. Todo el código quedaría así:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<bool stop, typename... CS>
+struct zip_aux {};
+
+template<typename... CS>
+struct zip_aux<false, CS...> : collection<> {};
+
+template<typename... CS>
+struct zip_aux<true, CS...> 
+  : cons<collection<first_t<CS>...>, 
+         typename zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>,
+                          rest_t<CS>...>::type> {};
+
+template<typename... CS>
+struct zip : zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,CS...>>,
+                     CS...>
+ #+end_src
+
+Observa que para llamar a ~zip_aux~ en ~zip~ tenemos que comprobar también si alguna de las colecciones está vacía. Al menos no tenemos que eliminar el elemento inicial, por lo que la llamada es más sencilla.

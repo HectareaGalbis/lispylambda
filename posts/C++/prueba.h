@@ -17,15 +17,14 @@ struct function{
 
 /// canonicalize
 #define EXPAND(X) X
-#define canonicalize(name, tempArgs, call, valType)                     \
-  EXPAND tempArgs                                                       \
-  using name##_t = typename EXPAND call ::type;                         \
-                                                                        \
-  EXPAND tempArgs                                                       \
-  static constexpr EXPAND valType name##_v = EXPAND call ::value;       \
-                                                                        \
+#define canonize(name)                                  \
+  template<typename... TS>                              \
+  using name##_t = typename name<TS...> ::type;         \
+                                                        \
+  template<typename... TS>                              \
+  static constexpr auto name##_v = name<TS...> ::value; \
+                                                        \
   using name##_f = function<name>;
-
 
 /// cinco
 using cinco = std::integral_constant<int,5>;
@@ -55,14 +54,19 @@ using bool_constant_t = typename bool_constant<b>::type;
 
 
 /// add
-template<typename A, typename B>
-struct add : int_constant<A::value+B::value>{};
+template<typename... NS>
+struct add : int_constant<0>{};
 
-template<typename A, typename B>
-constexpr int add_v = add<A,B>::value;
+template<typename N, typename... NS>
+struct add<N,NS...> : int_constant<N::value+add<NS...>::value> {};
 
-template<typename A, typename B>
-using add_t = typename add<A,B>::type;
+template<typename... NS>
+constexpr int add_v = add<NS...>::value;
+
+template<typename... NS>
+using add_t = typename add<NS...>::type;
+
+using add_f = function<add>;
 
 
 /// mult
@@ -124,6 +128,7 @@ constexpr int add1_v = add1<N>::value;
 template<typename N>
 using add1_t = typename add1<N>::type;
 
+using add1_f = function<add1>;
 
 /// sub1
 template<typename N>
@@ -495,6 +500,53 @@ template<typename C>
 using reverse_collection_t = typename reverse_collection<C>::type;
 
 
+/// funcall
+template<typename F, typename... A>
+struct funcall : F::template call<A...> {};
+
+template<typename F, typename... A>
+using funcall_t = typename funcall<F,A...>::type;
+
+template<typename F, typename... A>
+static constexpr typename funcall<F,A...>::value_type funcall_v = funcall<F,A...>::value;
+
+using funcall_f = function<funcall>;
+
+
+/// apply
+template<typename F, typename C, typename... A>
+struct apply_aux {};
+
+template<typename F, typename... CS, typename A, typename B, typename... AS>
+struct apply_aux<F,collection<CS...>,A,B,AS...> : apply_aux<F,collection<CS...,A>,B,AS...> {};
+
+template<typename F, typename... CS, typename... AS>
+struct apply_aux<F,collection<CS...>,collection<AS...>> : funcall<F,CS...,AS...> {};
+
+template<typename F, typename... A>
+struct apply : apply_aux<F,collection<>,A...> {};
+
+template<typename F, typename... A>
+using apply_t = typename apply<F,A...>::type;
+
+template<typename F, typename... A>
+static constexpr typename apply<F,A...>::value_type apply_v = apply<F,A...>::value;
+
+using apply_f = function<apply>;
+
+
+/// sum
+template<typename C>
+struct sum : apply<add_f,C> {};
+
+template<typename C>
+using sum_t = typename sum<C>::type;
+
+template<typename C>
+static constexpr int sum_v = sum<C>::value;
+
+using sum_f = function<sum>;
+
 
 /// first
 template<typename C>
@@ -503,4 +555,106 @@ struct first {};
 template<typename C, typename... CS>
 struct first<collection<C,CS...>> : C {};
 
-canonicalize(first, (template<typename C>), (first<C>), (typename first_t<C>::value_type));
+canonize(first);
+
+
+/// cons
+template<typename V, typename C>
+struct cons {};
+
+template<typename V, typename... CS>
+struct cons<V, collection<CS...>> : collection<V,CS...> {};
+
+canonize(cons);
+
+
+/// rest
+template<typename C>
+struct rest {};
+
+template<typename C, typename... CS>
+struct rest<collection<C,CS...>> : collection<CS...> {};
+
+template<typename... CS>
+struct rest<collection<CS...>> : collection<CS...> {};
+
+canonize(rest);
+
+
+/// range
+template<typename N, typename I>
+struct range_aux {};
+
+template<int k>
+struct range_aux<int_constant<k>,int_constant<k>> : collection<> {};
+
+template<int n, int i>
+struct range_aux<int_constant<n>, int_constant<i>>
+  : cons<int_constant<n>, typename range_aux<int_constant<n+1>, int_constant<i>>::type> {};
+
+template<typename I>
+struct range : range_aux<int_constant<0>, I> {};
+
+canonize(range);
+
+
+/// length
+template<typename C>
+struct length {};
+
+template<>
+struct length<collection<>> : int_constant<0> {};
+
+template<typename C, typename... CS>
+struct length<collection<C,CS...>> : add1<typename length<collection<CS...>>::type> {};
+
+canonize(length);
+
+
+/// map_single
+template<typename F, typename C>
+struct map_single {};
+
+template<typename F>
+struct map_single<F, collection<>> : collection<> {};
+
+template<typename F, typename C, typename... CS>
+struct map_single<F, collection<C,CS...>>
+  : cons<funcall_t<F,C>, typename map_single<F, collection<CS...>>::type> {};
+
+canonize(map_single);
+
+
+/// and_bool
+template<typename... BS>
+struct and_bool {};
+
+template<>
+struct and_bool<> : bool_constant<true> {};
+
+template<typename B>
+struct and_bool<B> : B {};
+
+template<bool a, bool b, typename... BS>
+struct and_bool<bool_constant<a>, bool_constant<b>, BS...>
+  : and_bool<bool_constant<a && b>, BS...> {};
+
+canonize(and_bool);
+
+
+/// zip_aux
+template<bool stop, typename... CS>
+struct zip_aux {};
+
+template<typename... CS>
+struct zip_aux<false, CS...> : collection<> {};
+
+template<typename... CS>
+struct zip_aux<true, CS...> 
+  : cons<collection<first_t<CS>...>, 
+         typename zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>,
+                          rest_t<CS>...>::type> {};
+
+template<typename... CS>
+struct zip : zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,CS...>>,
+                     CS...>
