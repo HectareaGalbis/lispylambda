@@ -181,11 +181,11 @@ Para esta función es necesario usar las especializaciones de templates. Date cu
 
  #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    template<typename T>
-   struct isZero
+   struct is_zero
 	   : bool_constant<false> {};
 
    template<>
-   struct isZero<std::integral_constant<int,0>>
+   struct is_zero<std::integral_constant<int,0>>
 	   : bool_constant<true> {};
  #+end_src
 
@@ -195,39 +195,39 @@ Observa que hemos usado el tipo ~bool_constant~. Es como ~int_constant~, pero pa
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename T>
-  constexpr bool isZero_v = isZero<T>::value;
+  constexpr bool is_zero_v = is_zero<T>::value;
 
   template<typename T>
-  using isZero_t = typename isZero<T>::type;
+  using is_zero_t = typename is_zero<T>::type;
  #+end_src
 
  Vamos a probar la función.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  std::cout << isZero_v<int_constant<0>> << std::endl;
+  std::cout << is_zero_v<int_constant<0>> << std::endl;
  #+end_src
 
  #+RESULTS:
  : 0
  
- Le pasamos a la función el valor ~0~ y la función nos devuelve verdadero. Espera... ha devuelto falso. ¡Claro! Recuerda lo que dijimos sobre ~type~. Le estamos pasando a ~isZero~ el tipo ~int_constant~ cuando realmente le tenemos que pasar ~std::integral_constant~. Basta aquí cambiar ~int_constant~ por ~int_constant_t~.
+ Le pasamos a la función el valor ~0~ y la función nos devuelve verdadero. Espera... ha devuelto falso. ¡Claro! Recuerda lo que dijimos sobre ~type~. Le estamos pasando a ~is_zero~ el tipo ~int_constant~ cuando realmente le tenemos que pasar ~std::integral_constant~. Basta aquí cambiar ~int_constant~ por ~int_constant_t~.
 
  #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  std::cout << isZero_v<int_constant_t<0>> << std::endl;
+  std::cout << is_zero_v<int_constant_t<0>> << std::endl;
  #+end_src
 
  #+RESULTS:
  : 1
 
-Observa de nuevo la definición de ~isZero~. La especialización se realiza sobre el tipo ~integral_constant~. Es por ello que con ~int_constant~ se devolvía el valor falso. Lo mismo ocurriría si utilizásemos ~add~ en lugar de ~add_t~.
+Observa de nuevo la definición de ~is_zero~. La especialización se realiza sobre el tipo ~integral_constant~. Es por ello que con ~int_constant~ se devolvía el valor falso. Lo mismo ocurriría si utilizásemos ~add~ en lugar de ~add_t~.
 
  #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
    using cuatro = int_constant_t<4>;
    using menosCuatro = int_constant_t<-4>;
 
-   std::cout << isZero_v<add<cuatro,menosCuatro>> << std::endl;
+   std::cout << is_zero_v<add<cuatro,menosCuatro>> << std::endl;
 
-   std::cout << isZero_v<add_t<cuatro,menosCuatro>> << std::endl;
+   std::cout << is_zero_v<add_t<cuatro,menosCuatro>> << std::endl;
  #+end_src
 
  #+RESULTS:
@@ -294,7 +294,7 @@ A partir de aquí podemos hacer todas las funciones que manejen valores primitiv
 
    /// isDivisor
    template<typename D, typename N>
-   struct isDivisor : isZero<mod_t<N,D>> {};
+   struct isDivisor : is_zero<mod_t<N,D>> {};
 
    template<typename D, typename N>
    constexpr bool isDivisor_v = isDivisor<D,N>::value;
@@ -1492,4 +1492,238 @@ Espero que no te duela la cabeza... Porque todo esto ha sido sencillo, ¿verdad?
 
 * Curryficación
 
+Aún recuerdo cuando, en mi último año de universidad, nuestra profesora de programación nos explicó la curryficación. No entendí nada. Y no fue su culpa, a ella la considero una de las mejores profesoras que podías encontrar en la facultad de informática. Fue con algunos ejemplos en Haskell cuando empecé a entender qué era la curryficación. Y puedo decir que fue el primer concepto de programación que me pareció magia. 
 
+Todos sabemos lo que es una función. Un trozo de código parametrizado por unos argumentos. Para ejecutar una función debemos darle el número correcto de argumentos, y si no, pues se genera un error, normalmente de compilación. Pero en Haskell no ocurría lo mismo. Si a una función le das menos argumentos de los que la función debía recibir, no se generaba nigún error. En su lugar, se devolvía una nueva función. Una función que debía recibir el resto de argumentos que la función original no recibió en primer lugar. Cuando a esta nueva función le das todos los argumentos, entonces se ejecutaba la función original. Cuando una función se comporta de esta manera decimos que la función está *curryficada*. La función devuelta podría o no estar también curryficada.
+
+El ejemplo más sencillo para entender la curryficación trata de usar la función ~suma~. La función ~suma~ suele recibir dos argumentos, ni uno más ni uno menos. 
+
+#+begin_src C++
+suma(3, 4);
+#+end_src
+
+Esta llamada daría el valor ~7~. Imaginemos ahora que intentamos ejecutar la misma función con sólo el argumento ~3~.
+
+#+begin_src C++
+nuevaFuncion = suma(3);
+#+end_src
+
+Esto devuelve una ~nuevaFuncion~ que requierirá sólo un argumento. Al recibir ese nuevo argumento, ejecutará la función original con el nuevo argumento y los que ya recibió anteriormente dicha función original.
+
+#+begin_src C++
+nuevaFuncion(4);
+#+end_src
+
+Esta llamada volvería a darnos el valor ~7~. 
+
+Por tanto, podemos observar que la función devuelta por ~suma(3)~ es aquella que suma ~3~ al valor que reciba como parámetro.
+
+El gran potencial de la curryficación reside en poder crear funciones al vuelo. Y es que es tan fácil crear una función como lo es pasarle menos argumentos a otra.
+
+Las funciones que hemos visto hasta ahora en T++ no está curryficadas. Si intentamos pasar un número de argumentos insuficiente se generará un error de compilación. Por tanto, lo que debemos hacer es curryficarlas. La idea es muy sencilla, y es casi igual a lo que hicimos con ~function~. Recordemos cómo se implementó ~function~:
+
+#+begin_src C++
+  template<template<typename...> typename F>
+  struct function{
+	using type = function;
+
+	template<typename... A>
+	using call = typename F<A...>::type;
+  };
+#+end_src
+
+El template ~function~ recibía un tipo templatizado ~F~ y es uno de sus miembros, ~call~, el que debía recibir los argumentos de dicho tipo. Al usar call, se 'ejecutaba' ~F~. 
+
+Para crear una función curryficada usaremos ~curry~. Y será muy parecida. La única diferencia es que, inicialmente, además de recibir un tipo templatizado también recibirá parte de los argumentos que necesita. Luego, el miembro ~call~ recibirá el resto:
+
+#+begin_src C++
+  template<template<typename...> typename F, typename... AS>
+  struct curry{
+	using type = curry;
+
+	template<typename... BS>
+	using call = typename F<AS...,BS...>::type;
+  };
+#+end_src
+
+Veamos un ejemplo de cómo se usaría con la función ~add~. Vamos a crear una función que suma el valor ~3~. Para ello, le pasamos el argumento ~3~ a ~add~ mediante el uso de ~curry~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+using add3_f = curry<add, int_constant<3>>;
+std::cout << funcall_v<add3_f, int_constant<4>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 7
+
+Al pasarle el valor 3 a la función curryficada, recibimos una nueva función que llamamos ~add3_f~. Luego la ejecutamos mediante ~funcall_v~ pasándole el argumento ~4~. 
+
+Esto ya es más cómodo que crear una nueva función como las que hemos creado hasta ahora. E incluso podemos hacerlo mejor. Con ~curry~ realmente no estamos curryficando nada. Lo ideal sería tener algo como ~add_c~ que represente de verdad una función curryficada. De hecho, crear esa función curryficada es sencillo:
+
+#+begin_src C++
+template<typename A>
+using add_c = curry<add, A>;
+#+end_src
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+using add3_f = add_c<int_constant<3>>;
+std::cout << funcall_v<add3_f, int_constant<4>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 7
+
+Si tuviésemos una forma de curryficar todas las funciones... 
+
+¡¡ ~canonize~!!
+
+Vamos a añadir la curryficación a ~canonize~, de esta forma todas nuestras funciones tendrán una versión curryficada:
+
+#+begin_src C++
+#define canonize(name)                                  \
+  template<typename... TS>                              \
+  using name##_t = typename name<TS...> ::type;         \
+                                                        \
+  template<typename... TS>                              \
+  static constexpr auto name##_v = name<TS...> ::value; \
+                                                        \
+  using name##_f = function<name>;                      \
+                                                        \
+  template<typename... TS>                              \
+  using name##_c = curry<name, TS...>;
+#+end_src
+ 
+Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+using first_five = range_t<int_constant<5>>;
+using next_first_five = map_t<add_c<int_constant<10>>, first_five>;  
+std::cout << sum_v<next_first_five> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 60
+
+Vayamos paso a paso. En la primera línea se crea la colección ~{0,1,2,3,4}~. En la siguiente línea sumamos ~10~ a cada uno de los elementos de la colección. Observa que sin la curryficación tendríamos que haber definido una función llamada ~add10~ o algo parecido. Con esta segunda línea se genera la colección ~{10,11,12,13,14}~. Y por último sumamos los valores de la colección: ~10+11+12+13+14 = 60~.
+
+
+* If else
+¿Ahora? ¿A estas alturas vemos el ~if-else~? Pues sí, y para entender por qué no lo hemos visto antes vamos a intentar crear la función de fibonacci. Recuerda que esta función recibe un índice y devuelve el valor con dicho índice de la sucesión de fibonacci. Los dos primeros valores de dicha sucesión son ~0~ y ~1~. Los siguientes, son la suma de los dos anteriores. Así, si recibimos un ~0~, devolvemos un ~0~. Si recibimos un ~2~, devolvemos un ~1~ (~0+1~). Y si recibimos un ~3~ devolvemos un ~2~ (~1+1~).
+
+El algoritmo en C++ sería el siguiente:
+
+#+begin_src C++
+int fibo(int n){
+  if (n == 0) 
+    return 0;
+  else if (n == 1)
+    return 1;
+  else
+    return fibo(n-1) + fibo(n-2);
+}
+#+end_src 
+
+Para mantener las cosas simples, obviamos el hecho de que pasar un valor negativo supondría el fin del mundo.
+
+Para crear la función T++ vamos a intentar crear algo como un ~if-else~. Recibe ~3~ argumentos, un ~bool_constant~ (la condición) y dos valores más (~then~ y ~else~). Si el booleano es ~true~ devolvemos el segundo argumento. Si el booleano es ~false~, devolvemos el tercero.
+
+Como ~if~ ya está reservado para C++, usaremos ~branch~:
+
+#+begin_src C++
+template<typename C, typename T, typename E>
+struct branch {};
+
+template<typename T, typename E>
+struct branch<bool_constant<true>,T,E> : T {};
+
+template<typename T, typename E>
+struct branch<bool_constant<false>,T,E> : E {};
+
+canonize(branch);
+#+end_src
+
+Vamos a realizar una pequeña prueba:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << branch_v<bool_constant<true>, int_constant<5>, int_constant<10>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 5
+
+¡Perfecto! Ahora podemos crear la función de fibonacci con el algoritmo descrito anteriormente:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+template<typename N>
+struct fibonacci : branch<eql_t<N, int_constant<0>>, 
+                          int_constant<0>,
+                          branch_t<eql_t<N, int_constant<1>>,
+                                   int_constant<1>,
+                                   add_t<typename fibonacci<sub1_t<N>>::type,
+                                         typename fibonacci<sub1_t<sub1_t<N>>>::type>>> {};
+
+canonize(fibonacci);
+#+end_src
+
+Veamos a ver si funciona:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << fibonacci_v<int_constant<0>> << std::endl;
+#+end_src
+
+#+begin_src
+In instantiation of ‘struct int_constant<-450>’: fatal error: template instantiation depth exceeds maximum of 900 (use ‘-ftemplate-depth=’ to increase the maximum)
+#+end_src
+
+¡¿Pero qué...?! Analicemos lo que está pasando. Cuando utilizamos ~branch~, sus argumentos debene de evaluarse antes de evaluar ~branch~ por sí misma. Eso quiere decir que el segundo ~branch~ tiene que evaluarse antes. Y por la misma razón tiene que evaluarse antes la expresión ~add_t<fibonacci<sub1_t<N>>, fibonacci<sub1_t<sub1_t<N>>>>~. Como ~add_t~ funciona de la misma manera deben evaluarse sus argumentos. En concreto se evaluará ~fibonacci<sub1_t<N>>::type~. Es decir, para evaluar ~fibonacci<N>~ se debe evaluar antes ~fibonacci<sub1_t<N>>~. Pero para evaluar ~fibonacci<sub1_t<N>>~ deberemos evaluar ~fibonacci<sub1_t<sub1_t<N>>>~ y para ello se deberá evaluar ~fibonacci<sub1_t<sub1_t<sub1_t<N>>>>~ y para deberá evaluarse... ¡Entramos en un bucle infinito!
+
+El problema radica en cómo se ha definido ~branch~. Al tener que evaluarse cada una de las ramas antes de evaluar la propia expresión ~branch~ cabe la posibilidad de entrar en bucles infinitos. ¿La solución? Retrasar la evaluación de los argumentos. Y la idea es muy simple: En lugar de intentar pasar el valor que devolvería la rama correspondiente, pasaremos una función que devolverá el valor.
+
+Vamos a modificar ~branch~ para que el segundo y tercer argumento (~then~ y ~else~) sean una función que evaluaremos con ~funcall~.
+
+#+begin_src C++
+template<typename C, typename T, typename E>
+struct branch {};
+
+template<typename T, typename E>
+struct branch<bool_constant<true>,T,E> : funcall<T> {};
+
+template<typename T, typename E>
+struct branch<bool_constant<false>,T,E> : funcall<E> {};
+
+canonize(branch);
+#+end_src
+
+Vale, la idea está bien. Pero en la práctica, ¿cómo lo usamos? Al tener que pasar funciones, como por ejemplo ~add_f~, tendríamos que definir nuevas funciones cada vez que queramos usar ~branch~. Bueno, sí. Pero en el capítulo anterior hemos visto una forma de crear funciones al vuelo: la *curryficación*.
+
+Pero detengámonos un poco más para explicar qué es lo que vamos a hacer. Observa en la nueva definición de ~branch~ que usamos ~funcall~. Recuerda que ~funcall~ debía recibir una función (en este caso ~T~ o ~E~) y los argumentos a pasar a dicha función. Sin embargo, en ~branch~ no se está pasando ningún argumento a parte de la función a ejecutar. Esto es porque debemos pasar funciones que no reciben ningún argumento. O dicho de otra forma, deben recibir cero argumentos.
+
+Así que la siguiente pregunta es: ¿cómo conseguimos crear funciones que reciben cero argumentos? ¿y cómo lo hacemos con las funciones curryficadas?
+
+Recuerda que una función curryficada normalmente recibe menos argumentos de los necesarios para así devolver una nueva función que debe recibir el resto. Vamos a recordar su implementación:
+
+#+begin_src C++
+template<template<typename...> typename F, typename... AS>
+struct curry{
+  using type = curry;
+
+  template<typename... BS>
+  using call = typename F<AS...,BS...>::type;
+};
+#+end_src
+
+Por la forma en la que se ha implementado la curryficación, ¿qué ocurre si a una función curryficada le pasamos todos sus argumentos? La respuesta es que no se ejecuta la función, sino que se crea una nueva función que recibe el resto de los argumentos, es decir, cero argumentos. 
+
+Esto quiere decir que cada vez que usemos ~branch~, en lugar de ejecutar las funciones como hacíamos normalmente, usaremos funciones curryficadas pasando todos los argumentos. Vamos a cambiar la definición de fibonacci:
+
+#+begin_src C++
+std::cout << branch_v<bool_constant<true>, int_constant<5>, int_constant<10>> << std::endl;
+#+end_src
+
+En lugar de ~int_constant~, usamos ahora su versión curryficada ~int_constant_c~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << branch_v<bool_constant<true>, int_constant_c<5>, int_constant_c<10>> << std::endl;
+#+end_src
+
+#+RESULTS:

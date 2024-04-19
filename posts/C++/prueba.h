@@ -14,9 +14,17 @@ struct function{
   using call = typename F<A...>::type;
 };
 
+/// curry
+template<template<typename...> typename F, typename... AS>
+struct curry{
+  using type = curry;
+
+  template<typename... BS>
+  using call = typename F<AS...,BS...>::type;
+};
+
 
 /// canonicalize
-#define EXPAND(X) X
 #define canonize(name)                                  \
   template<typename... TS>                              \
   using name##_t = typename name<TS...> ::type;         \
@@ -24,7 +32,11 @@ struct function{
   template<typename... TS>                              \
   static constexpr auto name##_v = name<TS...> ::value; \
                                                         \
-  using name##_f = function<name>;
+  using name##_f = function<name>;                      \
+                                                        \
+  template<typename... TS>                              \
+  using name##_c = curry<name, TS...>;
+
 
 /// cinco
 using cinco = std::integral_constant<int,5>;
@@ -34,23 +46,14 @@ using cinco = std::integral_constant<int,5>;
 template<int k>
 struct int_constant : std::integral_constant<int,k>{};
 
-template<int k>
-constexpr int int_constant_v = int_constant<k>::value;
-
-template<int k>
-using int_constant_t = typename int_constant<k>::type;
-
+canonize(int_constant);
 
 
 /// bool_constant
 template<int b>
 struct bool_constant : std::integral_constant<bool,b>{};
 
-template<int b>
-constexpr bool bool_constant_v = int_constant<b>::value;
-
-template<int b>
-using bool_constant_t = typename bool_constant<b>::type;
+canonize(bool_constant);
 
 
 /// add
@@ -60,126 +63,82 @@ struct add : int_constant<0>{};
 template<typename N, typename... NS>
 struct add<N,NS...> : int_constant<N::value+add<NS...>::value> {};
 
-template<typename... NS>
-constexpr int add_v = add<NS...>::value;
-
-template<typename... NS>
-using add_t = typename add<NS...>::type;
-
-using add_f = function<add>;
+canonize(add);
 
 
 /// mult
 template<typename N, typename M>
 struct mult : int_constant<N::value * M::value> {};
 
-template<typename N, typename M>
-constexpr int mult_v = mult<N,M>::value;
-
-template<typename N, typename M>
-using mult_t = typename mult<N,M>::type;
+canonize(mult);
 
 
-/// isZero
+/// is_zero
 template<typename T>
-struct isZero
+struct is_zero
 	: bool_constant<false> {};
 
 template<>
-struct isZero<std::integral_constant<int,0>>
+struct is_zero<std::integral_constant<int,0>>
 	: bool_constant<true> {};
 
-template<typename T>
-constexpr bool isZero_v = isZero<T>::value;
-
-template<typename T>
-using isZero_t = typename isZero<T>::type;
+canonize(is_zero);
 
 
 /// or operator
 template<typename B, typename C>
 struct or_bool : bool_constant<B::value || C::value> {};
 
-template<typename B, typename C>
-constexpr bool or_bool_v = or_bool<B,C>::value;
-
-template<typename B, typename C>
-using or_bool_t = typename or_bool<B,C>::type;
+canonize(or_bool);
 
 
 /// not operator
 template<typename B>
 struct not_bool : bool_constant<!B::value> {};
 
-template<typename B>
-constexpr bool not_bool_v = not_bool<B>::value;
-
-template<typename B>
-using not_bool_t = typename not_bool<B>::type;
+canonize(not_bool);
 
 
 /// add1
 template<typename N>
 struct add1 : int_constant<N::value + 1> {};
 
-template<typename N>
-constexpr int add1_v = add1<N>::value;
+canonize(add1);
 
-template<typename N>
-using add1_t = typename add1<N>::type;
-
-using add1_f = function<add1>;
 
 /// sub1
 template<typename N>
 struct sub1 : int_constant<N::value - 1> {};
 
-template<typename N>
-constexpr int sub1_v = sub1<N>::value;
-
-template<typename N>
-using sub1_t = typename sub1<N>::type;
-
+canonize(sub1);
 
 
 /// eql
 template<typename N, typename M>
 struct eql : bool_constant<N::value == M::value> {};
 
-template<typename N, typename M>
-constexpr bool eql_v = eql<N,M>::value;
-
-template<typename N, typename M>
-using eql_t = typename eql<N,M>::type;
+canonize(eql);
 
 
 /// mod operator
 template<typename A, typename B>
 struct mod : int_constant<A::value % B::value> {};
 
-template<typename A, typename B>
-constexpr int mod_v = mod<A,B>::value;
-
-template<typename A, typename B>
-using mod_t = typename mod<A,B>::type;
+canonize(mod);
 
 
 /// isDivisor
 template<typename D, typename N>
-struct isDivisor : isZero<mod_t<N,D>> {};
+struct isDivisor : is_zero<mod_t<N,D>> {};
 
-template<typename D, typename N>
-constexpr bool isDivisor_v = isDivisor<D,N>::value;
-
-template<typename D, typename N>
-using isDivisor_t = typename isDivisor<D,N>::type;
+canonize(isDivisor);
 
 
 /// hasDivisors
 template<typename D, typename N>
 struct hasDivisors_aux : or_bool<
-							isDivisor_t<D,N>,
-							typename hasDivisors_aux<add1_t<D>,N>::type> {};
+  isDivisor_t<D,N>,
+  typename hasDivisors_aux<add1_t<D>,N>::type> {};
 
 template<typename N>
 struct hasDivisors_aux<N,N> : bool_constant<false> {};
@@ -187,23 +146,24 @@ struct hasDivisors_aux<N,N> : bool_constant<false> {};
 template<typename N>
 struct hasDivisors : hasDivisors_aux<int_constant_t<2>,N> {};
 
-template<typename N>
-constexpr bool hasDivisors_v = hasDivisors<N>::value;
-
-template<typename N>
-using hasDivisors_t = typename hasDivisors<N>::type;
+canonize(hasDivisors);
 
 
 /// isPrime
 template<typename N>
 struct isPrime : not_bool<hasDivisors_t<N>> {};
 
-template<typename N>
-constexpr bool isPrime_v = isPrime<N>::value;
+canonize(isPrime);
 
-template<typename N>
-using isPrime_t = typename isPrime<N>::type;
 
+int fibo(int n){
+  if (n == 0) 
+    return 0;
+  else if (n == 1)
+    return 1;
+  else
+    return fibo(n-1) + fibo(n-2);
+}
 
 /// nextPrime
 template<typename N, typename IsPrime>
@@ -215,11 +175,7 @@ struct nextPrimeAux<N,bool_constant_t<true>> : N {};
 template<typename N>
 struct nextPrime : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
 
-template<typename N>
-constexpr int nextPrime_v = nextPrime<N>::value;
-
-template<typename N>
-using nextPrime_t = typename nextPrime<N>::type;
+canonize(nextPrime);
 
 
 // vector
@@ -457,13 +413,7 @@ struct is_empty<collection<T,TS...>> : bool_constant<false> {};
 template<typename... TS>
 struct is_empty<collection<TS...>> : bool_constant<true> {};
 
-template<typename C>
-constexpr bool is_empty_v = is_empty<C>::value;
-
-template<typename C>
-using is_empty_t = typename is_empty<C>::type;
-
-using is_empty_f = function<is_empty>;
+canonize(is_empty);
 
 
 /// concatenate
@@ -473,8 +423,7 @@ struct concatenate {};
 template<typename... CS, typename... DS>
 struct concatenate<collection<CS...>,collection<DS...>> : collection<CS...,DS...> {};
 
-template<typename C,typename D>
-using concatenate_t = typename concatenate<C,D>::type;
+canonize(concatenate);
 
 
 /// debug
@@ -498,21 +447,14 @@ template<typename C>
 struct reverse_collection
 	: reverse_collection_aux<C, collection_t<>> {};
 
-template<typename C>
-using reverse_collection_t = typename reverse_collection<C>::type;
+canonize(reverse_collection);
 
 
 /// funcall
 template<typename F, typename... A>
 struct funcall : F::template call<A...> {};
 
-template<typename F, typename... A>
-using funcall_t = typename funcall<F,A...>::type;
-
-template<typename F, typename... A>
-static constexpr typename funcall<F,A...>::value_type funcall_v = funcall<F,A...>::value;
-
-using funcall_f = function<funcall>;
+canonize(funcall);
 
 
 /// apply
@@ -528,26 +470,14 @@ struct apply_aux<F,collection<CS...>,collection<AS...>> : funcall<F,CS...,AS...>
 template<typename F, typename... A>
 struct apply : apply_aux<F,collection<>,A...> {};
 
-template<typename F, typename... A>
-using apply_t = typename apply<F,A...>::type;
-
-template<typename F, typename... A>
-static constexpr typename apply<F,A...>::value_type apply_v = apply<F,A...>::value;
-
-using apply_f = function<apply>;
+canonize(apply);
 
 
 /// sum
 template<typename C>
 struct sum : apply<add_f,C> {};
 
-template<typename C>
-using sum_t = typename sum<C>::type;
-
-template<typename C>
-static constexpr int sum_v = sum<C>::value;
-
-using sum_f = function<sum>;
+canonize(sum);
 
 
 /// first
@@ -675,3 +605,28 @@ template<typename F, typename... CS>
 struct map : map_aux<F, zip_t<CS...>> {};
 
 canonize(map);
+
+
+/// branch
+template<typename C, typename T, typename E>
+struct branch {};
+
+template<typename T, typename E>
+struct branch<bool_constant<true>,T,E> : funcall<T> {};
+
+template<typename T, typename E>
+struct branch<bool_constant<false>,T,E> : funcall<E> {};
+
+canonize(branch);
+
+
+/// fibonacci
+template<typename N>
+struct fibonacci : branch<eql_t<N, int_constant<0>>, 
+                          int_constant<0>,
+                          branch_t<eql_t<N, int_constant<1>>,
+                                   int_constant<1>,
+                                   add_t<typename fibonacci<sub1_t<N>>::type,
+                                         typename fibonacci<sub1_t<sub1_t<N>>>::type>>> {};
+
+canonize(fibonacci);
