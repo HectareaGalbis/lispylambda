@@ -48,7 +48,7 @@ Observa como se está usando ~identity<int>::type~. La meta-función ~identity~ 
 Cuando usamos una meta-función de esta manera decimos que estamos *evaluando* la meta-función. Sólo queda decir que estas meta-funciones van a ser el núcleo de T++ y serán lo que nos permita hacer cosillas interesantes en tiempo de compilación.
 
 * Constantes
-Y sin esperar mucho más, vamos a definir cuáles van a ser las constantes en T++. Decimos que un tipo de C++ es una constante si es una meta-función que se evalúa a sí misma. Aunque parezca raro, esto se puede hacer sin problemas.
+Y sin esperar mucho más, vamos a definir cuáles van a ser las constantes en T++. Decimos que un tipo de C++ es una constante en T++ si es una meta-función que se evalúa a sí misma. Aunque parezca raro, esto se puede hacer sin problemas.
 
 Empecemos por algo sencillo. Los enteros. Queremos crear un tipo de datos que represente, dependiendo de un argumento, a cada uno de los enteros. Como los templates pueden aceptar enteros, la solución es sencilla. Además, recuerda que se tiene que evaluar a sí misma:
 
@@ -133,7 +133,7 @@ Pues ahora que sabemos cómo establecer un puente entre T++ y C++ basta crear un
 ¿No podemos crear alguna constante que represente a cualquier valor de C++?
 
 * La constante 'box'
-Desde el estandar C++17 es válido indicar como argumento de un template un valor con el especificador ~auto~. De esta forma podemos conseguir definir una constante que represente un puente en T++ y C++ para todos los valores primitivos de C++.
+Desde el estandar C++17 es válido indicar como argumento de un template un valor con el especificador ~auto~. De esta forma podemos conseguir definir una constante que represente un puente entre T++ y C++ para todos los valores primitivos de C++.
 
 #+begin_src C++
 template<auto b>
@@ -163,7 +163,7 @@ std::cout << box_v<'k'> << std::endl;
 : k
 
 ¡Genial!
- 
+
 * Funciones
 Una vez hemos visto las constantes necesitamos algo que nos permita hacer cálculos con ellos. Y ahí es cuando entran las funciones. Definimos las funciones en T++ a aquellas meta-funciones que se evalúan a una constante.
 
@@ -417,195 +417,283 @@ struct is_zero<box<0>> : box<true> {};
 canonize(is_zero);
 #+end_src
 
+* La constante 'tbox'
+La constante 'box' introducida al inicio nos permitía tener una constante que además nos sirve de puente entre C++ y T++. Además, hemos dicho que una constante en T++ es una meta-función que se evalúa a sí misma. Pero también existen tipos en C++ que ni siquiera son meta-funciones. Hablamos de tipos como ~int~ o ~float~. Estos tipos también pertenecen a C++ y no a T++. Por lo que nos va a interesar crear otro puente.
+
+Aquí definimos la constante de T++ ~tbox~. Va a funcionar igual que ~box~, pero en lugar de recibir un valor, recibimos un tipo de C++. 
+
+Recibir como argumento este tipo de C++ es el puente que va de C++ hacia T++, pero tenemos que decidir cómo definimos el puente en la dirección opuesta. Aquí no podemos usar ~value~, porque ~value~ debe devolver siempre un valor, no un tipo. En este caso, usaremos ~value_type~. El propio atributo nos dice que va a ser un tipo con el uso de ​~_​type~, pero que además pertenece a C++ con el uso de ~value_~. 
+
+#+begin_src C++
+template<typename T>
+struct tbox{
+  using type = tbox;
+  using value_type = T;
+};
+#+end_src
+
+Como hemos estado haciendo hasta ahora, creamos varios alias para poder acceder directamente a estos atributos. Para el caso de ~value_type~ usamos ~_vt~:
+
+#+begin_src C++
+template<typename T>
+using tbox_t = typename tbox<T>::type;
+
+template<typename T>
+using tbox_vt = typename tbox<T>::value_type;
+#+end_src
+
+Recordemos por un momento la definición de ~box~:
+
+#+begin_src C++
+template<auto b>
+struct box{
+  using type = box;
+  static constexpr auto value = b; 
+};
+
+template<auto b>
+using box_t = typename box<b>::type;
+
+template<auto b>
+extern constexpr auto box_v = box<b>::value;
+#+end_src
+
+Ahora que vamos a usar ~value_type~, podemos agregarlo a la constante ~box~ para poder obtener el tipo del valor almacenado. La definición quedaría así:
+
+#+begin_src C++
+template<auto b>
+struct box{
+  using type = box;
+  using value_type = decltype(b);
+  static constexpr auto value = b; 
+};
+#+end_src
+
+Y su nuevo alias:
+
+#+begin_src C++
+template<auto b>
+using box_vt = typename box<b>::value_type;
+#+end_src
+
+Pero esto no termina aquí. Ahora que tenemos un nuevo posible alias en nuestras constantes, nos gustaría que las funciones de T++ que definamos a continuación tuviesen también este nuevo alias. Pero recordemos que ahora disponemos de ~canonize~. Podemos añadir este nuevo alias en la macro y todas las definiciones pasadas y futuras tendrán automáticamente este alias disponible. La nueva definición de ~canonize~ queda así:
+
+#+begin_src C++
+#define canonize(name)                                  \
+  template<typename... TS>                              \
+  using name##_t = typename name<TS...> ::type;         \
+                                                        \
+  template<typename... TS>                              \
+  static constexpr auto name##_v = name<TS...> ::value; \
+                                                        \
+  template<typename... TS>                              \
+  using name##_vt = typename name<TS...>::value_type;
+#+end_src
+
+Podemos probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+add_vt<box<3>,box<5>> miVar = 4; // add_vt devuelve un tipo
+std::cout << miVar << std::endl;
+#+end_src
+
+#+RESULTS:
+: 4
+
 * Más funciones
-A partir de aquí podemos hacer todas las funciones que manejen valores primitivos de T++ que se nos ocurran. Aquí tienes unas cuantas que usaremos más adelante. No tienen mucho misterio por lo que no explicaremos para qué sirven ni cómo se han definido.
+Para avanzar un poco más mostramos a continuación una batería de funciones que nos podrían ser útiles más adelante. No tienen mucho misterio e iba a 'dejar como ejercicio al lector' el revisarlos y entenderlos. Siempre me ha dado mucha rabia esa frase. Por eso, en lugar de 'dejar como ejercicio al lector entender por sí mismo las funciones', diré simplemente que no las voy a explicar. ~:D~
 
- #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-   /// or operator
-   template<typename B, typename C>
-   struct or_bool : bool_constant<B::value || C::value> {};
+ #+begin_src C++
+// sub
+template<typename... NS>
+struct sub : box<0>{};
 
-   template<typename B, typename C>
-   constexpr bool or_bool_v = or_bool<B,C>::value;
+template<typename N, typename... NS>
+struct sub<N,NS...> : box<N::value-sub<NS...>::value> {};
 
-   template<typename B, typename C>
-   using or_bool_t = typename or_bool<B,C>::type;
-
-
-   /// not operator
-   template<typename B>
-   struct not_bool : bool_constant<!B::value> {};
-
-   template<typename B>
-   constexpr bool not_bool_v = not_bool<B>::value;
-
-   template<typename B>
-   using not_bool_t = typename not_bool<B>::type;
+canonize(sub);
 
 
-   /// add1
-   template<typename N>
-   struct add1 : int_constant<N::value + 1> {};
+/// quot
+template<typename... NS>
+struct quot : box<1> {};
 
-   template<typename N>
-   constexpr int add1_v = add1<N>::value;
+template<typename N, typename... NS>
+struct quot<N,NS...> : box<N::value / quot<NS...>::value> {};
 
-   template<typename N>
-   using add1_t = typename add1<N>::type;
+canonize(quot);
 
+/// or_logic
+template<typename... NS>
+struct or_logic : box<false>{};
 
-   /// eql
-   template<typename N, typename M>
-   struct eql : bool_constant<N::value == M::value> {};
+template<typename N, typename... NS>
+struct or_logic<N,NS...> : box<N::value || or_logic<NS...>::value> {};
 
-   template<typename N, typename M>
-   constexpr bool eql_v = eql<N,M>::value;
-
-   template<typename N, typename M>
-   using eql_t = typename eql<N,M>::type;
+canonize(or_logic);
 
 
-   /// mod operator
-   template<typename A, typename B>
-   struct mod : int_constant<A::value % B::value> {};
+/// and_logic
+template<typename... NS>
+struct and_logic : box<true>{};
 
-   template<typename A, typename B>
-   constexpr int mod_v = mod<A,B>::value;
+template<typename N, typename... NS>
+struct and_logic<N,NS...> : box<N::value && and_logic<NS...>::value> {};
 
-   template<typename A, typename B>
-   using mod_t = typename mod<A,B>::type;
-
-
-   /// isDivisor
-   template<typename D, typename N>
-   struct isDivisor : is_zero<mod_t<N,D>> {};
-
-   template<typename D, typename N>
-   constexpr bool isDivisor_v = isDivisor<D,N>::value;
-
-   template<typename D, typename N>
-   using isDivisor_t = typename isDivisor<D,N>::type;
+canonize(and_logic);
 
 
-   /// hasDivisors
-   template<typename D, typename N>
-   struct hasDivisors_aux : or_bool<
-							   isDivisor_t<D,N>,
-							   typename hasDivisors_aux<add1_t<D>,N>::type> {};
+/// not operator
+template<typename B>
+struct not_logic : box<!B::value> {};
 
-   template<typename N>
-   struct hasDivisors_aux<N,N> : bool_constant<false> {};
-
-   template<typename N>
-   struct hasDivisors : hasDivisors_aux<int_constant_t<2>,N> {};
-
-   template<typename N>
-   constexpr bool hasDivisors_v = hasDivisors<N>::value;
-
-   template<typename N>
-   using hasDivisors_t = typename hasDivisors<N>::type;
+canonize(not_logic);
 
 
-   /// isPrime
-   template<typename N>
-   struct isPrime : not_bool<hasDivisors_t<N>> {};
+/// add1
+template<typename N>
+struct add1 : box<N::value + 1> {};
 
-   template<typename N>
-   constexpr bool isPrime_v = isPrime<N>::value;
-
-   template<typename N>
-   using isPrime_t = typename isPrime<N>::type;
+canonize(add1);
 
 
-   /// nextPrime
-   template<typename N, typename IsPrime>
-   struct nextPrimeAux : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
+/// sub1
+template<typename N>
+struct sub1 : box<N::value - 1> {};
 
-   template<typename N>
-   struct nextPrimeAux<N,bool_constant_t<true>> : N {};
+canonize(sub1);
 
-   template<typename N>
-   struct nextPrime : nextPrimeAux<add1_t<N>,isPrime_t<add1_t<N>>> {};
 
-   template<typename N>
-   constexpr int nextPrime_v = nextPrime<N>::value;
+/// eql
+template<typename N, typename M>
+struct eql : box<N::value == M::value> {};
 
-   template<typename N>
-   using nextPrime_t = typename nextPrime<N>::type;
+canonize(eql);
  #+end_src
 
-Vale, este código es duro de procesar. Pero nos quedamos al menos con la última, que nos permite obtener el siguiente número primo a partir de uno dado. Vamos a probarla.
-
- #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-   std::cout << nextPrime_v<int_constant_t<13>> << std::endl;
- #+end_src 
-
- #+RESULTS:
- : 17
-
-Todo esto está muy guay, pero falta algo. Con sólo tipos primitivos no conseguimos mucho. Vamos a ver si podemos crear algo más grande.
+Todo esto está muy guay, pero falta algo. Con sólo constantes de tipos primitivos no conseguimos mucho. Vamos a ver si podemos crear algo más grande.
 
 * Colecciones
-Hasta ahora nos hemos centrado en valores primitivos y arrays de estos valores. Pero podemos crear también contenedores de tipos. Uno de estos contenedores los llamaremos colecciones. Aquí va la definición.
+Hasta ahora nos hemos centrado en constantes y funciones que manipulan estas constantes simples. Pero podemos crear también contenedores de constantes. A continuación definimos las colecciones que, a pesar de contener constantes, ellas por sí mismas también son constantes.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename... TS>
-  struct collection{
-	  using type = collection;
-  };
+#+begin_src C++
+template<typename... TS>
+struct collection{
+  using type = collection;
+};
 
-  template<typename... TS>
-  using collection_t = typename collection<TS...>::type;
- #+end_src
+template<typename... TS>
+using collection_t = typename collection<TS...>::type;
+#+end_src
 
- Este template recibe una cantidad arbitraria de tipos y... no hace nada con ellos. El simple hecho de estar en la lista de argumentos nos permite 'almacenarlos'. Observa además que en este caso no tiene sentido un atributo ~value~, pues todos los argumentos son tipos que no tienen por qué representar ningún valor, ya sea numérico o de cualquier otro tipo.
- 
 Como ejemplo podemos crear una función que nos diga si una colección está o no vacía.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename C>
-  struct is_empty {};
+#+begin_src C++
+template<typename C>
+struct is_empty {};
 
-  template<typename T, typename... TS>
-  struct is_empty<collection<T,TS...>> : bool_constant<false> {};
+template<typename... TS>
+struct is_empty<collection<TS...>> : bool_constant<true> {};
 
-  template<typename... TS>
-  struct is_empty<collection<TS...>> : bool_constant<true> {};
+template<typename T, typename... TS>
+struct is_empty<collection<T,TS...>> : bool_constant<false> {};
 
-  template<typename C>
-  constexpr bool is_empty_v = is_empty<C>::value;
-
-  template<typename C>
-  using is_empty_t = typename is_empty<C>::type;
- #+end_src
-
-Observa que, como otras funciones que hemos implementado, se usa la especialización de templates. Pues fíjate en el caso general, es decir, la primera de todas. Es un struct vacío, no hereda de nadie ni tiene atributos. Al hacer esto, estamos forzando a que se genere un error si alguien usa esta función si no proporciona una colección como argumento.
+canonize(is_empty);
+#+end_src
 
 Probamos la función.
 
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+  std::cout << is_empty_v<collection<>> << std::endl;
+  std::cout << is_empty_v<collection<tbox<int>,tbox<float>,tbox<char>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 1
+: 0
+
+Ptra función sencilla es la que nos permite añadir un elemento al principio:
+
+#+begin_src C++
+template<typename V, typename C>
+struct cons {};
+
+template<typename V, typename... CS>
+struct cons<V, collection<CS...>> : collection<V,CS...> {};
+
+canonize(cons);
+#+end_src
+
+Otras funciones imprescindibles son las que nos permiten obtener o eliminar el primer elemento de una colección:
+
+#+begin_src C++
+/// car
+template<typename C>
+struct car {};
+
+template<typename C, typename... CS>
+struct car<collection<C,CS...>> : C {};
+
+canonize(car);
+
+/// cdr
+template<typename C>
+struct cdr {};
+
+template<typename C, typename... CS>
+struct cdr<collection<C,CS...>> : collection<CS...> {};
+
+template<typename... CS>
+struct cdr<collection<CS...>> : collection<CS...> {};
+
+canonize(cdr);
+#+end_src
+
+Los nombres de estas funciones se han mantenido durante años por motivos históricos. Pero pienso que si se han mantenido es por su utilidad. Y cuando me refiero a su utilidad, no me refiero por sí solas, si no combinadas. Por ejemplo, si queremos obtener el segundo elemento de una colección, tenemos que usar primero ~cdr~ y luego ~car~. Esto resultaría en algo como así: ~car_t<cdr_t<collection<...>>>~. Pero este tipo de operaciones son tan comunes que se les da su propio nombre. La forma de generar estas combinaciones es empezando por ~c~, acabando por ~r~ y añadiendo por en medio una combinación de ~a~ y ~d~.
+
+En el caso de ~car_t<cdr_t<...>>~ podemos definir la función ~cadr~. Si quisiésemos una función para ~cdr_t<car_t<cdr_t<cdr_t<...>>>>~ la llamaríamos ~cdaddr~. Claro que definir todas las combinaciones es imposible. Además, por cada ~a~ o ~d~ adicional que queramos añadir, la cantidad de combinaciones aumenta exponencialmente. En concreto, el número de funciones de hasta ~n~ letras (~a~ o ~d~) que habría que definir sería de ~2^(n+1) - 2~. La cantidad de funciones a definir de hasta 4 letras sería de ~2^5 - 2=30~. De hasta 3 letras: ~2^4-2=14~. De hasta 2 letras: ~6~.
+
+Por motivos obvios (la pereza), vamos las funciones que quedan de hasta dos letras. Como ya tenemos los de 1 letra, quedan 4:
+
+#+begin_src C++
+/// caar
+template<typename C>
+struct caar : car<car_t<C>> {};
+
+canonize(caar);
+
+/// cadr
+template<typename C>
+struct cadr : car<cdr_t<C>> {};
+
+canonize(cadr);
+
+/// cdar
+template<typename C>
+struct cdar : cdr<car_t<C>> {};
+
+canonize(cdar);
+
+/// cddr
+template<typename C>
+struct cddr : cdr<cdr_t<C>> {};
+
+canonize(cddr);
+#+end_src
+
+Pasemos a concatenar colecciones. La función es también relativamente sencilla:
+
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  std::cout << is_empty_v<collection_t<>> << std::endl;
-  std::cout << is_empty_v<collection_t<int,float,char>> << std::endl;
+template<typename C, typename D>
+struct concat {};
+
+template<typename... CS, typename... DS>
+struct concat<collection<CS...>,collection<DS...>> : collection<CS...,DS...> {};
+
+canonize(concat);
  #+end_src
 
- #+RESULTS:
- : 1
- : 0
-
-Concatenar colecciones también es muy sencillo.
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename C, typename D>
-  struct concatenate {};
-
-  template<typename... CS, typename... DS>
-  struct concatenate<collection<CS...>,collection<DS...>> : collection<CS...,DS...> {};
-
-  template<typename C,typename D>
-  using concatenate_t = typename concatenate<C,D>::type;
- #+end_src
-
-Y ahora es cuando tenemos el problema de que no podemos imprimir una colección de tipos. En algunos editores, pasando el ratón por encima de una directiva ~using~, es posible que veas el tipo resultante de aplicar estas funciones. Aunque también hay otro truquillo. Vamos a definir la estructura ~debug~ que nos permitirá ver el resultado de nuestras funciones cuando devuelvan tipos en lugar de valores.
+Antes de continuar, tenemos que reflexionar sobre algo. Las funciones se van a ir complicando y necesitamos alguna forma de comprobar si son correctas. Al menos, queremos poder probarlas e imprimir un resultado. Pero ahora es cuando tenemos el problema de que no podemos imprimir un tipo. En algunos editores, pasando el ratón por encima de una directiva ~using~, es posible que veas el tipo resultante de aplicar estas funciones. Aunque también hay otro truquillo. Vamos a definir la estructura ~debug~ que nos permitirá ver el resultado de nuestras funciones.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<typename T>
@@ -614,80 +702,80 @@ Y ahora es cuando tenemos el problema de que no podemos imprimir una colección 
 
  Te estarás preguntando qué tiene de especial esta estructura para conseguir visualizar el resultado de nuestras funciones. La respuesta es nada. De hecho, puedes llamar a esta estructura como quieras. Lo que vamos a hacer es forzar un error intentando acceder a un miembro inexistente de la estructura ~debug~. Esto se ve mejor con un ejemplo.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  using foo = debug<concatenate_t<collection_t<int,float>,collection_t<char,double>>>::type;
- #+end_src
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+  using foo = debug<concat_t<collection<tbox<int>,tbox<float>>,collection<tbox<char>,tbox<double>>>>::type;
+#+end_src
 
 #+begin_src
-  error: 'type' in 'struct debug<collection<int, float, char, double> >' does not name a type
+ error: ‘type’ in ‘struct debug<collection<tbox<int>, tbox<float>, tbox<char>, tbox<double> > >’ does not name a type
  #+end_src
  
-Vaya vaya. Así que no existe el atributo ~type~ en la estructura ~debug<collection<int,float,char,double>>~. Observa bien lo que hay escrito. Dentro de debug tenemos exactamente ~collection<int,float,char,double>~. Y está claro que esa es la concatenación de ~collection_t<int,float>~ y ~collection_t<char,double>~.
+Vaya vaya. Así que no existe el atributo ~type~ en la estructura ~debug<collection<tbox<int>,tbox<float>,tbox<char>,tbox<double>>>~. Observa bien lo que hay escrito. Dentro de debug tenemos exactamente ~collection<tbox<int>,tbox<float>,tbox<char>,tbox<double>>~. Y está claro que esa es la concatenación de ~collection<tbox<int>,tbox<float>>~ y ~collection<tbox<char>,tbox<double>>~.
 
 Sé que no es el método de debug más elegante, pero al menos funciona. Y si has pensado en usar la librería ~<typeinfo>~... no, no funciona. Aquí una prueba.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<typeinfo> '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\""))
-  std::cout << typeid(concatenate_t<collection_t<int,float>,collection_t<char,double>>).name() << std::endl;
- #+end_src
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << typeid(concat_t<collection<tbox<int>,tbox<float>>,collection<tbox<char>,tbox<double>>>).name() << std::endl;
+#+end_src
 
- #+RESULTS:
- : 10collectionIJifcdEE
+#+RESULTS:
+: 10collectionIJ4tboxIiES0_IfES0_IcES0_IdEEE
 
 Yo la verdad es que no entiendo muy bien lo que pone ahí.
 
-Vamos a detenernos de nuevo en la función concatenate.
+Vamos a detenernos de nuevo en la función ~concat~.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename C, typename D>
-  struct concatenate {};
+template<typename C, typename D>
+struct concat {};
 
-  template<typename... CS, typename... DS>
-  struct concatenate<collection<CS...>,collection<DS...>> : collection<CS...,DS...> {};
+template<typename... CS, typename... DS>
+struct concat<collection<CS...>,collection<DS...>> : collection<CS...,DS...> {};
 
-  template<typename C,typename D>
-  using concatenate_t = typename concatenate<C,D>::type;
+canonize(concat);
  #+end_src
 
- Observa la especialización de ~concatenate~. Fíjate en cómo estamos usando la especialización para darle un nombre a los elementos de cada colección. La primera colección tiene unos elementos que identificamos con ~CS~. Y para la segunda colección usamos el identificador ~DS~. Esta facilidad de darle un identificador a los elementos de una colección es lo que hace este tipo de contenedor sea tan útil para los templates de C++.
+Observa la especialización de ~concat~. Fíjate en cómo estamos usando la especialización para darle un nombre a los elementos de cada colección. La primera colección tiene unos elementos que identificamos con ~CS~. Y para la segunda colección usamos el identificador ~DS~. Esta facilidad de darle un identificador a los elementos de una colección es lo que hace que este tipo de contenedor sea tan útil para los templates de C++.
 
  Otro ejemplo interesante es la función para invertir el orden de los elementos de una colección.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename C, typename D>
-  struct reverse_collection_aux {};
+template<typename C, typename D>
+struct reverse_collection_aux {};
 
-  template<typename... cs, typename... ds>
-  struct reverse_collection_aux<collection<cs...>, collection<ds...>>
-	  : collection_t<ds...> {};
+template<typename... cs, typename... ds>
+struct reverse_collection_aux<collection<cs...>, collection<ds...>>
+	: collection<ds...> {};
 
-  template<typename c, typename... cs, typename... ds>
-  struct reverse_collection_aux<collection<c,cs...>, collection<ds...>>
-	  : reverse_collection_aux<collection_t<cs...>, collection_t<c,ds...>> {};
+template<typename c, typename... cs, typename... ds>
+struct reverse_collection_aux<collection<c,cs...>, collection<ds...>>
+	: reverse_collection_aux<collection<cs...>, collection<c,ds...>> {};
 
-  template<typename C>
-  struct reverse_collection
-	  : reverse_collection_aux<C, collection_t<>> {};
+template<typename C>
+struct reverse {};
 
-  template<typename C>
-  using reverse_collection_t = typename reverse_collection<C>::type;
+template<typename... cs>
+struct reverse<collection<cs...>> : reverse_collection_aux<collection<cs...>, collection<>> {};
+
+canonize(reverse);
  #+end_src
 
- De nuevo, la especialización de los templates nos permite dar identificadores a los elementos de una colección, incluso a elementos concretos como en este caso, donde se le da el identificador ~c~ al primer elemento de la colección. Observa que la clave de esta función está en la segunda especialización, donde el elemento ~c~ pasa de la primera colección a la segunda. 
+ De nuevo, la especialización de los templates nos permite dar identificadores a los elementos de una colección, incluso a elementos concretos como en este caso, donde se le da el identificador ~c~ al primer elemento de la colección. Observa que la clave de esta función está en la segunda especialización de ~reverse_collection_aux~, donde el elemento ~c~ pasa de la primera colección a la segunda.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  using foo = debug<reverse_collection_t<collection_t<float,char,int>>>::type;
- #+end_src
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+using foo = debug<reverse_t<collection<tbox<float>,tbox<char>,tbox<int>>>>::type;
+#+end_src
 
 #+begin_src
-  error: 'type' in 'struct debug<collection<int, char, float> >' does not name a type
+error: ‘type’ in ‘struct debug<collection<tbox<int>, tbox<char>, tbox<float> > >’ does not name a type
  #+end_src
 
-Podríamos seguir definiendo funciones para las colecciones, pero sería mejor si llevásemos todo esto un poco más lejos. Sin embargo, necesitamos un tipo de dato que, aunque ya hemos visto, no lo hemos explotado lo suficiente. Me refiero a las funciones.
+Podríamos seguir definiendo funciones para las colecciones, pero sería mejor si llevásemos todo esto un poco más lejos. El objetivo es poder definir funciones de T++ que reciban otras funciones. Es decir, queremos una constante de T++ que represente a una función.
 
 * Funciones de primera clase
-En cualquier lenguaje funcional, las funciones son elementos de primera clase. Tienen su propio tipo y no los hace ni más ni menos especiales que cualquier otro tipo de dato. Sin embargo, en T++, los datos y las funciones se deben de tratar de diferente manera. Basta ver las diferencias entre un entero y la función ~add~. Al definir un entero en T++, estamos definiendo una estructura en C++. Sin embargo, la función ~add~ es una estructura templatizada, y a menos que le proporcionemos los argumentos necesarios, no será una estructura como tal. Todo esto se puede apreciar mejor cuando intentamos crear una función que acepte cada uno de los dos tipos de argumentos.
+En cualquier lenguaje funcional, las funciones son elementos de primera clase. Tienen su propio tipo y no los hace ni más ni menos especiales que cualquier otro tipo de dato. Sin embargo, en T++, las constantes y las funciones se deben de tratar de diferente manera. Basta ver las diferencias entre un entero ~box<5>~ y la función ~add~. Al definir un entero en T++, estamos definiendo una estructura en C++. Sin embargo, la función ~add~ es una estructura templatizada, y a menos que le proporcionemos los argumentos necesarios, no será una estructura como tal. Todo esto se puede apreciar mejor cuando intentamos crear una función que acepte cada uno de los dos tipos de argumentos.
 
-Esta sería la posible implementación de una función que puede recibir como argumento una función como ~add~.
+Esta sería la posible implementación de una función que puede recibir como argumento una función como ~add2~ (la versión de ~add~ que recibía 2 argumentos).
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<template<typename,typename> typename F>
@@ -705,9 +793,9 @@ Es clara la diferencia. Mientras que en una debemos recibir un ~template<templat
 
 Lo ideal sería tener un tipo de dato que nos permita manejar funciones al igual que los enteros. De esta forma podremos tener colecciones de funciones, por ejemplo.
 
-Pues manos a la obra. Como no podemos predecir cuántos argumentos podrá recibir una función, podemos indicar que nuestro tipo de dato aceptará funciones con cualquier número de argumentos. Además, al igual que con ~integral_constant~ o las estructuras, definiremos el atributo ~type~ para que sea igual al propio tipo de la función.
+Pues manos a la obra. Como no podemos predecir cuántos argumentos podrá recibir una función, podemos indicar que nuestro tipo de dato aceptará funciones con cualquier número de argumentos.
 
-También necesitaremos un atributo extra que nos permita ejecutar la función. Dicho atributo lo llamaré ~call~.
+También necesitaremos un atributo extra que nos permita ejecutar la función. Dicho atributo lo llamaremos ~call~.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   template<template<typename...> typename F>
@@ -721,33 +809,41 @@ También necesitaremos un atributo extra que nos permita ejecutar la función. D
 
 Observa que ~call~ es un atributo templatizado. Simplemente recibe los argumentos que tiene que pasarle a la función ~F~.
 
-Crear ahora un objeto de tipo ~function~ es muy sencillo. Por ejemplo, si queremos almacenar la función ~add~, basta usar ~function<add>~. De hecho, algo que deberíamos hacer a partir de ahora, es añadir una nueva definición cada vez que creemos una función nueva. Por ejemplo, para ~add~ deberíamos añadir lo siguiente:
+Crear ahora un objeto de tipo ~function~ es muy sencillo. Por ejemplo, si queremos almacenar la función ~add~, basta usar ~function<add>~. De hecho, algo que deberíamos hacer a partir de ahora, es añadir un nuevo alias cada vez que creemos una función nueva. Por ejemplo, para ~add~ deberíamos añadir lo siguiente:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
   using add_f = function<add>;
  #+end_src
 
-A partir de ahora, supondremos que todas las funciones definidas hasta ahora tienen definida su versión ~_f~. 
+Pero espera un momento... Si tenemos ~canonize~. Vamos a modificar la macro para que también añada este nuevo alias.
 
-Ahora, podemos crear una función que ejecute un objeto de tipo ~function~.
+#+begin_src C++
+#define canonize(name)                                  \
+  template<typename... TS>                              \
+  using name##_t = typename name<TS...> ::type;         \
+                                                        \
+  template<typename... TS>                              \
+  static constexpr auto name##_v = name<TS...> ::value; \
+                                                        \
+  template<typename... TS>                              \
+  using name##_vt = typename name<TS...>::value_type;   \
+                                                        \
+  using name##_f = function<name>;
+#+end_src
+
+Ahora necesitamos una función que pueda ejecutar una constante ~function~. La llamaremos ~funcall~.
+
+#+begin_src C++
+template<typename F, typename... A>
+struct funcall : F::template call<A...> {};
+
+canonize(funcall);
+#+end_src
+
+En lugar de acceder al atributo templatizado ~call~ cada vez que queramos ejecutar una función, usaremos la función ~funcall~. Esta función recibe una constante ~function~ y sus argumentos. Devolverá el resultado de ejecutar la función con esos argumentos.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename F, typename... A>
-  struct funcall : F::template call<A...> {};
-
-  template<typename F, typename... A>
-  using funcall_t = typename funcall<F,A...>::type;
-
-  template<typename F, typename... A>
-  static constexpr typename funcall<F,A...>::value_type funcall_v = funcall<F,A...>::value;
-
-  using funcall_f = function<funcall>;
- #+end_src
-
-En lugar de acceder al atributo templatizado ~call~ cada vez que queramos ejecutar una función, usaremos la función ~funcall~. Esta función recibe un objeto de tipo ~function~ y sus argumentos. Devolverá el resultado de ejecutar la función con esos argumentos.
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  std::cout << funcall_v<add_f,int_constant<5>,int_constant<6>> << std::endl;
+  std::cout << funcall_v<add_f,box<5>,box<6>> << std::endl;
  #+end_src
 
  #+RESULTS:
@@ -755,104 +851,47 @@ En lugar de acceder al atributo templatizado ~call~ cada vez que queramos ejecut
  
 Otra función parecida a ~funcall~ es ~apply~. La diferencia está en que el último argumento debe ser una colección de argumentos. De esta forma, la función pasada a ~apply~ es ejecutada con los primeros argumentos pasados más los encontrados en la colección del último argumento.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename F, typename C, typename... A>
-  struct apply_aux {};
+#+begin_src C++
+template<typename F, typename C, typename... A>
+struct apply_aux {};
 
-  template<typename F, typename... CS, typename A, typename B, typename... AS>
-  struct apply_aux<F,collection<CS...>,A,B,AS...> : apply_aux<F,collection<CS...,A>,B,AS...> {};
+template<typename F, typename... CS, typename A, typename B, typename... AS>
+struct apply_aux<F,collection<CS...>,A,B,AS...> : apply_aux<F,collection<CS...,A>,B,AS...> {};
 
-  template<typename F, typename... CS, typename... AS>
-  struct apply_aux<F,collection<CS...>,collection<AS...>> : funcall<F,CS...,AS...> {};
+template<typename F, typename... CS, typename... AS>
+struct apply_aux<F,collection<CS...>,collection<AS...>> : funcall<F,CS...,AS...> {};
 
-  template<typename F, typename... A>
-  struct apply : apply_aux<F,collection<>,A...> {};
+template<typename F, typename... A>
+struct apply : apply_aux<F,collection<>,A...> {};
 
-  template<typename F, typename... A>
-  using apply_t = typename apply<F,A...>::type;
-
-  template<typename F, typename... A>
-  static constexpr typename apply<F,A...>::value_type apply_v = apply<F,A...>::value;
-
-  using apply_f = function<apply>;
- #+end_src
+canonize(apply);
+#+end_src
 
 Como no podemos obtener directamente el último argumento de una colección, debemos ir guardando cada uno de los argumentos anteriores hasta que sepamos que sólo nos queda uno (el último). En ese momento, ejecutamos la función usando ~funcall~.
 
-Para probarla, podemos definir una nueva función que sume todos los enteros de una colección. Normalmente necesitaríamos recorrer la colección usando recursividad, pero con ~apply~, es innecesario:
+Para probarla, podemos definir una nueva función que sume todos los enteros de una colección. Sin ~apply~, necesitaríamos extraer los elementos de la colección mediante una especialización para luego llamar a ~add~. 
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  template<typename C>
-  struct sum : apply<add_f,C> {};
+#+begin_src C++
+template<typename C>
+struct sum : apply<add_f,C> {};
 
-  template<typename C>
-  using sum_t = typename sum<C>::type;
-
-  template<typename C>
-  static constexpr int sum_v = sum<C>::value;
-
-  using sum_f = function<sum>;
- #+end_src
+canonize(sum);
+#+end_src
 
 Demasiado fácil para ser verdad. Pero funciona.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"/home/hector/lispylambda/posts/C++/prueba.h\"")
-  using myList = collection_t<int_constant<1>,int_constant<2>,int_constant<3>>;
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << sum_v<collection<box<1>,box<2>,box<3>>> << std::endl;
+#+end_src
 
-  std::cout << sum_v<myList> << std::endl;
- #+end_src
-
- #+RESULTS:
- : 6
+#+RESULTS:
+: 6
 
 * Más colecciones
 
-Las colecciones son bastante útiles y por eso vale la pena seguir definiendo funciones que nos permitan manipularlas con facilidad. Por ahora tenemos ~is_empty~, ~concatenate~, ~reverse_collection~ y ~first~. Vamos a intentar definir aquellas que son básicas, aquellas que nos permitan añadir elementos, contarlos, etc.
+Las colecciones son bastante útiles y por eso vale la pena seguir definiendo funciones que nos permitan manipularlas con facilidad. Por ahora tenemos ~is_empty~, ~concatenate~, ~reverse_collection~ y ~first~. Vamos a intentar definir aquellas que son básicas, aquellas que nos permitan contar elementos, generar nuevas colecciones, etc.
 
-Empezamos con ~cons~. Esta función añade un elemento al inicio de una colección.
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
-template<typename V, typename C>
-struct cons {};
-
-template<typename V, typename... CS>
-struct cons<V, collection<CS...>> : collection<V,CS...> {};
-
-canonize(cons);
- #+end_src
-
-El argumento ~V~ es el elemento que queremos insertar, y el segundo argumento es la colección donde queremos insertar el elemento.
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << first_v<cons_t<int_constant<5>,collection<int_constant<7>>>> << std::endl;
- #+end_src
-
- #+RESULTS:
- : 5
-
-Si podemos añadir elementos, también deberíamos poder eliminarlos. Creamos la función ~rest~.
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> "\"~/lispylambda/posts/C++/prueba.h\"")
-template<typename C>
-struct rest {};
-
-template<typename C, typename... CS>
-struct rest<collection<C,CS...>> : collection<CS...> {};
-
-template<typename... CS>
-struct rest<collection<CS...>> : collection<CS...> {};
-
-canonize(rest);
- #+end_src
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << first_v<rest_t<collection<int_constant<5>, int_constant<7>>>> << std::endl;
- #+end_src
-
- #+RESULTS:
- : 7
-
-Otra función que es bastante común es ~range~. Recibe un entero y devuelve una colección con todos los números no negativos menores que él.
+Una función que es bastante común es ~range~. Recibe un entero y devuelve una colección con todos los números no negativos menores que él.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
 template<typename N, typename I>
@@ -874,7 +913,7 @@ canonize(range);
 Ahora podemos, por ejemplo, calcular la suma de los 100 primeros números naturales:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << sum_v<range_t<int_constant<101>>> << std::endl;
+std::cout << sum_v<range_t<box<101>>> << std::endl;
  #+end_src
 
  #+RESULTS:
@@ -882,27 +921,27 @@ std::cout << sum_v<range_t<int_constant<101>>> << std::endl;
 
 Otra función más: ~length~. Creo que no es necesario ni explicar qué va a hacer.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+#+begin_src C++
 template<typename C>
 struct length {};
 
 template<>
-struct length<collection<>> : int_constant<0> {};
+struct length<collection<>> : box<0> {};
 
 template<typename C, typename... CS>
 struct length<collection<C,CS...>> : add1<typename length<collection<CS...>>::type> {};
 
 canonize(length);
- #+end_src
+#+end_src
 
 Podemos comprobar su validez con ~range~:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << length_v<range_t<int_constant<5>>> << std::endl;
+std::cout << length_v<range_t<box<17>>> << std::endl;
  #+end_src
 
  #+RESULTS:
- : 5
+ : 17
 
 Perfecto.
 
@@ -927,32 +966,13 @@ canonize(map_single);
 Vamos a hacer una pequeña prueba:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << sum_v<map_single_t<add1_f, range_t<int_constant<3>>>> << std::endl;
+std::cout << sum_v<map_single_t<add1_f, range_t<box<3>>>> << std::endl;
  #+end_src
 
  #+RESULTS:
  : 6
 
-Perfecto. La llamada a ~range_t<int_constant<3>>~ ha creado el tipo ~collection<int_constant<0>,int_constant<1>,int_constant<2>>~. Al sumarle ~1~ a cada uno de estos elementos con ~add1_f~ conseguimos una colección con los números ~1~, ~2~ y ~3~. Y la suma de estos 3 números es, efectivamente, ~6~.
-
-Vamos a necesitar también la función ~and_bool~. En los primeros capítulos definimos ~or_bool~ que aplicaba la operación lógica ~or~ sobre dos ~bool_constant~. Vamos a generalizar estas funciones para que acepten una cantidad variable de argumentos.
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-template<typename... BS>
-struct and_bool {};
-
-template<>
-struct and_bool<> : bool_constant<true> {};
-
-template<typename B>
-struct and_bool<B> : B {};
-
-template<bool a, bool b, typename... BS>
-struct and_bool<bool_constant<a>, bool_constant<b>, BS...>
-  : and_bool<bool_constant<a && b>, BS...> {};
-
-canonize(and_bool);
- #+end_src
+Perfecto. La llamada a ~range_t<box<3>>~ ha creado el tipo ~collection<box<0>,box<1>,box<2>>~. Al sumarle ~1~ a cada uno de estos elementos con ~add1_f~ conseguimos una colección con los números ~1~, ~2~ y ~3~. Y la suma de estos 3 números es, efectivamente, ~6~.
 
 Con esto ya tenemos herramientas para crear ~zip~ de manera relativamente cómoda. Esta función recibe una cantidad variable de colecciones y creará una colección de colecciones. La primera colección contiene los primeros elementos de las colecciones recibidas. La segunda, los segundos elementos. Y así, hasta que alguna colección recibida no tenga más elementos. La complicación de esta función reside principalmente en ir comprobando que alguna de las colecciones se quede vacía para terminar la evaluación. Para ello, usamos una función ~zip_aux~ que recibe además un booleano indicando si debemos terminar o no, es decir, si alguna colección ya no tiene elementos.
 
@@ -970,21 +990,21 @@ struct zip_aux<false, CS...> : collection<> {};
 
 Si debemos seguir, necesitamos calcular varias cosas. 
 
-Primero, debemos determinar si en la siguiente llamada deberemos continuar o no. Para ello, para cada una de las colecciones debemos eliminar el primer elemento y comprobar que la colección resultante está vacía. Si alguna de esas colecciones es vacía entonces debemos indicar con el valor ~true~ que debemos parar. Parecen muchas cosas, pero tenemos bastantes herramientas. Para poder eliminar el primer elemento de una colección usamos ~rest~. Y si queremos hacerlo para cada colección basta usar ~map_single~. Es decir, si ~CS...~ son nuestras colecciones, entonces basta evaluar ~map_single_t<rest_f,collection<CS...>>~. Ahora queremos saber si alguna de las colecciones que está dentro de la colección devuelta por la anterior llamada está vacía. Para saber si una colección está vacía usamos ~is_empty~. Si queremos usar la función para cada colección usamos de nuevo ~map_single_t~. La llamada a realizar, por ahora, sería ~map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>~. Esto nos devuelve una colección de ~bool_constant~. Si alguno de estos booleanos es ~false~, entonces devolvemos ~false~. Eso es aplicar la operación lógica ~and~. Y aquí entra ~and_bool~. Pero ~and_bool~ acepta una cantidad variable de booleanos, no una colección. No pasa nada, porque podemos usar ~apply~. Con todo esto la llamada final sería ~apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>~. 
+Primero, debemos determinar si en la siguiente llamada deberemos continuar o no. Para ello, para cada una de las colecciones debemos eliminar el primer elemento y comprobar que la colección resultante está vacía. Si alguna de esas colecciones es vacía entonces debemos indicar con el valor ~true~ que debemos parar. Parecen muchas cosas, pero tenemos bastantes herramientas. Para poder eliminar el primer elemento de una colección usamos ~cdr~. Y si queremos hacerlo para cada colección basta usar ~map_single~. Es decir, si ~CS...~ son nuestras colecciones, entonces basta evaluar ~map_single_t<cdr_f,collection<CS...>>~. Ahora queremos saber si alguna de las colecciones que está dentro de la colección devuelta por la anterior llamada está vacía. Para saber si una colección está vacía usamos ~is_empty~. Si queremos usar la función para cada colección usamos de nuevo ~map_single_t~. La llamada a realizar, por ahora, sería ~map_single_t<is_empty_f,map_single_t<cdr_f,collection<CS...>>>~. Esto nos devuelve una colección de ~box~ de booleanos. Si alguno de estos booleanos es ~false~, entonces devolvemos ~false~. Eso es aplicar la operación lógica ~and~. Pero ~and_logic~ acepta una cantidad variable de booleanos, no una colección. No pasa nada, porque podemos usar ~apply~. Con todo esto la llamada final sería ~apply_v<and_logic_f,map_single_t<is_empty_f,map_single_t<cdr_f,collection<CS...>>>>~. 
 
-En segundo lugar, debemos coger los primeros elementos de cada colección e introducirlos en una nueva. Como ~CS...~ son las colecciones que hemos recibido habría que evaluar los siguiente: ~collection<first_t<CS>...>~. Sencillo.
+En segundo lugar, debemos coger los primeros elementos de cada colección e introducirlos en una nueva. Como ~CS...~ son las colecciones que hemos recibido habría que evaluar los siguiente: ~collection<car_t<CS>...>~. Sencillo.
 
-Por último, la parte de recursividad. Debemos llamar a la propia función ~zip~ con las colecciones recibidas habiendo eliminado el primer elemento. La llamada sería ~zip_aux<'el booleano de antes', rest_t<CS>...>~. 
+Por último, la parte de recursividad. Debemos llamar a la propia función ~zip~ con las colecciones recibidas habiendo eliminado el primer elemento. La llamada sería ~zip_aux<'el booleano de antes', cdr_t<CS>...>~. 
 
 Ahora, para juntarlo todo, debemos coger la colección obtenida del segundo punto y añadirlo como primer elemento a la colección de colecciones obtenida por el tercer punto. 
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+#+begin_src C++
 template<typename... CS>
-struct zip_aux<true, CS...> 
-  : cons<collection<first_t<CS>...>, 
-         typename zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>,
-                          rest_t<CS>...>::type> {};
- #+end_src
+struct zip_aux<false, CS...> 
+  : cons<collection<car_t<CS>...>, 
+         typename zip_aux<apply_v<and_logic_f,map_single_t<is_empty_f,map_single_t<cdr_f,collection<CS...>>>>,
+                          cdr_t<CS>...>::type> {};
+#+end_src
 
 Ya solo queda crear ~zip~ usando ~zip_aux~. Todo el código quedaría así:
 
@@ -993,16 +1013,16 @@ template<bool stop, typename... CS>
 struct zip_aux {};
 
 template<typename... CS>
-struct zip_aux<false, CS...> : collection<> {};
+struct zip_aux<true, CS...> : collection<> {};
 
 template<typename... CS>
-struct zip_aux<true, CS...> 
-  : cons<collection<first_t<CS>...>, 
-         typename zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,map_single_t<rest_f,collection<CS...>>>>,
-                          rest_t<CS>...>::type> {};
+struct zip_aux<false, CS...> 
+  : cons<collection<car_t<CS>...>, 
+         typename zip_aux<apply_v<and_logic_f,map_single_t<is_empty_f,map_single_t<cdr_f,collection<CS...>>>>,
+                          cdr_t<CS>...>::type> {};
 
 template<typename... CS>
-struct zip : zip_aux<apply_v<and_bool_f,map_single_t<is_empty_f,CS...>>,
+struct zip : zip_aux<apply_v<and_logic_f,map_single_t<is_empty_f,collection<CS...>>>,
                      CS...> {};
 
 canonize(zip);
@@ -1010,23 +1030,27 @@ canonize(zip);
 
 Observa que para llamar a ~zip_aux~ en ~zip~ tenemos que comprobar también si alguna de las colecciones está vacía. Al menos no tenemos que eliminar el elemento inicial, por lo que la llamada es más sencilla.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-debug<zip_t<range_t<int_constant<3>>, range_t<int_constant<3>>>>::type;
- #+end_src
+Comprobamos su validez:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-error: ‘type’ is not a member of 
-‘debug<collection<
-      collection<std::integral_constant<int, 0>, std::integral_constant<int, 0> >,                    
-      collection<std::integral_constant<int, 1>, std::integral_constant<int, 1> >, 
-      collection<std::integral_constant<int, 2>, std::integral_constant<int, 2> > > >
+debug<zip_t<range_t<box<3>>, range_t<box<3>>>>::type;
+ #+end_src
+
+ #+RESULTS:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+error: ‘type’ is not a member of ‘debug<
+  collection<
+    collection<box<0>, box<0>>, 
+    collection<box<1>, box<1>>, 
+    collection<box<2>, box<2>>>>’
  #+end_src
 
 Perfecto. 
 
 Ahora ya podemos definir la función ~map~. Esta función recibe una función y una cantidad variable de colecciones. Todos los primeros elementos de cada colección son pasados a la función recibida generando un valor que se almacena en una nueva colección. Y lo mismo ocurre para todos los segundos elementos, todos los terceros, etc. La forma de agrupar cada uno de esos elementos es sencilla ahora que disponemos de la función ~zip~. Luego, basta aplicar la función con los elementos de cada colección devuelta por ~zip~. Para esta última parte definiremos una función auxiliar ~map_aux~.
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+#+begin_src C++
 template<typename F, typename C>
 struct map_aux {};
 
@@ -1037,21 +1061,20 @@ template<typename F, typename... CS>
 struct map : map_aux<F, zip_t<CS...>> {};
 
 canonize(map);
- #+end_src
+#+end_src
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << apply_v<add_f,map_t<add_f, range_t<int_constant<3>>, range_t<int_constant<3>>>> << std::endl;
+std::cout << sum_v<map_t<add_f, range_t<box<3>>, range_t<box<3>>>> << std::endl;
  #+end_src
 
  #+RESULTS:
  : 6
 
-Lo que acabamos de hacer es generar con ~map_t~ una coleccion con 3 elementos. Cada elemento tiene la suma de los dos primeros, dos segundos y dos terceros elementos de cada ~range_t~. Es decir, devuelve la colección con los elementos ~0~, ~2~ y ~4~ que son el resultado de ~0+0~, ~1+1~ y ~2+2~. Luego se aplica la función de suma sobre esta colección obteniendo así el valor ~6~.
+Lo que acabamos de hacer es generar con ~map_t~ una coleccion con 3 elementos. Cada elemento tiene la suma de los dos primeros, dos segundos y dos terceros elementos de cada ~range_t~. Es decir, devuelve la colección con los elementos ~0~, ~2~ y ~4~ que son el resultado de ~0+0~, ~1+1~ y ~2+2~. Luego sumamos los elementos de la colección obteniendo así el valor ~6~.
 
 Espero que no te duela la cabeza... Porque todo esto ha sido sencillo, ¿verdad? Además, los templates son bastante legibles... Bueno, mira el lado positivo, con ~canonize~ tenemos que escribir menos.
 
 * Curryficación
-
 Aún recuerdo cuando, en mi último año de universidad, nuestra profesora de programación nos explicó la curryficación. No entendí nada. Y no fue su culpa, a ella la considero una de las mejores profesoras que podías encontrar en la facultad de informática. Fue con algunos ejemplos en Haskell cuando empecé a entender qué era la curryficación. Y puedo decir que fue el primer concepto de programación que me pareció magia. 
 
 Todos sabemos lo que es una función. Un trozo de código parametrizado por unos argumentos. Para ejecutar una función debemos darle el número correcto de argumentos, y si no, pues se genera un error, normalmente de compilación. Pero en Haskell no ocurría lo mismo. Si a una función le das menos argumentos de los que la función debía recibir, no se generaba nigún error. En su lugar, se devolvía una nueva función. Una función que debía recibir el resto de argumentos que la función original no recibió en primer lugar. Cuando a esta nueva función le das todos los argumentos, entonces se ejecutaba la función original. Cuando una función se comporta de esta manera decimos que la función está *curryficada*. La función devuelta podría o no estar también curryficada.
@@ -1080,7 +1103,7 @@ Por tanto, podemos observar que la función devuelta por ~suma(3)~ es aquella qu
 
 El gran potencial de la curryficación reside en poder crear funciones al vuelo. Y es que es tan fácil crear una función como lo es pasarle menos argumentos a otra.
 
-Las funciones que hemos visto hasta ahora en T++ no está curryficadas. Si intentamos pasar un número de argumentos insuficiente se generará un error de compilación. Por tanto, lo que debemos hacer es curryficarlas. La idea es muy sencilla, y es casi igual a lo que hicimos con ~function~. Recordemos cómo se implementó ~function~:
+Las funciones que hemos visto hasta ahora en T++ no están curryficadas. Si intentamos pasar un número de argumentos insuficiente se generará un error de compilación. Por tanto, lo que debemos hacer es curryficarlas. La idea es muy sencilla, y es casi igual a lo que hicimos con ~function~. Recordemos cómo se implementó ~function~:
 
 #+begin_src C++
   template<template<typename...> typename F>
@@ -1094,7 +1117,7 @@ Las funciones que hemos visto hasta ahora en T++ no está curryficadas. Si inten
 
 El template ~function~ recibía un tipo templatizado ~F~ y es uno de sus miembros, ~call~, el que debía recibir los argumentos de dicho tipo. Al usar call, se 'ejecutaba' ~F~. 
 
-Para crear una función curryficada usaremos ~curry~. Y será muy parecida. La única diferencia es que, inicialmente, además de recibir un tipo templatizado también recibirá parte de los argumentos que necesita. Luego, el miembro ~call~ recibirá el resto:
+Para crear una función curryficada usaremos la constante ~curry~. Y será muy parecida. La única diferencia es que, inicialmente, además de recibir un tipo templatizado también recibirá parte de los argumentos que necesita. Luego, el miembro ~call~ recibirá el resto:
 
 #+begin_src C++
   template<template<typename...> typename F, typename... AS>
@@ -1109,8 +1132,8 @@ Para crear una función curryficada usaremos ~curry~. Y será muy parecida. La �
 Veamos un ejemplo de cómo se usaría con la función ~add~. Vamos a crear una función que suma el valor ~3~. Para ello, le pasamos el argumento ~3~ a ~add~ mediante el uso de ~curry~:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-using add3_f = curry<add, int_constant<3>>;
-std::cout << funcall_v<add3_f, int_constant<4>> << std::endl;
+using add3_f = curry<add, box<3>>;
+std::cout << funcall_v<add3_f, box<4>> << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -1121,13 +1144,13 @@ Al pasarle el valor 3 a la función curryficada, recibimos una nueva función qu
 Esto ya es más cómodo que crear una nueva función como las que hemos creado hasta ahora. E incluso podemos hacerlo mejor. Con ~curry~ realmente no estamos curryficando nada. Lo ideal sería tener algo como ~add_c~ que represente de verdad una función curryficada. De hecho, crear esa función curryficada es sencillo:
 
 #+begin_src C++
-template<typename A>
-using add_c = curry<add, A>;
+template<typename... AS>
+using add_c = curry<add, AS...>;
 #+end_src
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-using add3_f = add_c<int_constant<3>>;
-std::cout << funcall_v<add3_f, int_constant<4>> << std::endl;
+using add3_f = add_c<box<3>>;
+std::cout << funcall_v<add3_f, box<4>> << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -1147,6 +1170,9 @@ Vamos a añadir la curryficación a ~canonize~, de esta forma todas nuestras fun
   template<typename... TS>                              \
   static constexpr auto name##_v = name<TS...> ::value; \
                                                         \
+  template<typename... TS>                              \
+  using name##_vt = typename name<TS...>::value_type;   \
+                                                        \
   using name##_f = function<name>;                      \
                                                         \
   template<typename... TS>                              \
@@ -1156,8 +1182,8 @@ Vamos a añadir la curryficación a ~canonize~, de esta forma todas nuestras fun
 Vamos a probar:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-using first_five = range_t<int_constant<5>>;
-using next_first_five = map_t<add_c<int_constant<10>>, first_five>;  
+using first_five = range_t<box<5>>;
+using next_first_five = map_t<add_c<box<10>>, first_five>;  
 std::cout << sum_v<next_first_five> << std::endl;
 #+end_src
 
@@ -1165,6 +1191,52 @@ std::cout << sum_v<next_first_five> << std::endl;
 : 60
 
 Vayamos paso a paso. En la primera línea se crea la colección ~{0,1,2,3,4}~. En la siguiente línea sumamos ~10~ a cada uno de los elementos de la colección. Observa que sin la curryficación tendríamos que haber definido una función llamada ~add10~ o algo parecido. Con esta segunda línea se genera la colección ~{10,11,12,13,14}~. Y por último sumamos los valores de la colección: ~10+11+12+13+14 = 60~.
+
+* El intérprete
+No hay duda ya que la curryficación de funciones nos facilita la vida. Pero lo que nadie se esperaba era que podemos aprovecharnos de cómo funciona la constante ~curry~ para simular un intérprete. El intérprete que vamos a definir es muy simple. Su trabajo será el de ir evaluando los argumentos de una función. Si el argumento es otra función, tendrá que evaluar también sus argumentos. Es decir, el intérprete irá evaluando de manera recursiva las funciones que se vaya encontrando.
+
+Lo mejor de todo, es que implementar este intérprete no es para nada complicado. A la función que hará de intérprete la llamaremos ~eval~.
+
+#+begin_src C++
+template<typename T>
+struct eval : T {};
+
+template<template<typename...> typename F, typename... AS>
+struct eval<curry<F,AS...>> : funcall<curry<F,typename eval<AS>::type...>> {};
+
+canonize(eval);
+#+end_src
+
+Analicemos esta función. Observa en la versión general que lo que se devuelve es el propio tipo. Es decir, actúa como ~identity~. Esto es así porque un intérprete, al evaluar una constante, debe devolver dicha constante. Por otro lado, tenemos la versión especializada para la constante ~curry~. Lo que se hace es ejecutar la función curryficada, pero en lugar de usar los argumentos que había recibido la función curryficada, se interpretan los argumentos.
+
+Este intérprete cambia radicalmente cómo se usan las funciones curryficadas. Veamos el ejemplo siguiente. 
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << add_v<add_t<box<1>,box<2>>, box<5>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 8
+
+Para evaluar ~add_v~ primero se ha tenido que evaluar ~add_t~. El resultado que devuelve, ~box<3>~ en este caso, se sumará a ~box<5>~. Veamos ahora el mismo ejemplo usando ~interpret~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
+std::cout << eval_v<add_c<add_c<box<1>,box<2>>, box<5>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 8
+
+Observa cómo se están usando ambas llamadas a ~add~. Se está usando la versión curryficada. Recordemos cómo funcionaba ~eval~. El intérprete iba recorriendo los argumentos evaluándolos. En este caso, ~eval~ va a evaluar el primer ~add_c~ pero para ello primero evaluará el segundo ~add_c~ y ~box<5>~. Para evaluar ~add_c~ primero se van a evaluar ~box<1>~ y ~box<2>~. Y no nos olvidemos de que el intérprete deja intactas las constantes, que para eso las hemos llamado así. Por tanto, el orden de evaluación sería el siguiente:
+
+1. ~box<1>~ --> ~box<1>~
+2. ~box<2>~ --> ~box<2>~
+3. ~add_c<box<1>,box<2>>~ --> ~box<3>~
+4. ~box<5>~ --> ~box<5>~
+5. ~add_c<box<3>,box<5>>~ --> ~box<8>~
+
+Además, lo más importante de todo es que ahora ya no nos tenemos que preocupar de pensar si hay que usar ~_v~, ~_t~, ~_f~ o ~_vt~. Ahora sólo usamos ~_c~. Esto hacemos que programar sea más intuitivo. El único sitio donde nos preocupamos sobre el alias es con ~eval~.
+
 
 
 * If else
@@ -1185,7 +1257,7 @@ int fibo(int n){
 
 Para mantener las cosas simples, obviamos el hecho de que pasar un valor negativo supondría el fin del mundo.
 
-Para crear la función T++ vamos a intentar crear algo como un ~if-else~. Recibe ~3~ argumentos, un ~bool_constant~ (la condición) y dos valores más (~then~ y ~else~). Si el booleano es ~true~ devolvemos el segundo argumento. Si el booleano es ~false~, devolvemos el tercero.
+Para crear la función en T++ vamos a intentar crear algo como un ~if-else~. Recibe ~3~ argumentos, una constante booleana (la condición) y dos constantes más (~then~ y ~else~). Si el booleano es ~true~ devolvemos el segundo argumento. Si el booleano es ~false~, devolvemos el tercero.
 
 Como ~if~ ya está reservado para C++, usaremos ~branch~:
 
@@ -1194,10 +1266,10 @@ template<typename C, typename T, typename E>
 struct branch {};
 
 template<typename T, typename E>
-struct branch<bool_constant<true>,T,E> : T {};
+struct branch<box<true>,T,E> : T {};
 
 template<typename T, typename E>
-struct branch<bool_constant<false>,T,E> : E {};
+struct branch<box<false>,T,E> : E {};
 
 canonize(branch);
 #+end_src
@@ -1205,7 +1277,7 @@ canonize(branch);
 Vamos a realizar una pequeña prueba:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << branch_v<bool_constant<true>, int_constant<5>, int_constant<10>> << std::endl;
+std::cout << branch_v<box<true>, box<5>, box<10>> << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -1215,10 +1287,10 @@ std::cout << branch_v<bool_constant<true>, int_constant<5>, int_constant<10>> <<
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
 template<typename N>
-struct fibonacci : branch<eql_t<N, int_constant<0>>, 
-                          int_constant<0>,
-                          branch_t<eql_t<N, int_constant<1>>,
-                                   int_constant<1>,
+struct fibonacci : branch<eql_t<N, box<0>>, 
+                          box<0>,
+                          branch_t<eql_t<N, box<1>>,
+                                   box<1>,
                                    add_t<typename fibonacci<sub1_t<N>>::type,
                                          typename fibonacci<sub1_t<sub1_t<N>>>::type>>> {};
 
@@ -1228,14 +1300,16 @@ canonize(fibonacci);
 Veamos a ver si funciona:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << fibonacci_v<int_constant<0>> << std::endl;
+std::cout << fibonacci_v<box<0>> << std::endl;
 #+end_src
+
+#+RESULTS:
 
 #+begin_src
-In instantiation of ‘struct int_constant<-450>’: fatal error: template instantiation depth exceeds maximum of 900 (use ‘-ftemplate-depth=’ to increase the maximum)
+In instantiation of ‘struct box<-897>’: fatal error: template instantiation depth exceeds maximum of 900 (use ‘-ftemplate-depth=’ to increase the maximum)
 #+end_src
 
-¡¿Pero qué...?! Analicemos lo que está pasando. Cuando utilizamos ~branch~, sus argumentos debene de evaluarse antes de evaluar ~branch~ por sí misma. Eso quiere decir que el segundo ~branch~ tiene que evaluarse antes. Y por la misma razón tiene que evaluarse antes la expresión ~add_t<fibonacci<sub1_t<N>>, fibonacci<sub1_t<sub1_t<N>>>>~. Como ~add_t~ funciona de la misma manera deben evaluarse sus argumentos. En concreto se evaluará ~fibonacci<sub1_t<N>>::type~. Es decir, para evaluar ~fibonacci<N>~ se debe evaluar antes ~fibonacci<sub1_t<N>>~. Pero para evaluar ~fibonacci<sub1_t<N>>~ deberemos evaluar ~fibonacci<sub1_t<sub1_t<N>>>~ y para ello se deberá evaluar ~fibonacci<sub1_t<sub1_t<sub1_t<N>>>>~ y para deberá evaluarse... ¡Entramos en un bucle infinito!
+¡¿Pero qué...?! Analicemos lo que está pasando. Cuando utilizamos ~branch~, sus argumentos deben de evaluarse antes de evaluar ~branch~ por sí misma. Eso quiere decir que el segundo ~branch~ tiene que evaluarse antes. Y por la misma razón tiene que evaluarse antes la expresión ~add_t<fibonacci<sub1_t<N>>, fibonacci<sub1_t<sub1_t<N>>>>~. Como ~add_t~ funciona de la misma manera deben evaluarse sus argumentos. En concreto se evaluará ~fibonacci<sub1_t<N>>::type~. Es decir, para evaluar ~fibonacci<N>~ se debe evaluar antes ~fibonacci<sub1_t<N>>~. Pero para evaluar ~fibonacci<sub1_t<N>>~ deberemos evaluar ~fibonacci<sub1_t<sub1_t<N>>>~ y para ello se deberá evaluar ~fibonacci<sub1_t<sub1_t<sub1_t<N>>>>~ y para ello deberá evaluarse... ¡Entramos en un bucle infinito!
 
 El problema radica en cómo se ha definido ~branch~. Al tener que evaluarse cada una de las ramas antes de evaluar la propia expresión ~branch~ cabe la posibilidad de entrar en bucles infinitos. ¿La solución? Retrasar la evaluación de los argumentos. Y la idea es muy simple: En lugar de intentar pasar el valor que devolvería la rama correspondiente, pasaremos una función que devolverá el valor.
 
