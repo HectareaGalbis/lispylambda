@@ -1193,16 +1193,16 @@ std::cout << sum_v<next_first_five> << std::endl;
 Vayamos paso a paso. En la primera línea se crea la colección ~{0,1,2,3,4}~. En la siguiente línea sumamos ~10~ a cada uno de los elementos de la colección. Observa que sin la curryficación tendríamos que haber definido una función llamada ~add10~ o algo parecido. Con esta segunda línea se genera la colección ~{10,11,12,13,14}~. Y por último sumamos los valores de la colección: ~10+11+12+13+14 = 60~.
 
 * El intérprete
-No hay duda ya que la curryficación de funciones nos facilita la vida. Pero lo que nadie se esperaba era que podemos aprovecharnos de cómo funciona la constante ~curry~ para simular un intérprete. El intérprete que vamos a definir es muy simple. Su trabajo será el de ir evaluando los argumentos de una función. Si el argumento es otra función, tendrá que evaluar también sus argumentos. Es decir, el intérprete irá evaluando de manera recursiva las funciones que se vaya encontrando.
+No hay duda de que la curryficación de funciones nos facilita la vida. Pero lo que nadie se esperaba era que podemos aprovecharnos de cómo funciona la constante ~curry~ para simular un intérprete. El intérprete que vamos a definir es muy simple. Su trabajo será el de ir evaluando los argumentos de una función. Si el argumento es otra función, tendrá que evaluar también sus argumentos. Es decir, el intérprete irá evaluando de manera recursiva las funciones que se vaya encontrando.
 
-Lo mejor de todo, es que implementar este intérprete no es para nada complicado. A la función que hará de intérprete la llamaremos ~eval~.
+Lo mejor de todo, es que implementar este intérprete no es para nada complicado. A la función que hará de intérprete la llamaremos ~interpret~.
 
 #+begin_src C++
 template<typename T>
-struct eval : T {};
+struct interpret : T {};
 
 template<template<typename...> typename F, typename... AS>
-struct eval<curry<F,AS...>> : funcall<curry<F,typename eval<AS>::type...>> {};
+struct interpret<curry<F,AS...>> : funcall<curry<F,typename eval<AS>::type...>> {};
 
 canonize(eval);
 #+end_src
@@ -1221,13 +1221,13 @@ std::cout << add_v<add_t<box<1>,box<2>>, box<5>> << std::endl;
 Para evaluar ~add_v~ primero se ha tenido que evaluar ~add_t~. El resultado que devuelve, ~box<3>~ en este caso, se sumará a ~box<5>~. Veamos ahora el mismo ejemplo usando ~interpret~:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << eval_v<add_c<add_c<box<1>,box<2>>, box<5>>> << std::endl;
+std::cout << interpret_v<add_c<add_c<box<1>,box<2>>, box<5>>> << std::endl;
 #+end_src
 
 #+RESULTS:
 : 8
 
-Observa cómo se están usando ambas llamadas a ~add~. Se está usando la versión curryficada. Recordemos cómo funcionaba ~eval~. El intérprete iba recorriendo los argumentos evaluándolos. En este caso, ~eval~ va a evaluar el primer ~add_c~ pero para ello primero evaluará el segundo ~add_c~ y ~box<5>~. Para evaluar ~add_c~ primero se van a evaluar ~box<1>~ y ~box<2>~. Y no nos olvidemos de que el intérprete deja intactas las constantes, que para eso las hemos llamado así. Por tanto, el orden de evaluación sería el siguiente:
+Observa cómo se están usando ambas llamadas a ~add~. Se está usando la versión curryficada. Recordemos cómo funcionaba ~interpret~. El intérprete iba recorriendo los argumentos evaluándolos. En este caso, ~interpret~ va a evaluar el primer ~add_c~ pero para ello primero evaluará el segundo ~add_c~ y ~box<5>~. Para evaluar ~add_c~ primero se van a evaluar ~box<1>~ y ~box<2>~. Y no nos olvidemos de que el intérprete deja intactas las constantes, que para eso las hemos llamado así. Por tanto, el orden de evaluación sería el siguiente:
 
 1. ~box<1>~ --> ~box<1>~
 2. ~box<2>~ --> ~box<2>~
@@ -1235,129 +1235,34 @@ Observa cómo se están usando ambas llamadas a ~add~. Se está usando la versi�
 4. ~box<5>~ --> ~box<5>~
 5. ~add_c<box<3>,box<5>>~ --> ~box<8>~
 
-Además, lo más importante de todo es que ahora ya no nos tenemos que preocupar de pensar si hay que usar ~_v~, ~_t~, ~_f~ o ~_vt~. Ahora sólo usamos ~_c~. Esto hacemos que programar sea más intuitivo. El único sitio donde nos preocupamos sobre el alias es con ~eval~.
+Además, lo más importante de todo es que ahora ya no nos tenemos que preocupar de pensar si hay que usar ~_v~, ~_t~, ~_f~ o ~_vt~. Ahora sólo usamos ~_c~. Esto hace que programar sea más intuitivo. El único sitio donde nos preocupamos sobre el alias es con ~eval~.
 
-
-
-* If else
-¿Ahora? ¿A estas alturas vemos el ~if-else~? Pues sí, y para entender por qué no lo hemos visto antes vamos a intentar crear la función de fibonacci. Recuerda que esta función recibe un índice y devuelve el valor con dicho índice de la sucesión de fibonacci. Los dos primeros valores de dicha sucesión son ~0~ y ~1~. Los siguientes, son la suma de los dos anteriores. Así, si recibimos un ~0~, devolvemos un ~0~. Si recibimos un ~2~, devolvemos un ~1~ (~0+1~). Y si recibimos un ~3~ devolvemos un ~2~ (~1+1~).
-
-El algoritmo en C++ sería el siguiente:
+Espera un momento... Vamos a observar de nuevo el ejemplo:
 
 #+begin_src C++
-int fibo(int n){
-  if (n == 0) 
-    return 0;
-  else if (n == 1)
-    return 1;
-  else
-    return fibo(n-1) + fibo(n-2);
-}
+interpret_v<add_c<add_c<box<1>,box<2>>, box<5>>>
+#+end_src
+
+Mmmm... ¿Qué pasaría si renombrásemos ~add_c~ por ~add~?
+
+#+begin_src C++
+interpret_v<add<add<box<1>,box<2>>, box<5>>>
 #+end_src 
 
-Para mantener las cosas simples, obviamos el hecho de que pasar un valor negativo supondría el fin del mundo.
+Quiero decir... si cambiamos todos los alias que acaban por ~_c~ para que sean como su nombre original... sería casi como programar en un lenguaje normal... Claramente habría que cambiar también el nombre original para que no haya colisión de nombres, pero sería todo mucho más cómodo...
 
-Para crear la función en T++ vamos a intentar crear algo como un ~if-else~. Recibe ~3~ argumentos, una constante booleana (la condición) y dos constantes más (~then~ y ~else~). Si el booleano es ~true~ devolvemos el segundo argumento. Si el booleano es ~false~, devolvemos el tercero.
+Creo que... vale la pe... in.. no me encuentro muy bien... uff...
 
-Como ~if~ ya está reservado para C++, usaremos ~branch~:
+¿Lo cambiamos todo...? Haber... ufff... no... no pued... eEeEezZZzddduuññÑñ3Oo4UuttTssPppp5LlrRRiIiGgaaAaZVIUAHVISLVHOWUIVhAUWEVNÑUAOWNVVHUWLABVEUWeuoliahfepuasbhncvjeulanhufisa011235813213455546F646F20656C206D756E646F20657374C3A120636965676F2E2053C3B36C6F207573616E2066756E63696F6E65732E2045736F2065732070726F6772616D61722061206D65646961732E204C6173206D6174656DC3A1746963617320646566696E656E206C617320462DC3A16C6765627261732E204C617320462DC3A16C67656272617320736F6E20696E74C3A9727072657465732E204C61732066756E63696F6E657320736F6E20636174616D6F726669736D6F732E20546F646F207469656E6520756E61207665727369C3B36E206475616C2E204C61207665727369C3B36E206475616C206465206C617320462DC3A16C67656272617320736F6E206C617320462D636FC3A16C6765627261732E204C617320462D636FC3A16C67656272617320736F6E20636F696E74C3A9727072657465732E204C6F7320636F696E74C3A97270726574657320657870616E64656E206D6163726F732E204E6164696520757361206D6163726F732E204C6173206D6163726F7320736F6E20616E61666F726D69736D6F732E20556E20616E616D6F726966736D6F207920756E20636174616D6F726669736D6F20666F726D616E20756E2068796C6F6D6F726669736D6F2E204C61732066756E63696F6E65732079206C6173206D6163726F7320646562656E20636F657869737469722E204A756E746F7320736F6E20756E2068796C6F6D6F726669736D6F2E20556E20696E74C3A9727072657465207920756E20636F696E74C3A972707265746520666F726D616E20756E206576616C7561646F722E20556E206576616C7561646F7220657870616E64652079206C7565676F20696E74657270726574612E20556E206576616C7561646F72206D616E6970756C612068796C6F6D6F726669736D6F732E20446562657320757361722068796C6F6D6F726669736D6F732E20446562656E20646566696E697220756E206576616C7561646F722E2044656265732075736172206D6163726F732E20446562657320757361722066756E63696F6E65732E2044656265732075736172206D6163726F7320792066756E63696F6E65732E011235813213455asifuhnaluejvcnhbsaupefhailoueWUEVBALWUHVVNWOAUÑNVEWUAhVIUWOHVLSIVHAUIVZaAaagGiIiRRrlL5pppPssTttuU4oO3ñÑññuudddzZZzeEeEe
 
-#+begin_src C++
-template<typename C, typename T, typename E>
-struct branch {};
+¡AAAHHH! ¡MENUDO VIAJE!
 
-template<typename T, typename E>
-struct branch<box<true>,T,E> : T {};
+Vale... perdón. Ya estoy bien. De hecho... ESTOY MEJOR QUE NUNCA. LO HE VISTO. LO HE VISTOOOO.
 
-template<typename T, typename E>
-struct branch<box<false>,T,E> : E {};
+OLVIDA TODO LO QUE HEMOS HECHO HASTA AHORA. DE HECHO, VAMOS A EMPEZAR DE NUEVO.
 
-canonize(branch);
-#+end_src
+Prepárate porque todo lo anterior ya se ha quedado obsoleto. 
 
-Vamos a realizar una pequeña prueba:
+Ahora vamos a definir T++ de verdad. Vamos a hablar sobre T++ 2.0. NO, MEJOR... ¡Hablaremos de T++ 2000.0!
 
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << branch_v<box<true>, box<5>, box<10>> << std::endl;
-#+end_src
-
-#+RESULTS:
-: 5
-
-¡Perfecto! Ahora podemos crear la función de fibonacci con el algoritmo descrito anteriormente:
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-template<typename N>
-struct fibonacci : branch<eql_t<N, box<0>>, 
-                          box<0>,
-                          branch_t<eql_t<N, box<1>>,
-                                   box<1>,
-                                   add_t<typename fibonacci<sub1_t<N>>::type,
-                                         typename fibonacci<sub1_t<sub1_t<N>>>::type>>> {};
-
-canonize(fibonacci);
-#+end_src
-
-Veamos a ver si funciona:
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << fibonacci_v<box<0>> << std::endl;
-#+end_src
-
-#+RESULTS:
-
-#+begin_src
-In instantiation of ‘struct box<-897>’: fatal error: template instantiation depth exceeds maximum of 900 (use ‘-ftemplate-depth=’ to increase the maximum)
-#+end_src
-
-¡¿Pero qué...?! Analicemos lo que está pasando. Cuando utilizamos ~branch~, sus argumentos deben de evaluarse antes de evaluar ~branch~ por sí misma. Eso quiere decir que el segundo ~branch~ tiene que evaluarse antes. Y por la misma razón tiene que evaluarse antes la expresión ~add_t<fibonacci<sub1_t<N>>, fibonacci<sub1_t<sub1_t<N>>>>~. Como ~add_t~ funciona de la misma manera deben evaluarse sus argumentos. En concreto se evaluará ~fibonacci<sub1_t<N>>::type~. Es decir, para evaluar ~fibonacci<N>~ se debe evaluar antes ~fibonacci<sub1_t<N>>~. Pero para evaluar ~fibonacci<sub1_t<N>>~ deberemos evaluar ~fibonacci<sub1_t<sub1_t<N>>>~ y para ello se deberá evaluar ~fibonacci<sub1_t<sub1_t<sub1_t<N>>>>~ y para ello deberá evaluarse... ¡Entramos en un bucle infinito!
-
-El problema radica en cómo se ha definido ~branch~. Al tener que evaluarse cada una de las ramas antes de evaluar la propia expresión ~branch~ cabe la posibilidad de entrar en bucles infinitos. ¿La solución? Retrasar la evaluación de los argumentos. Y la idea es muy simple: En lugar de intentar pasar el valor que devolvería la rama correspondiente, pasaremos una función que devolverá el valor.
-
-Vamos a modificar ~branch~ para que el segundo y tercer argumento (~then~ y ~else~) sean una función que evaluaremos con ~funcall~.
-
-#+begin_src C++
-template<typename C, typename T, typename E>
-struct branch {};
-
-template<typename T, typename E>
-struct branch<bool_constant<true>,T,E> : funcall<T> {};
-
-template<typename T, typename E>
-struct branch<bool_constant<false>,T,E> : funcall<E> {};
-
-canonize(branch);
-#+end_src
-
-Vale, la idea está bien. Pero en la práctica, ¿cómo lo usamos? Al tener que pasar funciones, como por ejemplo ~add_f~, tendríamos que definir nuevas funciones cada vez que queramos usar ~branch~. Bueno, sí. Pero en el capítulo anterior hemos visto una forma de crear funciones al vuelo: la *curryficación*.
-
-Pero detengámonos un poco más para explicar qué es lo que vamos a hacer. Observa en la nueva definición de ~branch~ que usamos ~funcall~. Recuerda que ~funcall~ debía recibir una función (en este caso ~T~ o ~E~) y los argumentos a pasar a dicha función. Sin embargo, en ~branch~ no se está pasando ningún argumento a parte de la función a ejecutar. Esto es porque debemos pasar funciones que no reciben ningún argumento. O dicho de otra forma, deben recibir cero argumentos.
-
-Así que la siguiente pregunta es: ¿cómo conseguimos crear funciones que reciben cero argumentos? ¿y cómo lo hacemos con las funciones curryficadas?
-
-Recuerda que una función curryficada normalmente recibe menos argumentos de los necesarios para así devolver una nueva función que debe recibir el resto. Vamos a recordar su implementación:
-
-#+begin_src C++
-template<template<typename...> typename F, typename... AS>
-struct curry{
-  using type = curry;
-
-  template<typename... BS>
-  using call = typename F<AS...,BS...>::type;
-};
-#+end_src
-
-Por la forma en la que se ha implementado la curryficación, ¿qué ocurre si a una función curryficada le pasamos todos sus argumentos? La respuesta es que no se ejecuta la función, sino que se crea una nueva función que recibe el resto de los argumentos, es decir, cero argumentos. 
-
-Esto quiere decir que cada vez que usemos ~branch~, en lugar de ejecutar las funciones como hacíamos normalmente, usaremos funciones curryficadas pasando todos los argumentos. Vamos a cambiar la definición de fibonacci:
-
-#+begin_src C++
-std::cout << branch_v<bool_constant<true>, int_constant<5>, int_constant<10>> << std::endl;
-#+end_src
-
-En lugar de ~int_constant~, usamos ahora su versión curryficada ~int_constant_c~:
-
-#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba.h>)
-std::cout << branch_v<bool_constant<true>, int_constant_c<5>, int_constant_c<10>> << std::endl;
-#+end_src
-
-#+RESULTS:
+* T++ 2000.0
