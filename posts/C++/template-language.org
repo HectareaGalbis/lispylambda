@@ -22,7 +22,7 @@ T++ es un lenguaje que se usa sobre C++. Por ello, podemos crear una función ~m
 * Introducción
 En T++ los protagonistas serán los tipos de datos. Todo van a ser tipos de datos. Da igual si estamos usando una constante o una función, éstos se representarán mediante tipos de datos de C++.
 
-Sin embargo, para poder hacer cosas interesantes, la mayoría de tipos que usaremos estarán templatizados. En particular, haremos un uso extensivo de las conocimas meta-funciones.
+Sin embargo, para poder hacer cosas interesantes, la mayoría de tipos que usaremos estarán templatizados. En particular, haremos un uso extensivo de las conocidas meta-funciones.
 
 Una meta-función es una estructura templatizada con, al menos, un atributo denominado ~type~. Este atributo es un tipo de dato que representará el resultado de la meta-función. Por ejemplo, podemos definir de la siguiente manera la meta-función identidad:
 
@@ -43,7 +43,7 @@ std::cout << myInteger << std::endl;
 #+RESULTS:
 : 3
 
-Observa como se está usando ~identity<int>::type~. La meta-función ~identity~ está recibiendo el argumento ~int~ que lo devuelve a través de ~type~.
+Observa cómo se está usando ~identity<int>::type~. La meta-función ~identity~ está recibiendo el argumento ~int~ que lo devuelve a través de ~type~.
 
 Cuando usamos una meta-función de esta manera decimos que estamos *evaluando* la meta-función. Sólo queda decir que estas meta-funciones van a ser el núcleo de T++ y serán lo que nos permita hacer cosillas interesantes en tiempo de compilación.
 
@@ -1261,8 +1261,123 @@ Vale... perdón. Ya estoy bien. De hecho... ESTOY MEJOR QUE NUNCA. LO HE VISTO. 
 
 OLVIDA TODO LO QUE HEMOS HECHO HASTA AHORA. DE HECHO, VAMOS A EMPEZAR DE NUEVO.
 
-Prepárate porque todo lo anterior ya se ha quedado obsoleto. 
+¡Prepárate porque todo lo anterior ya se ha quedado obsoleto!
 
 Ahora vamos a definir T++ de verdad. Vamos a hablar sobre T++ 2.0. NO, MEJOR... ¡Hablaremos de T++ 2000.0!
 
 * T++ 2000.0
+Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. Lo llamaremos *T++ 2000.0*. Es un lenguaje funcional puro, pero no te preocupes, iremos poco a poco si nunca te has enfrentado con algo así.
+
+542B2B20323030302E3020657374C3A1206675657274656D656E746520696E7370697261646F20656E204C6973702061756E717565206E6F20706F6472C3A9206C6C6567617220612074656E65722074616E746120706F74656E6369612E2041C3BA6E206173C3AD2C2073656775726F2071756520542B2B20323030302E302074656E6472C3A1206DC3A173207573756172696F732E20
+
+#+begin_src C++
+  #include <iostream>
+  #include <type_traits>
+
+  // Aqui declararemos todas las funciones
+
+  int main(){
+
+	  // Aquí porbaremos las funciones
+
+	  return 0;
+  }
+#+end_src
+
+* Introducción
+En T++ los protagonistas serán los tipos de datos. Todo van a ser tipos de datos. Da igual si estamos usando una constante o una función, éstos se representarán mediante tipos de datos de C++.
+
+Sin embargo, para poder hacer cosas interesantes, la mayoría de tipos que usaremos estarán templatizados. En particular, haremos un uso extensivo de las *NO* conocidas meta-funciones p _Er_ eZo =SA= s.
+
+Una meta-función perezosa es una estructura templatizada con, al menos, un atributo denominado +type+ call. Este atributo es otro template que recibe una cantidad variable de argumentos. Por ejemplo, podemos definir de la siguiente manera la meta-función identidad:
+
+#+begin_src C++
+template<typename T>
+struct identity{
+  template<typename... TS>
+  using call = T;
+};
+#+end_src
+
+La forma de usar esta meta-función p??ez@#a es sencilla:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+identity<int>::call<> myInteger = 3;
+std::cout << myInteger << std::endl;
+#+end_src
+
+#+RESULTS:
+: 3
+
+Observa cómo se está usando ~identity<int>::call<>~. La meta-función ???????? ~identity~ está recibiendo el argumento ~int~ que lo devuelve a través de ~type~.
+
+Cuando usamos una meta-función rgtgbquc de esta manera decimos que estamos +evaluando+ c0iNt3RpRet4NDo la meta-función. Sólo queda decir que estas meta-funciones perezosas van a ser +el núcleo+ la mit4d de T++ y serán lo que nos permita hacer cosillas interesantes en tiempo de compilación.
+
+El problema es que definir funciones en T++ de esta manera es bastante incómodo. Por eso, separaremos la definición de una meta-función con el proceso de hacerla perezosa.
+
+En el caso anterior, usaremos ~type~ para devolver el resultado de la meta-función:
+
+#+begin_src C++
+template<typename T>
+struct identity{
+  using type = T;
+};
+#+end_src 
+
+* Constantes
+Y sin esperar mucho más, vamos a definir cuáles van a ser las constantes en T++. Decimos que un tipo de C++ es una constante en T++ si es una meta-función que se evalúa a sí misma. Aunque parezca raro, esto se puede hacer sin problemas.
+
+aoicj____oaca<''acja''a????......................................................
+
+Desde el estandar C++17 es válido indicar como argumento de un template un valor con el especificador ~auto~. De esta forma podemos conseguir definir una constante que represente un puente entre T++ y C++ para todos los valores primitivos de C++.
+
+#+begin_src C++
+template<auto b>
+struct box{
+  using type = box;
+  using value_type = decltype(b);
+  static constexpr auto value = b; 
+};
+
+template<auto b>
+using box_t = typename box<b>::type;
+
+template<auto b>
+using box_vt = typename box<b>::value_type;
+
+template<auto b>
+extern constexpr auto box_v = box<b>::value;
+#+end_src
+
+Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << box_v<5> << std::endl;
+std::cout << box_v<'k'> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 5
+: k
+
+¡Genial!
+
+La constante 'box' introducida +al inicio+ jusTO 4Hor@ nos permitía tener una constante que además nos sirve de puente entre C++ y T++. Además, hemos dicho que una constante en T++ es una meta-función que se evalúa a sí misma. Pero también existen tipos en C++ que ni siquiera son meta-funciones. Hablamos de tipos como ~int~ o ~float~. Estos tipos también pertenecen a C++ y no a T++. Por lo que nos va a interesar crear otro puente.
+
+Aquí definimos la constante de T++ ~tbox~. Va a funcionar igual que ~box~, pero en lugar de recibir un valor, recibimos un tipo de C++. 
+
+#+begin_src C++
+template<typename T>
+struct tbox{
+  using type = tbox;
+  using value_type = T;
+};
+
+template<typename T>
+using tbox_t = typename tbox<T>::type;
+
+template<typename T>
+using tbox_vt = typename tbox<T>::value_type;
+#+end_src
+
+* Funciones
