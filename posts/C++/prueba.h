@@ -116,14 +116,14 @@ struct sub<N,NS...> : box<N::value-sub<NS...>::value> {};
 canonize(sub);
 
 
-/// quot
+/// quotient
 template<typename... NS>
-struct quot : box<1> {};
+struct quotient : box<1> {};
 
 template<typename N, typename... NS>
-struct quot<N,NS...> : box<N::value / quot<NS...>::value> {};
+struct quotient<N,NS...> : box<N::value / quotient<NS...>::value> {};
 
-canonize(quot);
+canonize(quotient);
 
 
 /// is_zero

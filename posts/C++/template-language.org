@@ -514,14 +514,14 @@ struct sub<N,NS...> : box<N::value-sub<NS...>::value> {};
 canonize(sub);
 
 
-/// quot
+/// quotient
 template<typename... NS>
-struct quot : box<1> {};
+struct quotient : box<1> {};
 
 template<typename N, typename... NS>
-struct quot<N,NS...> : box<N::value / quot<NS...>::value> {};
+struct quotient<N,NS...> : box<N::value / quotient<NS...>::value> {};
 
-canonize(quot);
+canonize(quotient);
 
 /// or_logic
 template<typename... NS>
@@ -1268,8 +1268,6 @@ Ahora vamos a definir T++ de verdad. Vamos a hablar sobre T++ 2.0. NO, MEJOR... 
 * T++ 2000.0
 Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. Lo llamaremos *T++ 2000.0*. Es un lenguaje funcional puro, pero no te preocupes, iremos poco a poco si nunca te has enfrentado con algo así.
 
-542B2B20323030302E3020657374C3A1206675657274656D656E746520696E7370697261646F20656E204C6973702061756E717565206E6F20706F6472C3A9206C6C6567617220612074656E65722074616E746120706F74656E6369612E2041C3BA6E206173C3AD2C2073656775726F2071756520542B2B20323030302E302074656E6472C3A1206DC3A173207573756172696F732E20
-
 #+begin_src C++
   #include <iostream>
   #include <type_traits>
@@ -1285,127 +1283,135 @@ Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. L
 #+end_src
 
 * Introducción
-En T++ los protagonistas serán los tipos de datos. Todo van a ser tipos de datos. Da igual si estamos usando una constante o una función, éstos se representarán mediante tipos de datos de C++.
+En T++ 2000.0 los protagonistas serán los tipos de datos. Todo van a ser tipos de datos. Da igual si estamos usando una constante o una función, éstos se representarán mediante tipos de datos de C++.
 
-Sin embargo, para poder hacer cosas interesantes, la mayoría de tipos que usaremos estarán templatizados. En particular, haremos un uso extensivo de las *NO* conocidas meta-funciones p _Er_ eZo =SA= s.
+Sin embargo, para poder hacer cosas interesantes, la mayoría de tipos que usaremos estarán templatizados. En particular, haremos un uso extensivo de las *NO* conocidas meta-funciones perezosas.
 
-Una meta-función perezosa es una estructura templatizada con, al menos, un atributo denominado +type+ call. Este atributo es otro template que recibe una cantidad variable de argumentos. Por ejemplo, podemos definir de la siguiente manera la meta-función identidad:
+Una meta-función perezosa es una estructura templatizada con, al menos, un atributo denominado ~eval_impl~. Este atributo es otro template que recibe una cantidad variable de argumentos. Por ejemplo, podemos definir de la siguiente manera la meta-función identidad:
 
 #+begin_src C++
 template<typename T>
 struct identity{
-  template<typename... TS>
-  using call = T;
+  template<typename...>
+  using eval_impl = T;
 };
 #+end_src
 
-La forma de usar esta meta-función p??ez@#a es sencilla:
+La forma de usar esta meta-función perezosa es sencilla:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-identity<int>::call<> myInteger = 3;
+identity<int>::eval_impl<> myInteger = 3;
 std::cout << myInteger << std::endl;
 #+end_src
 
 #+RESULTS:
 : 3
 
-Observa cómo se está usando ~identity<int>::call<>~. La meta-función ???????? ~identity~ está recibiendo el argumento ~int~ que lo devuelve a través de ~type~.
+Observa cómo se está usando ~identity<int>::eval_impl<>~. La meta-función perezosa ~identity~ está recibiendo el argumento ~int~ que lo devuelve a través de ~eval_impl~.
 
-Cuando usamos una meta-función rgtgbquc de esta manera decimos que estamos +evaluando+ c0iNt3RpRet4NDo la meta-función. Sólo queda decir que estas meta-funciones perezosas van a ser +el núcleo+ la mit4d de T++ y serán lo que nos permita hacer cosillas interesantes en tiempo de compilación.
+Cuando usamos una meta-función perezosa de esta manera decimos que estamos *evaluando* la meta-función. De hecho, diremos que una meta-función es *evaluable* si contiene el atributo ~eval_impl~.
 
-El problema es que definir funciones en T++ 2000.0 de esta manera es bastante incómodo. Por eso, separaremos la definición de una meta-función con el proceso de hacerla perezosa.
-
-En el caso anterior, usaremos ~type~ para devolver el resultado de la meta-función:
-
-#+begin_src C++
-template<typename T>
-struct identity{
-  using type = T;
-};
-#+end_src 
+Sólo queda decir que meta-funciones evaluables van a ser el núcleo de T++ 2000.0 y serán lo que nos permita hacer cosillas interesantes en tiempo de compilación.
 
 * Constantes
-Y sin esperar mucho más, vamos a definir cuáles van a ser las constantes en T++ 2000.0. Decimos que un tipo de C++ es una constante en T++ si es una meta-función que se evalúa a sí misma. Aunque parezca raro, esto se puede hacer sin problemas.
+Y sin esperar mucho más, vamos a definir cuáles van a ser las constantes en T++ 2000.0. Decimos que un tipo de C++ es una *constante* en T++ si es una meta-función evaluable que se *evalúa* a sí misma. Aunque parezca raro, esto se puede hacer sin problemas.
 
-aoicj____oaca<''acja''a????......................................................
-
-Desde el estandar C++17 es válido indicar como argumento de un template un valor con el especificador ~auto~. De esta forma podemos conseguir definir una constante que represente un puente entre T++ 2000.0 y C++ para todos los valores primitivos de C++.
+Desde el estándar C++17 es válido indicar como argumento de un template un valor con el especificador ~auto~. De esta forma podemos conseguir definir una constante que represente un puente entre T++ 2000.0 y C++ para todos los valores primitivos de C++.
 
 #+begin_src C++
 template<auto b>
 struct box{
-  using type = box;
-  using value_type = decltype(b);
-  static constexpr auto value = b; 
+  using type = decltype(b);
+  static constexpr auto value = b;
+
+  template<typename...>
+  using eval_impl = box;
 };
-
-template<auto b>
-using box_t = typename box<b>::type;
-
-template<auto b>
-using box_vt = typename box<b>::value_type;
-
-template<auto b>
-extern constexpr auto box_v = box<b>::value;
 #+end_src
 
 Vamos a probar:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-std::cout << box_v<5> << std::endl;
-std::cout << box_v<'k'> << std::endl;
+std::cout << box<5>::eval_impl<>::value << std::endl;
 #+end_src
 
 #+RESULTS:
 : 5
-: k
 
 ¡Genial!
 
-La constante 'box' introducida +al inicio+ jusTO 4Hor@ nos permitía tener una constante que además nos sirve de puente entre C++ y T++ 2000.0. Además, hemos dicho que una constante en T++ 2000.0 es una meta-función que se evalúa a sí misma. Pero también existen tipos en C++ que ni siquiera son meta-funciones. Hablamos de tipos como ~int~ o ~float~. Estos tipos también pertenecen a C++ y no a T++ 2000.0. Por lo que nos va a interesar crear otro puente.
+La constante ~box~ introducida justo ahora nos permite tener una *constante* que además nos sirve de puente entre C++ y T++ 2000.0. Además, hemos dicho que una *constante* en T++ 2000.0 es una meta-función perezosa que se *evalúa* a sí misma. 
 
-Aquí definimos la constante de T++ 2000.0 ~tbox~. Va a funcionar igual que ~box~, pero en lugar de recibir un valor, recibimos un tipo de C++. 
+Observa además que tenemos una gran diferencia con respecto a la definición que teníamos en T++. El atributo ~type~ ahora devuelve el tipo del valor ~b~. Además, ya no está el atributo ~value_type~. A partir de ahora, queremos que haya una diferencia clara entre qué pertenece a C++ (los atributos ~type~ y ~value~) y qué pertenece a T++ 2000.0 (el atributo ~eval~).  
+
+Por otro lado, también existen tipos en C++ que ni siquiera son meta-funciones. Hablamos de tipos como ~int~ o ~float~. Estos tipos también pertenecen a C++ y no a T++ 2000.0. Por lo que nos va a interesar crear otro puente.
+
+Aquí definimos la *constante* de T++ 2000.0 ~tbox~. Va a funcionar igual que ~box~, pero en lugar de recibir un valor, recibimos un tipo de C++. 
 
 #+begin_src C++
 template<typename T>
 struct tbox{
-  using type = tbox;
-  using value_type = T;
+  using type = T;
+
+  template<typename...>
+  using eval_impl = tbox;
 };
-
-template<typename T>
-using tbox_t = typename tbox<T>::type;
-
-template<typename T>
-using tbox_vt = typename tbox<T>::value_type;
 #+end_src
 
-* Fun??on$#....____
-??????????
+* El evaluador
+Seamos sinceros... Usar ~eval_impl<>~ para evaluar una meta-función perezosa es incómodo. Sólo hace falta ver el último ejemplo:
+
+#+begin_src C++
+std::cout << box<5>::eval_impl<>::value << std::endl;
+#+end_src
+
+Hasta duele un poco a los ojos.
+
+Pero esto tiene solución. Sólo tenemos que hacer una meta-función que evalúe por nosotros. Esta meta-función será el evaluador de T++ 2000.0 y lo llamaremos ~eval~. 
+
+La definición de ~eval~ es tan simple como esto:
+
+#+begin_src C++
+template<typename T>
+using eval = typename T::eval_impl<>;
+#+end_src
+
+Observa que ~eval~ no es un nuevo ~struct~. Es una alias para ~T::eval_impl<>~. Esto es así porque queremos que ~eval<T>~ sea ya el objeto al que se evalúa ~T~. Si ~eval~ fuese un ~struct~ entonce ~eval<T>~ sería un nuevo tipo de dato de C++ que hereda del objeto al que se evalúa ~T~. Es definitiva, no queremos un nuevo tipo, queremos que sea literalmente el objeto devuelto por ~T~.
+
+Para poder acceder fácilmente a sus atributos generamos los famosos alias:
+
+#+begin_src C++
+template<typename T>
+using eval = T::eval_impl<> {};
+
+template<typename T>
+extern constexpr auto eval_v = eval<T>::value;
+#+end_src
+
+Probemos ahora a evaluar la constante ~box<5>~ usando ~eval~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << eval_v<box<5>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 5
+
+¡Mucho mejor!
 
 * Implementaciones
-Una vez hemos visto las constantes necesitamos algo que nos permita hacer cálculos con ellos. Y ahí es cuando entran las funciones. Definimos las funciones en T++ 2000.0 a aquellas meta-funciones que +se evalúan a una constante+ eVa1ú4N sus argumentos para recibir constantes y devuelven otra constante. 
+Una vez hemos visto las constantes necesitamos algo que nos permita hacer cálculos con ellos. Y ahí es cuando entran las funciones. Definimos las funciones en T++ 2000.0 a aquellas meta-funciones evaluables que evalúan sus argumentos para luego devolver otra meta-función evaluable.
 
-Para conseguir definir funciones necesitamos primero implementar el comportamiento de la función. Por ejemplo, podemos +definir+ implementar el comportamiento de una función que reciba dos enteros (~box<n>~ con ~n~ de tipo ~int~) y que devuelva la suma:
+Para conseguir definir funciones necesitamos primero implementar el comportamiento de la función. Por ejemplo, podemos implementar el comportamiento de una función que reciba dos enteros (~box<n>~ con ~n~ de tipo ~int~) y que devuelva la suma:
 
 #+begin_src C++
 template<typename A, typename B>
 struct add2_impl : box<A::value + B::value>{};
 #+end_src
 
-Aquí asumimos que los argumentos están Eva1uaD0s. Además, hemos añadido el sufijo ~_impl~ para hacer énfasis de que es sólo la implementación. Esto *NO* es una función de T++ 2000.0.
+Aquí asumimos que los argumentos están *evaluados*. Además, hemos añadido el sufijo ~_impl~ para hacer énfasis de que es sólo la implementación. Esto *NO* es una función de T++ 2000.0.
 
-Antes de continuar, no nos olvidemos de los alias:
-
-#+begin_src C++
-??????????????????????
-???????????????????????????????????
-
-??????????????????????
-???????????????????????????????????
-#+end_src
-
-La +función+ implementación de suma se puede generalizar para que acepte una cantidad variable de argumentos:
+La implementación de suma se puede generalizar para que acepte una cantidad variable de argumentos:
 
 #+begin_src C++
 template<typename... NS>
@@ -1413,238 +1419,26 @@ struct add_impl : box<0>{};
 
 template<typename N, typename... NS>
 struct add_impl<N,NS...> : box<N::value+add<NS...>::value> {};
-
-??????????????????
-??????????????????????????????????????
-
-???????????????????
-??????????????????????????????????
 #+end_src
 
 * Funciones
-Las funciones van a ser constantes. De esta forma conseguimos que en T++ 2000.0 las funciones sean de primera clase.
+Las funciones van a ser meta-funciones evaluables. Es decir, necesitan tener un atributo ~eval_impl~. 
 
-Recordemos que las funciones tienen que ev41u4rrrrRRrrrRRr los argumentos antes de usar la implementación. Además, si queremos que las funciones sean de primera clase necesitamos algo como el currymorfismo.
-
-Recordemos la definición de ~curry~:
-
-#+begin_src C++
-  template<template<typename...> typename F, typename... AS>
-  struct curry{
-	using type = curry;
-
-	template<typename... BS>
-	using call = typename F<AS...,BS...>::type;
-  };
-#+end_src
-
-Aunque se pasasen los argumentos al usar ~curry~ (los argumentos ~AS~), era en el atributo ~call~ donde realmente se usaba la +función+ implementación. 
-
-Y para poder usar una de estas constantes usábamos ~func4LLLLL##$$%%%~     ~funcall_impl~:
-
-#+begin_src C++
-template<typename F, typename... A>
-struct funcall_impl : F::template call<A...> {};
-
-???????????
-#+end_src
-
-Pero si queremos que todo el conjunto represente una función necesitamos evvvluar los argumentos. Aquí nos vendría bien algo como un intérprete. Pero ya sabemos cómo es un intérprete. Volvamos a recordar su definición.
-
-#+begin_src C++
-template<typename T>
-struct interpret : T {};
-
-template<template<typename...> typename F, typename... AS>
-struct interpret<curry<F,AS...>> : funcall_impl<curry<F,typename interpret<AS>::type...>> {};
-
-???????????
-#+end_src
-
-Observa que el interprete ev..... eval..... eviejasie.... evapret..... evnpreta..... interpreta los argumentos. Espera... ¿qué? El intérprete evvv...aa..vva..lu...pret.... interpreta los argumentos.
-
-Como estamos viendo un intérprete no consigue ev4luARR#$% los argumentos, sólo los sigue interpretando. Necesitamos algo más.
-
-* Cocurryficación
-Este término me lo acabo de inventar. Para utilizar cocurryficación usaremos la constante ~cocurry~ y su definición es exactamente igual al currymorfismo.
-
-#+begin_src C++
-  template<template<typename...> typename F, typename... AS>
-  struct cocurry{
-	using type = cocurry;
-
-	template<typename... BS>
-	using call = typename F<AS...,BS...>::type;
-  };
-#+end_src
-
-Ten fe. Todo cobrará sentido más adelante.
-
-* Ten FE
-Ten fe.
-
-* El cointérprete
-El cointérprete es el hermano mellizo olvidado del intérprete. Es un incomprendido. Nadie juega con él.
-
-Pero te voy a contar un secreto: Su hermano, el intérprete, lo hecha de menos. Están hechos para estar juntos. Pero la maldición se lo impide. Su poder juntos es inconmesurable y la gente tiene miedo de no poder controlarlo.
-
-Estoy seguro de que si lo llamamos vendrá. Hooolaaa, ¿estás ahí? ¿cointérpre...?
-
-#+begin_src C++
-template<typename T>
-struct cointerpret : T {};
-
-template<template<typename...> typename F, typename... AS>
-struct cointerpret<cocurry<F,AS...>> : ????<typename funcall_impl<cocurry<F,AS...>>::type> {};
-
-???????????
-#+end_src
-
-¡OH! Ahí está. Es parecido al intérprete. Por algo son hermanos. Aunque en este caso está usando ~cocurry~. Además... parece que le falta algo. Vamos a llamar a su herma...
-
-#+begin_src C++
-template<typename T>
-struct interpret : T {};
-
-template<template<typename...> typename F, typename... AS>
-struct interpret<curry<F,AS...>> : funcall_impl<curry<F,typename ????<AS>::type...>> {};
-#+end_src
-
-¡OH! Ahí está también. Espera... ¿también te falta algo? Antes tenías ahí una llamada recursiva. 
-
-¿Qué decís...? ¿Qué queréis jugar juntos? Y que esa parte que os falta es lo que os combina. Lo que os hace estar compuestos... ¿literalmente? 
-
-Y que juntos os llamais... ¿¡EL EVALUADOR!?.
-
-* El evaluador
-El evaluador de T++ 2000.0 consiste en la composición de un intérprete y un cointérprete. De hecho, esta es su definición:
-
-#+begin_src C++
-template<typename T>
-struct eval : interpret<typename cointerpret<T>::type> {};
-#+end_src
-
-Pero para entender bien cómo funciona ~eval~ necesitamos completar el intérprete y el cointérprete. La parte que falta en las definiciones que acabamos de ver es el propio ~eval~. Es decir, ~eval~ usa ~interpret~ y ~cointerpret~ y ambos usan a su vez ~eval~.
-
-Para evitar errores de tipos no definidos necesitamos usar declaraciones adelantadas.
-
-#+begin_src C++
-template<typename T>
-struct interpret : T {};
-
-template<typename T>
-struct cointerpret : T {};
-
-template<typename T>
-struct eval : interpret<typename cointerpret<T>::type> {};
-#+end_src
-
-Y ahora ya podemos definir finalmente el intérprete y el cointérprete:
+Recordemos que las funciones tienen que *evaluar* los argumentos antes de usar la implementación. La definición es la siguiente:
 
 #+begin_src C++
 template<template<typename...> typename F, typename... AS>
-struct interpret<curry<F,AS...>>
-  : funcall_impl<curry<F,typename eval<AS>::type...>> {};
-
-template<template<typename...> typename F, typename... AS>
-struct cointerpret<cocurry<F,AS...>>
-  : eval<typename funcall_impl<cocurry<F,AS...>>::type> {};
-#+end_src
-
-Por ahora es bastante código que no tiene sentido. Pero aguanta, porque poco a poco iremos viendo todo su potencial. Por ahora, dejo aquí todo lo que hemos definido hasta ahora:
-
-#+begin_src C++
-/// box
-template<auto b>
-struct box{
-  using type = box;
-  using value_type = decltype(b);
-  static constexpr auto value = b; 
+struct make_function{
+  template<typename...>
+  using eval_impl = eval<F<eval<AS>...>>;
 };
-
-template<auto b>
-using box_t = typename box<b>::type;
-
-template<auto b>
-using box_vt = typename box<b>::value_type;
-
-template<auto b>
-extern constexpr auto box_v = box<b>::value;
-
-/// tbox
-template<typename T>
-struct tbox{
-  using type = tbox;
-  using value_type = T;
-};
-
-template<typename T>
-using tbox_t = typename tbox<T>::type;
-
-template<typename T>
-using tbox_vt = typename tbox<T>::value_type;
-
-/// curry
-template<template<typename...> typename F, typename... AS>
-struct curry{
-  using type = curry;
-
-  template<typename... BS>
-  using call = typename F<AS...,BS...>::type;
-};
-
-/// cocurry
-template<template<typename...> typename F, typename... AS>
-struct cocurry{
-  using type = cocurry;
-
-  template<typename... BS>
-  using call = typename F<AS...,BS...>::type;
-};
-
-/// funcall
-template<typename F, typename... A>
-struct funcall_impl : F::template call<A...> {};
-
-/// eval
-template<typename T>
-struct interpret : T {};
-
-template<typename T>
-struct cointerpret : T {};
-
-template<typename T>
-struct eval : interpret<typename cointerpret<T>::type> {};
-
-template<template<typename...> typename F, typename... AS>
-struct interpret<curry<F,AS...>>
-  : funcall_impl<curry<F,typename eval<AS>::type...>> {};
-
-template<template<typename...> typename F, typename... AS>
-struct cointerpret<cocurry<F,AS...>>
-  : eval<typename funcall_impl<cocurry<F,AS...>>::type> {};
 #+end_src
 
-Repasemos: Tenemos constantes que hacen de puente entre C++ y T++ 2000.0; Tenemos ~curry~ y ~cocurry~, que aún no sabemos muy bien cómo se van a usar; Sí sabemos que ~funcall_impl~ es capaz de devolver la constante proveniente de 'ejecutar' la función guardada por ~curry~ o ~cocurry~; Por último, tenemos al evaluador que se compone de un intérprete y un cointérprete.
+La meta-función ~function~ recibe como primer parametro una implementación y seguidamente sus argumentos. 
 
-* Mucho texto...
-Aún no ha habido mucho texto y, de hecho, no lo habrá. La única meta-función de la que necesitaremos los alias es ~eval~. Las definimos:
+A la hora de evaluar la función, primero se evalúan los argumentos de la implementación ~F~ mediante ~eval<AS>...~ y a continuación se evalúa de nuevo ~F<eval<AS>...>~ para obtener el resultado.
 
-#+begin_src C++
-template<typename T>
-using eval_t = typename eval<T>::type;
-
-template<typename T>
-using eval_vt = typename eval<T>::value_type;
-
-template<typename T>
-extern constexpr auto eval_v = eval<T>::value;
-#+end_src
-
-* Funciones (ahora sí)
-Para definir una función necesitamos dos ingredientes: La implementación y curryficarla.
-
-Recordemos el ejemplo de la suma.
+Como ya tenemos la implementación de la suma (~add_impl~) vamos a probar a crear su función correspondiente. Recordemos primero dicha implementación:
 
 #+begin_src C++
 template<typename... NS>
@@ -1654,68 +1448,159 @@ template<typename N, typename... NS>
 struct add_impl<N,NS...> : box<N::value+add_impl<NS...>::value> {};
 #+end_src
 
-En este caso, ~add_impl~ no necesita hacer nada adicional ya que está devolviendo una constante. Para futuras funciones veremos que necesitaremos alguna cosilla más.
-
-En segundo lugar hemos dicho que necesitamos curryficar ~add_impl~. Es esta versión curryficada la que sí será una función de T++ 2000.0.
+Con esto, basta escribir lo siguiente:
 
 #+begin_src C++
-template<typename... NS>
-using add = curry<add_impl, NS...>;
-#+end_src 
+  template<typename... TS>
+  using add = make_function<add_impl, TS...>;
+#+end_src
 
-¡Hecho!
-
-Y... ¿cómo podemos ahora evaluar la función? Espera... ¿queremos evaluar la función? ¿evaluar? ¡¡Pues usamos ~eval~!!
+¡Hecho! Ahora sí, ~add~ es una función de T++ 2000.0. Podemos usar ahora ~eval~ para evaluar la función:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-std::cout << eval_v<add<box<1>,box<5>>> << std::endl;
+std::cout << eval_v<add<box<3>,box<6>,box<10>>> << std::endl;
 #+end_src
 
 #+RESULTS:
-: 6
+: 19
 
-Creo que merece la pena detenernos aquí por un momento y ver qué está ocurriendo paso a paso.
+Y lo mejor de todo, es que podemos usar ~add~ como un argumento del propio ~add~. Porque recuerda, ~add~ es un objeto y el propio ~add~ evalúa los argumentos:
 
-Lo primero de todo, ~add<...>~ es en realidad ~curry<add_impl,...>~. Además ~eval~ se definía como la composición de ~cointerpret~ e ~interpret~. Vamos primero a ver qué hace ~cointerpret~. Recordemos su definición:
-
-#+begin_src C++
-template<typename T>
-struct cointerpret : T {};
-
-template<template<typename...> typename F, typename... AS>
-struct cointerpret<cocurry<F,AS...>>
-  : eval<typename funcall<cocurry<F,AS...>>::type> {};
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << eval_v<  add<  add<box<3>,box<6>>,  box<10>  >  > << std::endl;
 #+end_src
 
-Si el argumento recibido es una constante ~cocurry~, hacía algo. Pero en este caso no tenemos un ~cocurry~, sino un ~curry~. Por tanto, ~cointerpret~ en este caso actúa como la identidad. Por tanto, la constante ~curry<add_impl,...>~ se pasa ahora a ~interpret~. Recordemos su definición:
+#+RESULTS:
+: 19
+
+Es decir, en este caso, el orden de evaluación sería el siguiente:
+
+1. ~box<3>~ -> ~box<3>~
+2. ~box<3>~ -> ~box<6>~
+3. ~add<box<3>,box<6>>~ -> ~box<9>~
+4. ~box<10>~ -> ~box<10>~
+5. ~add<box<9>,box<10>>~ -> ~box<19>~
+
+Finalmente, fíjate que no hemos definido ningún alias para nuestra función. Los únicos alias que necesitaremos son los ya definidos para ~eval~.
+
+* If Then Else
+En T++ era simplemente imposible crear algo como un ~If Then Else~ debido a que los argumentos de un template normalmente se evalúan de forma ansiosa. Es decir, no podemos elegir qué argumentos se evalúan y cuáles no (al menos con facilidad). Pero T++ 2000.0 está a otro nivel. Aquí todo es posible.
+
+Para implementar un ~If Then Else~ necesitamos crear un nuevo tipo de meta-función evaluable. Vamos a elegir el nombre ~branch~ para nuestro ~If Then Else~ ya que ~if~ está cogido por C++. Lo que debe de hacer ~branch~ es *evaluar* primero la condición. Si el resultado es verdadero, entonces *evaluamos* el ~Then~, y si no, *evaluamos* el ~Else~. ¡Y ya está! Esta sería la definición.
 
 #+begin_src C++
-template<typename T>
-struct interpret : T {};
+template<typename C, typename T, typename E>
+struct branch : branch<eval<C>,T,E> {};
 
-template<template<typename...> typename F, typename... AS>
-struct interpret<curry<F,AS...>>
-  : funcall<curry<F,typename eval<AS>::type...>> {};
+template<typename T, typename E>
+struct branch<box<true>,T,E> : eval<T> {};
+
+template<typename T, typename E>
+struct branch<box<false>,T,E> : eval<E> {};
+#+end_src 
+
+Vamos arealizar primero una pequeña prueba:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << eval_v<branch<box<true>,box<10>,box<15>>> << std::endl;
+std::cout << eval_v<branch<box<false>,box<10>,box<15>>> << std::endl;
 #+end_src
 
-Como sí tenemos una constante ~curry~ se evalúa la especialización. Lo que hará será 'ejecutar' la implementación ~add_impl~. Pero antes de eso se evalúan los argumentos. Es decir, se hará ~eval<box<1>>~ y ~eval<box<5>>~. Sabemos ya que ~eval~ cointerpreta y luego interpreta. Como ~box<...>~ no es ni un ~cocurry~ ni un ~curry~, simplemente se dejan pasar.
+#+RESULTS:
+: 10
+: 15
 
-Así que finalmente se 'ejecuta' ~add_impl~ con los argumentos ~box<1>~ y ~box<5>~ que ya sabemos que devuelve ~box<6>~. Como inicialmente habíamos usado ~eval_v~ se hará finalmente ~box<6>::value~ lo que nos da el valor ~6~.
+¡Genial! Por ahora funciona. Aunque será mejor probar con algo más complicado.
 
-Algo importante aquí es que no hemos necesitado ningún alias para ~add~. Y no lo necesitaremos para ninguna función que definamos de aquí en adelante. Creo que esto ya es una mejora de T++ 2000.0 con respecto a T++.
+* Recursividad
+Ya en T++ se usaba la recursividad de manera recurrente. Aunque en T++ 2000.0 se hace más evidente y, a la vez, sencillo.
 
-* Vale, algo de texto si hay...
-Para currificar la función ~add~ necesitábamos curryficar ~add_impl~. Pero no es muy intuitivo saber que para definir una función tenemos que cuurryficar su implementación. 
+Para demostrar cómo vamos a usar la recursividad en T++ 2000.0 vamos a definir la función de FIbonacci.
 
-Por eso vamos a hacer una macro que es más fácil de recordar y su propio nombre indicará qué hace. Vamos a definir ~defun~:
+Recordemos que esta función debe recibir un entero y devolver el elemento n-ésimo de la sucesión de Fibonacci. El primer elemento de esa sucesión es el ~0~, el segundo el ~1~, y el resto se calcula sumando los dos anteriores.
+
+En particular, si la función recibe un ~0~ o un ~1~, devolvemos el mismo valor. Si recibimos un valor más grande sumamos los dos valores anteriores realizando llamadas recursivas.
+
+Por último, necesitaremos un par de funciones extra: ~sub1~ y ~eql~. Sus definiciones son las siguientes:
 
 #+begin_src C++
-#define defun(name)                             \
-  template<typename... TS>                      \
-  using name = curry<name##_impl, TS...>;
+/// sub1
+template<typename N>
+struct sub1_impl : box<N::value - 1> {};
+
+template<typename N>
+using sub1 = make_function<sub1_impl,N>;
+
+/// eql
+template<typename N, typename M>
+struct eql_impl : box<N::value == M::value> {};
+
+template<typename N, typename M>
+using eql = make_function<eql>;
 #+end_src
 
-Ahora es mucho más intuitivo definir una función en T++ 2000.0. La definición completa de la suma sería la siguiente:
+Ahora sí, empezamos definiendo la función escribiendo la declaración de su implementación:
+
+#+begin_src C++
+template<typename N>
+struct fibonacci_impl;
+#+end_src
+
+Y, antes de escribir la implementación, creamos ya la función. De esta forma podremos usar el objeto en la propia implementación.
+
+#+begin_src C++
+template<typename N>
+using fibonacci = make_function<fibonacci_impl, N>;
+#+end_src
+
+Y sólo queda ya la implementación que escribiremos usando ~branch~:
+
+#+begin_src C++
+template<typename N>
+struct fibonacci_impl
+  : branch<eql<N,box<0>>,
+           box<0>,
+           branch<eql<N,box<1>>,
+                  box<1>,
+                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>> {};
+#+end_src
+
+No hay mucho más que explicar aquí, es el típico algoritmo de Fibonacci. Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << eval_v<fibonacci<box<10>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 55
+
+¡Perfecto! Si te soy sincero, nunca pensé que podría utilizar un ~If Then Else~ en los templates de C++. ¡Pero ahí está! ¡Y funciona de maravilla!
+
+* Mucho texto...
+Yo soy muy perezoso. Y como tal, tengo que buscar formas para escribir lo menos posible. Ya hemos definido varias funciones y me da la sensación de que hay que escribir demasiado.
+
+Por ejemplo, volvamos a ver la función de suma:
+
+#+begin_src C++
+template<typename... NS>
+struct add_impl : box<0>{};
+
+template<typename N, typename... NS>
+struct add_impl<N,NS...> : box<N::value+add_impl<NS...>::value> {};
+
+template<typename... NS>
+using add = make_function<add_impl>;
+#+end_src
+
+Está claro que la implementación se tiene que quedar, pero ya vimos en T++ que podemos ahorrarnos los alias (en este caso ~add~) con una macro de C++. Y aquí no va a ser menos. Como lo que estamos haciendo es definir una función, voy a denominar a la macro como ~defun~.
+
+#+begin_src C++
+#define defun(name)                                \
+  template<typename... TS>                         \
+  using name = make_function<name##_impl, TS...>;
+#+end_src
+
+Ahora la definición de la suma sería:
 
 #+begin_src C++
 template<typename... NS>
@@ -1727,15 +1612,310 @@ struct add_impl<N,NS...> : box<N::value+add_impl<NS...>::value> {};
 defun(add);
 #+end_src
 
-Es hasta bonito.
+¡Bien! Más cortito. Aunque podemos hacerlo mejor.
 
-Fíjate en que en T++ 2000.0 ya no usamos alias, pero sí hablamos de funciones y de un evaluador. De hecho, observemos de nuevo el ejemplo de la suma. Literalmente, estamos *evaluando* una función:
+Recordemos ahora la definición de ~fibonacci~:
+
+#+begin_src C++
+template<typename N>
+struct fibonacci_impl;
+
+template<typename N>
+using fibonacci = make_function<fibonacci_impl, N>;
+
+template<typename N>
+struct fibonacci_impl
+  : branch<eql<N,box<0>>,
+           box<0>,
+           branch<eql<N,box<1>>,
+                  box<1>,
+                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>> {};
+#+end_src
+
+Con la nueva macro pasaríamos a tener lo siguiente:
+
+#+begin_src C++
+template<typename N>
+struct fibonacci_impl;
+
+defun(fibonacci);
+
+template<typename N>
+struct fibonacci_impl
+  : branch<eql<N,box<0>>,
+           box<0>,
+           branch<eql<N,box<1>>,
+                  box<1>,
+                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>> {};
+#+end_src
+
+Algo mejor, pero no está perfecto. Y es que me mosquea la declaración de arriba. De hecho, creo que podemos meterla dentro de la macro. De esta forma, para cualquier función que definamos podremos usar recursividad. ¡Dos pájaros de un tiro!
+
+#+begin_src C++
+#define defun(name)                                \
+  struct name##_impl;                              \
+                                                   \
+  template<typename... TS>                         \
+  using name = make_function<name##_impl, TS...>;
+#+end_src
+
+Ahora se tendría:
+
+#+begin_src C++
+template<typename N>
+defun(fibonacci);
+
+template<typename N>
+struct fibonacci_impl
+  : branch<eql<N,box<0>>,
+           box<0>,
+           branch<eql<N,box<1>>,
+                  box<1>,
+                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>> {};
+#+end_src
+
+No sé, no sé... No me acaba de gustar. Es un poco raro tener ese ~template<typename N>~ arriba de ~defun~. ¿Y si lo metemos también en la macro? Sí... Creo que puede funcionar. Como cada función tiene unos argumentos diferentes, recibiremos estos argumentos como argumentos de la macro:
+
+#+begin_src C++
+#define defun(name, ...)                           \
+  template<__VA_ARGS__>                            \
+  struct name##_impl;                              \
+                                                   \
+  template<typename... TS>                         \
+  using name = make_function<name##_impl, TS...>;
+#+end_src
+
+Veamos cómo quedaría:
+
+#+begin_src C++
+defun(fibonacci, typename N);
+
+template<typename N>
+struct fibonacci_impl
+  : branch<eql<N,box<0>>,
+           box<0>,
+           branch<eql<N,box<1>>,
+                  box<1>,
+                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>> {};
+#+end_src
+
+Oh... ¡Me gusta! ¡Es casi como definir una función de manera normal y corriente!
+
+Volvamos a definir ~add~, ~eql~ y ~sub1~:
+
+#+begin_src C++
+/// add
+defun(add, typename... NS);
+
+template<typename... NS>
+struct add_impl : box<0>{};
+
+template<typename N, typename... NS>
+struct add_impl<N,NS...> : box<N::value+add_impl<NS...>::value> {};
+
+/// sub1
+defun(sub1, typename N);
+
+template<typename N>
+struct sub1_impl : box<N::value - 1> {};
+
+/// eql
+defun(eql, typename N, typename M);
+
+template<typename N, typename M>
+struct eql_impl : box<N::value == M::value> {};
+#+end_src
+
+Me gusta, me gusta...
+
+Probemos si funciona:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-std::cout << eval_v<add<box<2>,box<5>,add<box<7>,box<-3>>>> << std::endl;
+std::cout << eval_v<add<fibonacci<box<10>>,box<100>>> << std::endl;
 #+end_src
 
 #+RESULTS:
-: 11
+: 155
 
-Observa que hemos usado ~add~ dentro de ~add~ y todo va perfecto.
+¡Perfecto!
+
+Antes de seguir, vamos a definir también todas las funciones que vimos en T++ por si nos sirviesen más adelante:
+
+#+begin_src C++
+/// add
+defun(add, typename... NS);
+
+template<typename... NS>
+struct add_impl : box<0>{};
+
+template<typename N, typename... NS>
+struct add_impl<N,NS...> : box<N::value+add_impl<NS...>::value> {};
+
+/// mult
+defun(mult, typename... NS);
+
+template<typename... NS>
+struct mult_impl : box<1> {};
+
+template<typename N, typename... NS>
+struct mult_impl<N,NS...> : box<N::value * mult_impl<NS...>::value> {};
+
+// sub
+defun(sub, typename... NS);
+
+template<typename... NS>
+struct sub_impl : box<0>{};
+
+template<typename N, typename... NS>
+struct sub_impl<N,NS...> : box<N::value-sub_impl<NS...>::value> {};
+
+/// quotient
+defun(quotient, typename... NS);
+
+template<typename... NS>
+struct quotient_impl : box<1> {};
+
+template<typename N, typename... NS>
+struct quotient_impl<N,NS...> : box<N::value / quotient_impl<NS...>::value> {};
+
+/// is_zero
+defun(is_zero, typename T);
+
+template<typename T>
+struct is_zero_impl : box<false>{}; 
+
+template<>
+struct is_zero_impl<box<0>> : box<true> {};
+
+/// or_logic
+defun(or_logic, typename... NS);
+
+template<typename... NS>
+struct or_logic_impl : box<false>{};
+
+template<typename N, typename... NS>
+struct or_logic_impl<N,NS...> : box<N::value || or_logic_impl<NS...>::value> {};
+
+/// and_logic
+defun(and_logic, typename... NS);
+
+template<typename... NS>
+struct and_logic_impl : box<true>{};
+
+template<typename N, typename... NS>
+struct and_logic_impl<N,NS...> : box<N::value && and_logic_impl<NS...>::value> {};
+
+/// not_logic
+defun(not_logic, typename B);
+
+template<typename B>
+struct not_logic_impl : box<!B::value> {};
+
+/// add1
+defun(add1, typename N);
+
+template<typename N>
+struct add1_impl : add<N,box<1>> {};
+
+/// sub1
+defun(sub1, typename N);
+
+template<typename N>
+struct sub1_impl : box<N::value - 1> {};
+
+/// eql
+defun(eql, typename N, typename M);
+
+template<typename N, typename M>
+struct eql_impl : box<N::value == M::value> {};
+#+end_src
+
+* Quotation
+
+
+* Macros
+¿Macros? ¡Macros! Y no las de C++. Macros en nuestro evaluador. Las macros son como las funciones, pero trabajan de un manera un pelín diferente. En una macro, los argumentos se reciben sin evaluar. Sin embargo, es el resultado lo que sí se evalúa.
+
+Para nuestra primera macro vamos a definir ~cond~. Esta macro recibe una cantidad variable de argumentos. Estos argumentos van en parejas de ~condición~ y ~expresión~. Cuando se encuentre la primera condición veradera, se evaluará la expresión correspondiente. Si no se encuentra ninguna expresión verdadera se generará un error.
+
+Como no queremos que se evalúen todos los argumentos, ~cond~ no puede ser una función. 
+
+La idea para implementar ~cond~ es sencilla. Es usar ~If Then Else~ hasta encontrar la condición verdadera. Vamos a empezar:
+
+#+begin_src C++
+template<typename... CT>
+struct cond_impl {};
+
+template<typename C, typename T, typename... ES>
+struct cond_impl<C,T,ES...> : eval<branch<C,T,cond<ES...>>> {};
+#+end_src
+
+La implementación es sencilla. Recuerda que queremos usar el cointérprete. Recordemos su definición:
+
+#+begin_src C++
+template<template<typename...> typename F, typename... AS>
+struct eval<cocurry<F,AS...>>
+  : eval<typename funcall_impl<cocurry<F,AS...>>::type> {};
+#+end_src
+
+Fíjate que el resultado de ~cond_impl~ también se va a evaluar. Por otro lado, si queremos que ~cond~ sea usado por el cointérprete necesitamos cocurryficarlo. Vamos allá:
+
+#+begin_src C++
+template<typename... CT>
+  using cond = cocurry<cond_impl, CT...>;
+#+end_src
+
+Aunque yo ahí veo mucho texto... Ya sabemos lo que hacer, ¿verdad? Vamos definir una macro de C++ llamada ~defmacro~:
+
+#+begin_src C++
+#define defmacro(name)                          \
+  template<typename... TS>                      \
+  using name = cocurry<name##_impl, TS...>;
+#+end_src
+
+De esta forma, nuestra definición completa de la macro ~cond~ sería esta:
+
+#+begin_src C++
+template<typename... CT>
+struct cond_impl {};
+
+defmacro(cond);
+
+template<typename C, typename T, typename... ES>
+struct cond_impl<C,T,ES...> : eval<branch<C,T,cond<ES...>>> {};
+#+end_src
+
+Ponemos de nuevo ~defmacro~ justo antes de la implementación por comodidad. Vamos a probarla redefiniendo la función de fibonacci:
+
+#+begin_src C++
+template<typename N>
+struct fibonacci_impl;
+
+defun(fibonacci);
+
+template<typename N>
+struct fibonacci_impl
+  : eval<cond<is_zero<N>,    box<0>,
+              eql<N,box<1>>, box<1>,
+              box<true>,     add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>> {};
+#+end_src
+
+¿No es preciosa ahora esta nueva definición? Es mucho más legible que el anterior ~branch~. Observa que la última condición es ~box<true>~. Esta es la forma que tenemos para indicar un valor por defecto en ~cond~.
+
+Vamos a probar de nuevo:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << eval_v<fibonacci<box<10>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+
+Analicemos detalladamente qué está pasando aquí. En primer lugar, ~fibonacci~ se sustituye por ~curry<fibonacci_impl,...>~ que devolverá ~eval<cond<is_zero<N>, box<0>, ...>>~. Aquí, ~cond~ es un ~cocurry~ y por tanto los argumentos no se evalúan. Es decir, ~cond~ va a querer devolver ~branch<is_zero<N>, box<0>, cond<...>>~ que dentro de ~cond~ se evalúa a ~cond<box<true>, add<fibonacci<...>,fibonacci<...>>>~ ya que ~N~ al inicio es ~10~. Pero ahora recuerda que estamos usando el cointérprete: Los argumentos no se evaluaban pero el resultado sí. Es decir, cond<add<fibonacci<...>,fibonacci<...>>>
+
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+std::cout << eval_v<fibonacci<box<10>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 55
