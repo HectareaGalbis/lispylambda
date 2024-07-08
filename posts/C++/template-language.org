@@ -13,9 +13,9 @@ T++ es un lenguaje que se usa sobre C++. Por ello, podemos crear una función ~m
 
   int main(){
 
-	  // Aquí porbaremos las funciones
+          // Aquí porbaremos las funciones
 
-	  return 0;
+          return 0;
   }
 #+end_src
 
@@ -1367,31 +1367,36 @@ std::cout << box<5>::eval_impl<>::value << std::endl;
 
 Hasta duele un poco a los ojos.
 
-Pero esto tiene solución. Sólo tenemos que hacer una meta-función que evalúe por nosotros. Esta meta-función será el evaluador de T++ 2000.0 y lo llamaremos ~eval~. 
+Pero esto tiene solución. Sólo tenemos que hacer una meta-función que evalúe por nosotros. Esta meta-función será el evaluador de T++ 2000.0 y lo llamaremos ~tpp~. 
 
-La definición de ~eval~ es tan simple como esto:
-
-#+begin_src C++
-template<typename T>
-using eval = typename T::eval_impl<>;
-#+end_src
-
-Observa que ~eval~ no es un nuevo ~struct~. Es una alias para ~T::eval_impl<>~. Esto es así porque queremos que ~eval<T>~ sea ya el objeto al que se evalúa ~T~. Si ~eval~ fuese un ~struct~ entonce ~eval<T>~ sería un nuevo tipo de dato de C++ que hereda del objeto al que se evalúa ~T~. Es definitiva, no queremos un nuevo tipo, queremos que sea literalmente el objeto devuelto por ~T~.
-
-Para poder acceder fácilmente a sus atributos generamos los famosos alias:
+La definición de ~tpp~ es tan simple como esto:
 
 #+begin_src C++
-template<typename T>
-using eval = T::eval_impl<> {};
-
-template<typename T>
-extern constexpr auto eval_v = eval<T>::value;
+  template<typename T>
+  using tpp = typename T::eval_impl<>;
 #+end_src
 
-Probemos ahora a evaluar la constante ~box<5>~ usando ~eval~:
+Observa que ~tpp~ no es un nuevo ~struct~. Es una alias para ~T::eval_impl<>~. Esto es así porque queremos que ~tpp<T>~ sea ya el objeto al que se evalúa ~T~. Si ~tpp~ fuese un ~struct~ entonces ~tpp<T>~ sería un nuevo tipo de dato de C++ que hereda del objeto al que se evalúa ~T~. Es definitiva, no queremos un nuevo tipo, queremos que sea literalmente el objeto devuelto por ~T~.
+
+Podemos pensar en ~tpp~ como la meta-función que nos permite escribir código de T++.
+
+Además, para poder acceder fácilmente a sus atributos generamos los famosos alias:
+
+#+begin_src C++
+  template<typename T>
+  using tpp = T::eval_impl<> {};
+
+  template<typename T>
+  extern constexpr auto tpp_v = tpp<T>::value;
+
+  template<typename T>
+  using tpp_t = tpp<T>::type;'
+#+end_src
+
+Probemos ahora a evaluar la constante ~box<5>~ usando ~tpp~:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-std::cout << eval_v<box<5>> << std::endl;
+std::cout << tpp_v<box<5>> << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -1430,13 +1435,13 @@ Recordemos que las funciones tienen que *evaluar* los argumentos antes de usar l
 template<template<typename...> typename F, typename... AS>
 struct make_function{
   template<typename...>
-  using eval_impl = eval<F<eval<AS>...>>;
+  using eval_impl = tpp<F<tpp<AS>...>>;
 };
 #+end_src
 
 La meta-función ~function~ recibe como primer parametro una implementación y seguidamente sus argumentos. 
 
-A la hora de evaluar la función, primero se evalúan los argumentos de la implementación ~F~ mediante ~eval<AS>...~ y a continuación se evalúa de nuevo ~F<eval<AS>...>~ para obtener el resultado.
+A la hora de evaluar la función, primero se evalúan los argumentos de la implementación ~F~ mediante ~tpp<AS>...~ y a continuación se evalúa de nuevo ~F<tpp<AS>...>~ para obtener el resultado.
 
 Como ya tenemos la implementación de la suma (~add_impl~) vamos a probar a crear su función correspondiente. Recordemos primero dicha implementación:
 
@@ -1455,10 +1460,10 @@ Con esto, basta escribir lo siguiente:
   using add = make_function<add_impl, TS...>;
 #+end_src
 
-¡Hecho! Ahora sí, ~add~ es una función de T++ 2000.0. Podemos usar ahora ~eval~ para evaluar la función:
+¡Hecho! Ahora sí, ~add~ es una función de T++ 2000.0. Podemos usar ahora ~tpp~ para evaluar la función:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-std::cout << eval_v<add<box<3>,box<6>,box<10>>> << std::endl;
+std::cout << tpp_v<add<box<3>,box<6>,box<10>>> << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -1467,7 +1472,7 @@ std::cout << eval_v<add<box<3>,box<6>,box<10>>> << std::endl;
 Y lo mejor de todo, es que podemos usar ~add~ como un argumento del propio ~add~. Porque recuerda, ~add~ es un objeto y el propio ~add~ evalúa los argumentos:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-std::cout << eval_v<  add<  add<box<3>,box<6>>,  box<10>  >  > << std::endl;
+std::cout << tpp_v<  add<  add<box<3>,box<6>>,  box<10>  >  > << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -1481,7 +1486,7 @@ Es decir, en este caso, el orden de evaluación sería el siguiente:
 4. ~box<10>~ -> ~box<10>~
 5. ~add<box<9>,box<10>>~ -> ~box<19>~
 
-Finalmente, fíjate que no hemos definido ningún alias para nuestra función. Los únicos alias que necesitaremos son los ya definidos para ~eval~.
+Finalmente, fíjate que no hemos definido ningún alias para nuestra función. Los únicos alias que necesitaremos son los ya definidos para ~tpp~.
 
 * If Then Else
 En T++ era simplemente imposible crear algo como un ~If Then Else~ debido a que los argumentos de un template normalmente se evalúan de forma ansiosa. Es decir, no podemos elegir qué argumentos se evalúan y cuáles no (al menos con facilidad). Pero T++ 2000.0 está a otro nivel. Aquí todo es posible.
@@ -1832,6 +1837,13 @@ struct eql_impl : box<N::value == M::value> {};
 
 * Quotation
 
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  std::cout << tpp_v<eval<quote<fibonacci<box<10>>>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 55
+
 
 * Macros
 ¿Macros? ¡Macros! Y no las de C++. Macros en nuestro evaluador. Las macros son como las funciones, pero trabajan de un manera un pelín diferente. En una macro, los argumentos se reciben sin evaluar. Sin embargo, es el resultado lo que sí se evalúa.
@@ -1919,3 +1931,4 @@ std::cout << eval_v<fibonacci<box<10>>> << std::endl;
 
 #+RESULTS:
 : 55
+
