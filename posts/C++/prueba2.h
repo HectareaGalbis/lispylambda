@@ -26,45 +26,39 @@ extern constexpr auto tpp_vt = tpp<T>::value_type;
     template <typename...> \
     using tpp_return =
 
-/// box
+/// v
 template <auto b>
-struct box {
-    using type = box;
+struct v {
+    using type = v;
     using value_type = decltype(b);
     static constexpr auto value = b;
 
-    evaluating box;
+    evaluating v;
 };
 
-/// tbox
+/// t
 template <typename T>
-struct tbox {
-    using type = tbox;
+struct t {
+    using type = t;
     using value_type = T;
 
-    evaluating tbox;
+    evaluating t;
 };
 
-/// ttbox
+/// f
 template <template <typename...> typename F>
-struct ttbox {
-    using type = ttbox;
+struct f {
+    using type = f;
     template <typename... FS>
     using value_template_type = F<FS...>;
 
-    evaluating ttbox;
-};
-
-/// variable
-template<typename T>
-struct variable {
-    evaluating T;
+    evaluating f;
 };
 
 /// function
 template <template <typename...> typename F, typename... AS>
 struct make_function {
-    evaluating tpp<F<variable<tpp<AS>>...>>;
+    evaluating tpp<F<tpp<AS>...>>;
 };
 
 /// defun
@@ -78,26 +72,53 @@ struct make_function {
     template <typename... TS>                             \
     struct name : make_function<name##_pre_impl, TS...> { };
 
-/// let
-#define let using
-
 /// returning
 #define returning          \
     template <typename...> \
     using tpp_return =
 
-/// collection
-template<typename... TS>
-struct eval_collection {};
+/// __l
+template <typename... TS>
+struct __l {
+    using type = __l;
 
-template<template<typename...> typename F, typename... AS>
-struct eval_collection<ttbox<F>,AS...> : F<AS...> {};
+    evaluating __l;
+};
+
+/// l
+defun(l, typename... TS);
 
 template <typename... TS>
-struct collection {
-    using type = collection;
+struct l_impl {
+    returning __l<TS...>;
+};
 
-    evaluating tpp<eval_collection<TS...>>;
+/// funcall
+defun(funcall, typename F, typename... AS);
+
+template <typename F, typename... AS>
+struct funcall_impl {
+    returning typename F::template value_template_type<AS...>;
+};
+
+/// apply
+defun(apply_aux, typename F, typename C, typename... A)
+
+template<typename F, typename... CS, typename... AS>
+struct apply_aux_impl<F, __l<CS...>, __l<AS...>> {
+    returning funcall<F, CS..., AS...>;
+};
+
+template<typename F, typename... CS, typename A, typename B, typename... AS>
+struct apply_aux_impl<F, __l<CS...>, A, B, AS...> {
+    returning apply_aux<F, l<CS..., A>, B, AS...>;
+};
+
+defun(apply, typename F, typename... AS);
+
+template <typename F, typename... AS>
+struct apply_impl {
+    returning apply_aux<F, l<>, AS...>;
 };
 
 /// quote
@@ -108,7 +129,7 @@ struct quote {
 
 template <template <typename...> typename F, typename... AS>
 struct quote<F<AS...>> {
-    evaluating collection<ttbox<F>, tpp<quote<AS>>...>;
+    evaluating l<f<F>, tpp<quote<AS>>...>;
 };
 
 /// qt
@@ -136,7 +157,7 @@ struct quasiquote<unquote<T>> {
 
 template <template <typename...> typename F, typename... AS>
 struct quasiquote<F<AS...>> {
-    evaluating collection<ttbox<F>, tpp<quasiquote<AS>>...>;  
+    evaluating l<f<F>, tpp<quasiquote<AS>>...>;  
 };
 
 /// qq
@@ -156,7 +177,7 @@ template <template <typename...> typename M, typename... AS>
 struct macro {
     using type = macro;
 
-    evaluating tpp<tpp<M<variable<quote<AS>>...>>>;
+    evaluating tpp<tpp<M<quote<AS>...>>>;
 };
 
 /// defmacro
@@ -175,12 +196,12 @@ defun(add, typename... NS);
 
 template <typename... NS>
 struct add_impl {
-    returning box<0>;
+    returning v<0>;
 };
 
 template <typename N, typename... NS>
 struct add_impl<N, NS...> {
-    returning box<tpp_v<N> + tpp_v<add<NS...>>>;
+    returning v<N::value + tpp_v<add<NS...>>>;
 };
 
 /// mult
@@ -188,12 +209,12 @@ defun(mult, typename... NS);
 
 template <typename... NS>
 struct mult_impl {
-    returning box<1>;
+    returning v<1>;
 };
 
 template <typename N, typename... NS>
 struct mult_impl<N, NS...> {
-    returning box<tpp_v<N> * tpp_v<mult<NS...>>>;
+    returning v<N::value * tpp_v<mult<NS...>>>;
 };
 
 // sub
@@ -201,12 +222,12 @@ defun(sub, typename... NS);
 
 template <typename... NS>
 struct sub_impl {
-    returning box<0>;
+    returning v<0>;
 };
 
 template <typename N, typename... NS>
 struct sub_impl<N, NS...> {
-    returning box<tpp_v<N> - tpp_v<sub<NS...>>>;
+    returning v<N::value - tpp_v<sub<NS...>>>;
 };
 
 /// quotient
@@ -214,12 +235,12 @@ defun(quotient, typename... NS);
 
 template <typename... NS>
 struct quotient_impl {
-    returning box<1>;
+    returning v<1>;
 };
 
 template <typename N, typename... NS>
 struct quotient_impl<N, NS...> {
-    returning box<tpp_v<N> / tpp_v<quotient<NS...>>>;
+    returning v<N::value / tpp_v<quotient<NS...>>>;
 };
 
 /// is_zero
@@ -227,7 +248,7 @@ defun(is_zero, typename T);
 
 template <typename T>
 struct is_zero_impl {
-    returning box<tpp_v<T> == 0>;
+    returning v<T::value == 0>;
 };
 
 /// or_logic
@@ -235,12 +256,12 @@ defun(or_logic, typename... NS);
 
 template <typename... NS>
 struct or_logic_impl {
-    returning box<false>;
+    returning v<false>;
 };
 
 template <typename N, typename... NS>
 struct or_logic_impl<N, NS...> {
-    returning box<tpp_v<N> || tpp_v<or_logic<NS...>>>; 
+    returning v<N::value || tpp_v<or_logic<NS...>>>; 
 };
 
 /// and_logic
@@ -248,12 +269,12 @@ defun(and_logic, typename... NS);
 
 template <typename... NS>
 struct and_logic_impl {
-    returning box<true>;
+    returning v<true>;
 };
 
 template <typename N, typename... NS>
 struct and_logic_impl<N, NS...> {
-    returning box<tpp_v<N> && tpp_v<and_logic<NS...>>>;
+    returning v<N::value && tpp_v<and_logic<NS...>>>;
 };
 
 /// not operator
@@ -261,7 +282,7 @@ defun(not_logic, typename B);
 
 template <typename B>
 struct not_logic_impl {
-    returning box<!tpp_v<B>>;
+    returning v<!B::value>;
 };
 
 /// add1
@@ -269,7 +290,7 @@ defun(add1, typename N);
 
 template <typename N>
 struct add1_impl {
-    returning add<N, box<1>>;
+    returning add<N, v<1>>;
 };
 
 /// sub1
@@ -277,7 +298,7 @@ defun(sub1, typename N);
 
 template <typename N>
 struct sub1_impl {
-    returning sub<N, box<1>>;
+    returning sub<N, v<1>>;
 };
 
 /// eql
@@ -285,18 +306,61 @@ defun(eql, typename N, typename M);
 
 template <typename N, typename M>
 struct eql_impl {
-    returning box<tpp_v<N> == tpp_v<M>>;
+    returning v<N::value == M::value>;
 };
+
+/// lt
+defun(lt, typename N, typename M);
+
+template <typename N, typename M>
+struct lt_impl {
+    returning v<(N::value < M::value)>;
+};
+
+/// gt
+defun(gt, typename N, typename M);
+
+template <typename N, typename M>
+struct gt_impl {
+    returning v<(N::value > M::value)>;
+};
+
+/// le
+defun(le, typename N, typename M);
+
+template <typename N, typename M>
+struct le_impl {
+    returning v<N::value <= M::value>;
+};
+
+/// ge
+defun(ge, typename N, typename M);
+
+template <typename N, typename M>
+struct ge_impl {
+    returning v<N::value >= M::value>;
+};
+
+/// plusp
+defun(plusp, typename N);
+
+template <typename N>
+struct plusp_impl {
+    returning gt<N, v<0>>;
+};
+
+
 
 /// branch
 template <typename C, typename T, typename E>
 struct branch : branch<tpp<C>, T, E> { };
 
 template <typename T, typename E>
-struct branch<box<true>, T, E> : tpp<T> { };
+struct branch<v<true>, T, E> : tpp<T> { };
 
 template <typename T, typename E>
-struct branch<box<false>, T, E> : tpp<E> { };
+struct branch<v<false>, T, E> : tpp<E> { };
+
 
 /// cond
 defmacro(cond, typename... CT);
@@ -309,90 +373,166 @@ struct cond_impl<C, T, ES...>  {
 /// fibonacci
 defun(fibonacci, typename N);
 
+// template <typename N>
+// struct fibonacci_impl {
+//     returning cond<
+//         eql<N, v<0>>, v<0>,
+//         eql<N, v<1>>, v<1>,
+//         v<true>,add<fibonacci<sub1<N>>,
+//                       fibonacci<sub<N, v<2>>>>>;
+// };
+
 template <typename N>
-struct fibonacci_impl {
-    returning cond<
-        eql<N, box<0>>, box<0>,
-        eql<N, box<1>>, box<1>,
-        box<true>,add<fibonacci<sub1<N>>,
-                      fibonacci<sub<N, box<2>>>>>;
-};
+  struct fibonacci_impl {
+      returning
+          branch<eql<N, v<0>>,
+              v<0>,
+              branch<eql<N, v<1>>,
+                  v<1>,
+                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>>;
+  };
+
+
 
 /// is_empty
 defun(is_empty, typename C);
 
 template <typename... TS>
-struct is_empty_impl<collection<TS...>> : box<true> { };
+struct is_empty_impl<__l<TS...>> {
+    returning v<true>;
+};
 
 template <typename T, typename... TS>
-struct is_empty_impl<collection<T, TS...>> : box<false> { };
+struct is_empty_impl<__l<T, TS...>>  {
+    returning v<false>;
+};
 
 /// cons
 defun(cons, typename V, typename C);
 
 template <typename V, typename... CS>
-struct cons_impl<V, collection<CS...>> : collection<V, CS...> { };
+struct cons_impl<V, __l<CS...>> {
+    returning l<V, CS...>;
+};
 
 /// car
 defun(car, typename C);
 
 template <typename C, typename... CS>
-struct car_impl<collection<C, CS...>> : C { };
+struct car_impl<__l<C, CS...>> {
+    returning C;
+};
 
 /// cdr
 defun(cdr, typename C);
 
 template <typename C, typename... CS>
-struct cdr_impl<collection<C, CS...>> : collection<CS...> { };
+struct cdr_impl<__l<C, CS...>> {
+    returning l<CS...>;
+};
 
 template <typename... CS>
-struct cdr_impl<collection<CS...>> : collection<CS...> { };
+struct cdr_impl<__l<CS...>> {
+    returning l<CS...>;
+};
 
 /// caar
 defun(caar, typename C);
 
 template <typename C>
-struct caar_impl : car<car<C>> { };
+struct caar_impl  {
+    returning car<car<C>>;
+};
 
 
 /// cadr
 defun(cadr, typename C);
 
 template <typename C>
-struct cadr_impl : car<cdr<C>> { };
+struct cadr_impl {
+    returning car<cdr<C>>;
+};
 
 /// cdar
 defun(cdar, typename C);
 
 template <typename C>
-struct cdar_impl : cdr<car<C>> { };
+struct cdar_impl {
+    returning cdr<car<C>>;
+};
 
 /// cddr
 defun(cddr, typename C);
 
 template <typename C>
-struct cddr_impl : cdr<cdr<C>> { };
+struct cddr_impl {
+    returning cdr<cdr<C>>;
+};
 
 /// concat
 defun(concat, typename C, typename D);
 
 template <typename... CS, typename... DS>
-struct concat_impl<collection<CS...>, collection<DS...>> : collection<CS..., DS...> { };
+struct concat_impl<__l<CS...>, __l<DS...>>  {
+    returning l<CS..., DS...>;
+};
 
-/// reverse_collection
-defun(reverse_collection, typename C);
-
-template <typename C, typename D>
-struct reverse_collection_aux { };
+/// reverse
+defun(reverse_aux, typename C, typename D);
 
 template <typename... cs, typename... ds>
-struct reverse_collection_aux<collection<cs...>, collection<ds...>>
-    : collection<ds...> { };
+struct reverse_aux_impl<__l<cs...>, __l<ds...>> {
+    returning l<ds...>;
+};
 
 template <typename c, typename... cs, typename... ds>
-struct reverse_collection_aux<collection<c, cs...>, collection<ds...>>
-    : reverse_collection_aux<collection<cs...>, collection<c, ds...>> { };
+struct reverse_aux_impl<__l<c, cs...>, __l<ds...>> {
+    returning reverse_aux<l<cs...>, l<c, ds...>>;
+};
+
+defun(reverse, typename C);
 
 template <typename... cs>
-struct reverse_collection_impl<collection<cs...>> : reverse_collection_aux<collection<cs...>, collection<>> { };
+struct reverse_impl<l<cs...>>  {
+    returning reverse_aux<l<cs...>, l<>>;
+};
 
+
+/// map_single
+defun(map_single, typename F, typename C);
+
+template <typename F, typename... CS>
+struct map_single_impl<F,__l<CS...>> {
+    returning l<funcall<F,CS>...>;
+};
+
+/// map
+defun(map, typename F, typename... CS);
+
+template <typename F, typename... CS>
+struct map_impl {
+    returning
+        branch<
+            // Si alguna lista es vacía
+            apply<f<or_logic>, map_single<f<is_empty>, l<CS...>>>,
+            // Devolvemos una lista vacía
+            l<>,
+            // En otro caso, aplicamos F a los primeros elementos y realizamos
+            // la llamada recursiva quitando un elemento de cada lista
+            cons<apply<F, map_single<f<car>, l<CS...>>>,
+                 apply<f<map>, F, map_single<f<cdr>, l<CS...>>>>>;
+};
+
+/// zip
+defun(zip, typename... CS);
+
+template <typename... CS>
+struct zip_impl {
+    returning map<f<l>, CS...>;
+};
+
+/// q
+template <typename T>
+struct q {
+    evaluating T;
+};
