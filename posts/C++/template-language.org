@@ -1358,6 +1358,21 @@ Aquí definimos el *objeto* de T++ 2000.0 ~t~. Va a funcionar igual que ~v~, per
   };
 #+end_src
 
+Otro objeto que puede ser interesante es el que contiene tipos templatizados. En T++ 2000.0 nos interesan concretamente los tipos, pero no templatizados. Así que podemos crear el objeto ~tt~ para crear otro puente entre T++ 2000.0 y los tipos templatizados.
+
+#+begin_src C++
+  template <template <typename...> typename T>
+  struct tt {
+      using type = tt;
+
+      template <typename... TS>
+      using value_template_type = T<TS...>;
+
+      template <typename...>
+      using tpp_return = tt;
+  };
+#+end_src
+
 
 * El evaluador
 
@@ -2117,6 +2132,47 @@ Utilizamos una función auxiliar ~apply_aux~ que va guardando los primeros argum
 #+RESULTS:
 : 6
 
+* Curryficación
+
+En T++ vimos la currificación como aquella herramienta que nos permitía crear funciones al vuelo. Dada una función, le dábamos menos argumentos de los requeridos. El resto de los argumentos se pasarán más tarde. Aquí tendremos lo mismo, pero mejor. Y es que en T++ teníamos la curryficación como algo separado de las funciones. ¿Por qué no hacemos que todas las funciones se puedan curryficar por defecto?
+
+En lugar de crear un nuevo objeto llamado ~c~, vamos a modificar ~f~ para que acepte más argumentos. Recordemos la definición de ~f~:
+
+#+begin_src C++
+  template <template <typename...> typename F>
+  struct f {
+      using type = f;
+      template <typename... FS>
+      using value_template_type = F<FS...>;
+
+      evaluating f;
+  };
+#+end_src
+
+Sólo necesitamos recibir de antemano algunos argumentos que se usarán en la evaluación de la función:
+
+#+begin_src C++
+  template <template <typename...> typename F, typename... AS>
+  struct f {
+      using type = f;
+      template <typename... FS>
+      using value_template_type = F<AS..., FS...>;
+
+      evaluating f;
+  };
+#+end_src
+
+Como ejemplo, podemos usar ~f<lt,v<0>>~ como la función que comprueba si un número es mayor que ~0~:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  std::cout << tpp_v<funcall<f<lt,v<0>>, v<5>>> << std::endl;
+  std::cout << tpp_v<funcall<f<lt,v<0>>, v<-5>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 1
+: 0
+
 * Map y Zip
 
 Volvemos a encontrarnos con estos dos monstruos. Pero recuerda, ahora estamos en T++ 2000.0. Las cosas son un poco más fáciles aquí.
@@ -2141,8 +2197,8 @@ Como ya hicimos en T++, empezaremos definiendo una versión simplificada de ~map
 Vamos a probar. Dada una colección de enteros, usaremos ~map_single~ y ~apply~ para comprobar si todos los elementos son mayores que 0.
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
-  std::cout << tpp_v<apply<f<and_logic>, map_single<f<plusp>, l<v<1>, v<2>, v<3>>>>> << std::endl;
-  std::cout << tpp_v<apply<f<and_logic>, map_single<f<plusp>, l<v<1>, v<-2>, v<0>>>>> << std::endl;
+  std::cout << tpp_v<apply<f<and_logic>, map_single<f<lt, v<0>>, l<v<1>, v<2>, v<3>>>>> << std::endl;
+  std::cout << tpp_v<apply<f<and_logic>, map_single<f<lt, v<0>>, l<v<1>, v<-2>, v<0>>>>> << std::endl;
 #+end_src
 
 #+RESULTS:
@@ -2218,9 +2274,194 @@ Ya está. En serio, no hay más.
 
 Pues no sé, no me han parecido taaan complicadas estas funciones como recordaba. Aunque creo que eso se debe a que T++ 2000.0 está demostrando ser más sencillo que su antecesor T++.
 
+* Meta-programación
+
+Sip, vamos a hablar de meta-programación en la herramienta de meta-programación de C++. Hay varias formas de meta-programación y cada lenguaje lo implementa de diferentes maneras. Aquí vamos a reflexionar sobre qué nos puede servir a nosotros.
+
+En nuestro caso, nos interesa ser capaz de representar código de T++ 2000.0 con algo que se use normalmente en el propio lenguaje. Por ejemplo, las funciones reciben y devuelven objetos, como ~v<1>~. Así que no es descabellado pensar en intentar representar código mediante un objeto.
+
+Más aún, todo el código de T++ 2000.0 son tipos de C++. Por ejemplo, ~add<v<1>,v<2>>~ es una estructura. Sin embargo, no es un objeto de T++ 2000.0. Recuerda que los objetos se evalúan a sí mismos y ~add<v<1>,v<2>>~ se evalúa a ~v<3>~. 
+
+Sabiendo que ~add<v<1>,v<2>>~ es un tipo de C++, ¿como podemos crear un objeto de T++ 2000.0 que represente este código? Bueno, ¿recuerdas que habíamos definido los objetos como puentes entre C++ y T++ 2000.0? En concreto, al inicio habíamos definido hasta 3 objetos diferentes. El primero era ~v~ que se usa continuamente. Pero habían dos más, ~t~ y ~tt~. En particular, ~t~ era un puente para los tipos de C++ en general. Así que la solución a nuestro problema se reduce a usar ~t~.
+
+Si queremos representar en un objeto el código ~add<v<1>,v<2>>~ basta usar ~t<add<v<1>,v<2>>>~.
+
+¡Genial!
+
+Pero aún falta algo que no hemos comentado aún. ¿Qué es ~add~? ¿Cómo podemos representar ese código como objeto de T++ 2000.0? Y ojo, no estamos hablando de ~add~ como función, sino como token en nuestro código. Esto no es programación, es meta-programación. Para T++ 2000.0 ~add~ es una función, pero para C++ es un tipo templatizado. Y al igual que con los tipos usamos ~t~, para los tipos templatizados podemos usar ~tt~. Es decir, el objeto que representa el código ~add~ es ~tt<add>~.
+
+Ahora es cuando esto se pone interesante, porque podemos definir una función que evalúe un objeto que represente código de T++ 2000.0. A esta función la llamamos ~eval~. Como el nombre indica, se puede ver como si fuese un evaluador del T++ 2000.0. Recordemos que ~eval~ no es equivalente a ~tpp~. ~tpp~ es lo que nos permite escribir y evaluar código de T++ 2000.0. Por otro lado, ~eval~ es una función dentro de T++ 2000.0. ~eval~ no puede existir sin ~tpp~.
+
+#+begin_src C++
+  defun(eval, typename T);
+
+  template <typename T>
+  struct eval_impl<t<T>> {
+      returning T;
+  };
+#+end_src
+
+Observa que en la implementación sólo aceptamos objetos ~t~. Cogemos el código que contiene y lo devolvemos. Como ~eval~ es una función, el código ~T~ es evaluado y será su resultado lo que realmente se devuelve.
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  std::cout << tpp_v<eval<t<add<v<1>,v<2>>>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 3
+
+Todo el potencial de la meta-programación la obtendremos más adelante. Aunque necesitaremos un par de funciones para poder trabajar cómodamente con código de T++ 2000.0. Observa que ya estamos empezando a hablar sobre trabajar sobre el propio código de T++ 2000.0. Es decir, vamos a poder manipular lo que se escribe y modificarlo a nuestro antojo.
+
+Para que la tarea de manipular el código sea más sencilla, necesitamos convertir un objeto ~t~ a algo del que tengamos más control. En particular, vamos a transformar los objetos ~t~ en listas.
+
+Observa el ejemplo de la suma de nuevo ~add<v<1>,v<2>>~. Si diseccionamos cada parte del código, vemos que hay tres elementos importantes: ~add~, ~v<1>~ y ~v<2>~. Cada una de estas partes es fácilmente convertible en un objeto ~t~ o ~tt~. Por tanto, dado ~add<v<1>,v<2>>~ podemos generar la lista ~l<tt<add>,t<v<1>>,t<v<2>>>~. Y viceversa, dada la lista podemos crear el objeto ~t~ inicial.
+
+Además queremos que sea recursivo. Imagina el código ~add<add<v<1>,v<2>>,v<3>>~. Queremos que esto se 'descomponga' en la lista ~l<tt<add>,l<tt<add>,t<v<1>>, t<v<2>>>, t<v<3>>>~.
+
+A todo esto se le añade un poquito más de complicación. Imagínate que queremos hacer este proceso de 'descomposición' con el código ~t<v<1>>~. Siguiendo el proceso descrito, deberíamos crear la lista ~l<tt<v>, t<1>>~. ¡Pero esto está todo mal! ~1~ no es un tipo que se pueda guardar con ~t~ y ni siquiera ~v~ es un tipo templatizado válido para ~tt~. Hay que añadir alguna regla más. ¿Qué diferencia hay entre ~add<v<1>,v<2>>~ y ~v<1>~ para que el primero se pueda descomponer y el segundo no? Pues, simplemente, que el primero es una llamada a una función y el segundo es un objeto. Y esta puede ser la clave. Debemos decomponer sólo las llamadas a funciones. O más bien al revés, iremos decomponiendo hasta que encontremos un objeto.
+
+Todo esto significa que necesitamos alguna forma de saber si algo es un objeto o no. Pero eso es sencillo. Lo hemos dicho ya muchas veces. Sólo hay que comprobar si se evalúa a sí mismo.
+
+Vamos a definir la función ~atom~ que nos dirá si cierto código es un objeto o no.
+
+#+begin_src C++
+  defun(atom, typename T);
+
+  template <typename T>
+  struct atom_impl<t<T>> {
+      returning v<std::is_same_v<T, tpp_t<T>>>;
+  };
+#+end_src
+
+Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  std::cout << tpp_v<atom<t<v<5>>>> << std::endl;
+  std::cout << tpp_v<atom<t<add<v<5>>>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 1
+: 0
+
+Perfecto. Ahora ya podemos definir las funciones de conversión. La primera la vamos a llamar ~split~. Dado un ~t~ con código, devolverá una lista con cada uno de los elementos del código.
+
+#+begin_src C++
+  /// simple_split
+  defun(simple_split, typename T);
+
+  template <template <typename...> typename T, typename... S>
+  struct simple_split_impl<t<T<S...>>> {
+      returning l<tt<T>, t<S>...>;
+  };
+
+  /// split
+  defun(split, typename T);
+
+  template <typename T>
+  struct split_impl<t<T>> {
+
+      using splitted_T = simple_split<t<T>>;
+
+      returning branch<
+          atom<t<T>>,
+          t<T>,
+          cons<car<splitted_T>, map<f<split>, cdr<splitted_T>>>>;
+  };
+#+end_src
+
+Nos ayudamos de la función auxiliar ~simple_split~ que realiza el proceso de descomposición para una llamada a función. Y sin hacer recursividad. La comprobación de si tenemos un objeto y la recursividad se hace en la función deseada ~split~. Si tenemos un objeto lo devolvemos. En otro caso, realizamos el split simple y, por un lado, cogemos su primer elemento que será un ~t~, y segundo, realizamos la descomposición de manera recursiva sobre los argumentos de la función.
+
+Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  debug<tpp_t<split<t<add<add<v<1>,v<2>>, v<3>>>>>>::type;
+#+end_src
+
+#+begin_src C++
+  ‘type’ is not a member of ‘debug<
+      __l<tt<add>,
+          __l<tt<add>, t<v<1>>, t<v<2>>>,
+          t<v<3>>>>’
+#+end_src
+
+¡Perfecto!
+
+Ahora toca el proceso inverso. Dada la lista con ~tt~ y ~t~, queremos devolver un único ~t~ con el código. A esta segundo función la llamamos ~join~. Va a ser muy parecida a ~split~. Aunque ahora, en lugar de saber si nos encontramos con un átomo para parar, necesitamos saber cuándo nos encontramos con una lista para poder realizar la llamada recursiva. Definimos entonces la función ~listp~:
+
+#+begin_src C++
+  defun(listp, typename T);
+
+  template <typename T>
+  struct listp_impl {
+      returning v<false>;
+  };
+
+  template <typename... TS>
+  struct listp_impl<__l<TS...>> {
+      returning v<true>;
+  };
+#+end_src
+
+Ahora sí, definimos ~join~:
+
+#+begin_src C++
+  /// simple_join
+  defun(simple_join, typename T);
+
+  template <template <typename...> typename T, typename... S>
+  struct simple_join_impl<__l<tt<T>, t<S>...>> {
+      returning t<T<S...>>;
+  };
+
+  /// join
+  defun(join, typename T);
+
+  template <typename T>
+  struct join_impl {
+      returning branch<
+          listp<T>,
+          simple_join<cons<car<T>, map<f<join>, cdr<T>>>>,
+          T>;
+  };
+#+end_src
+
+Si el argumento recibido es una lista, realizamos la llamada recursiva y con el resultado realizamos el join simple. En otro caso, devolvemos el argumento.
+
+Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  debug<
+      tpp_t<join<l<
+          tt<add>,
+          l<tt<add>, t<v<1>>, t<v<2>>>,
+          t<v<3>>>>>>::type;
+#+end_src
+
+#+begin_src C++
+  error : ‘type’ is not a member of ‘debug<t<add<add<v<1>, v<2>>, v<3>>>>’
+#+end_src
+
+¿No es maravilloso?
+
+Claramente hay una propiedad que necesitamos probar sí o sí. Y es que si hemos hecho bien las cosas, debe cumplirse que ~split~ y ~join~ son funciones inversas. En particular, ~split<join<T>>~ debe ser la función identidad para las listas pertinentes (con ~tt~ y ~t~ que representen código). Y por otro lado ~join<split<T>>~ debe ser la función identidad para los ~t~ que representen código.
+
+Una prueba sencilla:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  std::cout << tpp_v<eval<join<split<t<add<add<v<1>, v<2>>, v<3>>>>>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 6
+
+Espectacular.
+
+Y todo esto... ¿para qué? No te preocupes, ten paciencia. Dentro de poco lo veremos.
+
 * Quotation
 
-Hasta ahora nos hemos centrado en definir objetos y funciones en T++ 2000.0. Nos hemos centrado en darle un sentido a los tipos de datos en C++ dentro del contexto del alias ~tpp~. Pero hay que recordar que todo lo que hemos usado son tipos de C++ independientemente del significado que le hayamos dado. Esto es algo que aún no hemos explotado del todo. Y para entender esto, es posible que nos pueda interesar crear una lista con los tipos ~add<v<1>,v<2>>~ o ~car<l<t<int>,t<float>>>~ como elementos. Para entender mejor lo que quiero decir veamos el siguiente ejemplo:
+Hasta ahora nos hemos definido objetos y funciones en T++ 2000.0. Nos hemos centrado en darle un sentido a los tipos de datos en C++ dentro del contexto del alias ~tpp~. Pero hay que recordar que todo lo que hemos usado son tipos de C++ independientemente del significado que le hayamos dado. Esto es algo que aún no hemos explotado del todo. Y para entender esto, es posible que nos pueda interesar crear una lista con los tipos ~add<v<1>,v<2>>~ o ~car<l<t<int>,t<float>>>~ como elementos. Para entender mejor lo que quiero decir veamos el siguiente ejemplo:
 
 #+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
   debug<tpp<l<add<v<1>,v<2>>>>>::type;
@@ -2230,7 +2471,7 @@ Hasta ahora nos hemos centrado en definir objetos y funciones en T++ 2000.0. Nos
 error: ‘type’ is not a member of ‘debug<__l<v<3> > >’
 #+end_src
 
-Lo que nos interesa ahora es poder construir el objeto ~__l<add<v<1>,v<2>>>~ usando el constructor ~l~ y no tener que usar ~__l~.
+Lo que nos interesa ahora es poder construir el objeto ~__l<add<v<1>,v<2>>>~ usando el constructor ~l~ y no ~__l~.
 
 Para conseguir eso necesitamos algún mecanismo que nos permita evitar la evaluación de los argumentos. Y aquí entra ~quote~, que abreviaremos como ~q~.
 
@@ -2251,10 +2492,43 @@ Para conseguir eso necesitamos algún mecanismo que nos permita evitar la evalua
   error : ‘type’ is not a member of ‘debug<__l<add<v<1>, v<2>>>>’
 #+end_src
 
+Gracias a ~q~, podemos hacer énfasis en que queremos el tipo de dato de C++ escrito y no una expresión de T++ 2000.0.
+
+Una función interesante a partir de esto es ~eval~. Esta función debe recibir código de T++ 2000.0. Algo que ya podemos conseguir mediante ~q~. La definición sería la siguiente:
+
+#+begin_src C++
+  defun(eval, typename T);
+
+  template<typename T>
+  struct eval_impl {
+      returning tpp<T>;
+  }
+#+end_src
+
+Vamos a probar:
+
+#+begin_src C++ :exports both :eval never-export :results output :includes '(<iostream> </home/hectarea/lispylambda/posts/C++/prueba2.h>)
+  std::cout << tpp_v<eval<q<add<v<2>, v<3>>>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 5
+
+Quizás todo esto de desactivar la evaluación para después crear la función ~eval~ parezca un poco raro, pero poco a poco iremos viendo su potencial.
 
 Quasiquote y Unquote ¿Hacer como aqui: https://www.lispworks.com/documentation/HyperSpec/Body/02_df.htm?
 
 
+Nada de quote. Lo que sirve para representar el propio codigo de T++ es ~t~. Por ejemplo, ~t<add<v<1>,v<2>>>~. Para representar al propio ~add~ podemos definir ~tt~ y así tener ~tt<add>~.
+Dado un ~t~, se podría convertir en una lista de ~tt~ y ~t~ y viceversa. Se debería de definir ~q~, ~qq~, ~uq~ y ~suq~ en términos de ~t~ y ~tt~.
+
+Tambien podríamos definir estructuras
+
+defstruct(mistruct, x, y, z);
+
+mistruct<v<1>,v<4>,t<int>>
+
+mistruct_x<mistruct<v<1>,v<4>,t<int>>> --> v<1>
 
 
 

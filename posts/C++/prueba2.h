@@ -20,7 +20,6 @@ extern constexpr auto tpp_v = tpp<T>::value;
 template <typename T>
 extern constexpr auto tpp_vt = tpp<T>::value_type;
 
-
 /// evaluating
 #define evaluating         \
     template <typename...> \
@@ -45,12 +44,23 @@ struct t {
     evaluating t;
 };
 
+/// tt
+template <template <typename...> typename T>
+struct tt {
+    using type = tt;
+
+    template <typename... TS>
+    using value_template_type = T<TS...>;
+
+    evaluating tt;
+};
+
 /// f
-template <template <typename...> typename F>
+template <template <typename...> typename F, typename... AS>
 struct f {
     using type = f;
     template <typename... FS>
-    using value_template_type = F<FS...>;
+    using value_template_type = F<AS..., FS...>;
 
     evaluating f;
 };
@@ -104,12 +114,12 @@ struct funcall_impl {
 /// apply
 defun(apply_aux, typename F, typename C, typename... A)
 
-template<typename F, typename... CS, typename... AS>
-struct apply_aux_impl<F, __l<CS...>, __l<AS...>> {
+    template <typename F, typename... CS, typename... AS>
+    struct apply_aux_impl<F, __l<CS...>, __l<AS...>> {
     returning funcall<F, CS..., AS...>;
 };
 
-template<typename F, typename... CS, typename A, typename B, typename... AS>
+template <typename F, typename... CS, typename A, typename B, typename... AS>
 struct apply_aux_impl<F, __l<CS...>, A, B, AS...> {
     returning apply_aux<F, l<CS..., A>, B, AS...>;
 };
@@ -133,7 +143,7 @@ struct quote<F<AS...>> {
 };
 
 /// qt
-template<typename T>
+template <typename T>
 using qt = quote<T>;
 
 /// unquote
@@ -141,36 +151,28 @@ template <typename T>
 struct unquote { };
 
 /// uq
-template<typename T>
+template <typename T>
 using uq = unquote<T>;
 
 /// quasiquote
-template<typename T>
+template <typename T>
 struct quasiquote {
     evaluating T;
 };
 
-template<typename T>
+template <typename T>
 struct quasiquote<unquote<T>> {
-    evaluating tpp<T>;  
+    evaluating tpp<T>;
 };
 
 template <template <typename...> typename F, typename... AS>
 struct quasiquote<F<AS...>> {
-    evaluating l<f<F>, tpp<quasiquote<AS>>...>;  
+    evaluating l<f<F>, tpp<quasiquote<AS>>...>;
 };
 
 /// qq
-template<typename T>
+template <typename T>
 using qq = quasiquote<T>;
-
-/// eval
-defun(eval, typename E);
-
-template <typename E>
-struct eval_impl {
-    returning tpp<E>;
-};
 
 /// macro
 template <template <typename...> typename M, typename... AS>
@@ -261,7 +263,7 @@ struct or_logic_impl {
 
 template <typename N, typename... NS>
 struct or_logic_impl<N, NS...> {
-    returning v<N::value || tpp_v<or_logic<NS...>>>; 
+    returning v<N::value || tpp_v<or_logic<NS...>>>;
 };
 
 /// and_logic
@@ -349,8 +351,6 @@ struct plusp_impl {
     returning gt<N, v<0>>;
 };
 
-
-
 /// branch
 template <typename C, typename T, typename E>
 struct branch : branch<tpp<C>, T, E> { };
@@ -361,12 +361,11 @@ struct branch<v<true>, T, E> : tpp<T> { };
 template <typename T, typename E>
 struct branch<v<false>, T, E> : tpp<E> { };
 
-
 /// cond
 defmacro(cond, typename... CT);
 
 template <typename C, typename T, typename... ES>
-struct cond_impl<C, T, ES...>  {
+struct cond_impl<C, T, ES...> {
     returning qq<branch<uq<C>, uq<T>, cond<uq<ES>...>>>;
 };
 
@@ -383,16 +382,14 @@ defun(fibonacci, typename N);
 // };
 
 template <typename N>
-  struct fibonacci_impl {
-      returning
-          branch<eql<N, v<0>>,
-              v<0>,
-              branch<eql<N, v<1>>,
-                  v<1>,
-                  add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>>;
-  };
-
-
+struct fibonacci_impl {
+    returning
+        branch<eql<N, v<0>>,
+            v<0>,
+            branch<eql<N, v<1>>,
+                v<1>,
+                add<fibonacci<sub1<N>>, fibonacci<sub1<sub1<N>>>>>>;
+};
 
 /// is_empty
 defun(is_empty, typename C);
@@ -403,7 +400,7 @@ struct is_empty_impl<__l<TS...>> {
 };
 
 template <typename T, typename... TS>
-struct is_empty_impl<__l<T, TS...>>  {
+struct is_empty_impl<__l<T, TS...>> {
     returning v<false>;
 };
 
@@ -413,6 +410,19 @@ defun(cons, typename V, typename C);
 template <typename V, typename... CS>
 struct cons_impl<V, __l<CS...>> {
     returning l<V, CS...>;
+};
+
+/// listp
+defun(listp, typename T);
+
+template<typename T>
+struct listp_impl{
+    returning v<false>;
+};
+
+template<typename... TS>
+struct listp_impl<__l<TS...>>{
+    returning v<true>;
 };
 
 /// car
@@ -440,10 +450,9 @@ struct cdr_impl<__l<CS...>> {
 defun(caar, typename C);
 
 template <typename C>
-struct caar_impl  {
+struct caar_impl {
     returning car<car<C>>;
 };
-
 
 /// cadr
 defun(cadr, typename C);
@@ -473,7 +482,7 @@ struct cddr_impl {
 defun(concat, typename C, typename D);
 
 template <typename... CS, typename... DS>
-struct concat_impl<__l<CS...>, __l<DS...>>  {
+struct concat_impl<__l<CS...>, __l<DS...>> {
     returning l<CS..., DS...>;
 };
 
@@ -493,17 +502,16 @@ struct reverse_aux_impl<__l<c, cs...>, __l<ds...>> {
 defun(reverse, typename C);
 
 template <typename... cs>
-struct reverse_impl<l<cs...>>  {
+struct reverse_impl<l<cs...>> {
     returning reverse_aux<l<cs...>, l<>>;
 };
-
 
 /// map_single
 defun(map_single, typename F, typename C);
 
 template <typename F, typename... CS>
-struct map_single_impl<F,__l<CS...>> {
-    returning l<funcall<F,CS>...>;
+struct map_single_impl<F, __l<CS...>> {
+    returning l<funcall<F, CS>...>;
 };
 
 /// map
@@ -520,7 +528,7 @@ struct map_impl {
             // En otro caso, aplicamos F a los primeros elementos y realizamos
             // la llamada recursiva quitando un elemento de cada lista
             cons<apply<F, map_single<f<car>, l<CS...>>>,
-                 apply<f<map>, F, map_single<f<cdr>, l<CS...>>>>>;
+                apply<f<map>, F, map_single<f<cdr>, l<CS...>>>>>;
 };
 
 /// zip
@@ -529,6 +537,63 @@ defun(zip, typename... CS);
 template <typename... CS>
 struct zip_impl {
     returning map<f<l>, CS...>;
+};
+
+/// eval
+defun(eval, typename T);
+
+template <typename T>
+struct eval_impl<t<T>> {
+    returning T;
+};
+
+/// atom
+defun(atom, typename T);
+
+template <typename T>
+struct atom_impl<t<T>> {
+    returning v<std::is_same_v<T, tpp_t<T>>>;
+};
+
+/// simple_split
+defun(simple_split, typename T);
+
+template <template <typename...> typename T, typename... S>
+struct simple_split_impl<t<T<S...>>> {
+    returning l<tt<T>, t<S>...>;
+};
+
+/// split
+defun(split, typename T);
+
+template <typename T>
+struct split_impl<t<T>> {
+
+    using splitted_T = simple_split<t<T>>;
+
+    returning branch<
+        atom<t<T>>,
+        t<T>,
+        cons<car<splitted_T>, map<f<split>, cdr<splitted_T>>>>;
+};
+
+/// simple_join
+defun(simple_join, typename T);
+
+template <template <typename...> typename T, typename... S>
+struct simple_join_impl<__l<tt<T>, t<S>...>> {
+    returning t<T<S...>>;
+};
+
+/// join
+defun(join, typename T);
+
+template <typename T>
+struct join_impl {
+    returning branch<
+        listp<T>,
+        simple_join<cons<car<T>, map<f<join>, cdr<T>>>>,
+        T>;
 };
 
 /// q
