@@ -8,9 +8,16 @@
 #+end_src
 
 
+
 #+begin_src C++
-debug<l<int>::type>::type;
-//   std::cout << tpp_v<fibonacci<v<10>>> << std::endl;
+  debug < tpp < macroexpand < q<match<v<2>, otherwise, add<fibonacci<add<v<2>, v<-1>>>, fibonacci<add<v<2>, v<-2>>>>>> >>> ::type;
 #+end_src
 
 #+RESULTS:
+
+#+begin_src C++
+  std::cout << tpp_v<fibonacci<v<10>>> << std::endl;
+#+end_src
+
+#+RESULTS:
+: 55
