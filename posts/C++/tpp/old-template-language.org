@@ -1,5 +1,4 @@
 #+TITLE: T++: El lenguaje oculto tras los Templates
-#+date:<2023-07-30 do.>
 
 Te propongo lo siguiente: Vamos a aprender un lenguaje de programación nuevo. Lo llamaremos *T++*. Es un lenguaje funcional puro, pero no te preocupes, iremos poco a poco si nunca te has enfrentado con algo así.
 
@@ -2618,4 +2617,11 @@ std::cout << eval_v<fibonacci<box<10>>> << std::endl;
 
 #+RESULTS:
 : 55
+
+#+begin_src C++
+  std::cout << box<5>::value << std::endl;
+#+end_src
+
+#+RESULTS:
+: 5
 

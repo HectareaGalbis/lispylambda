@@ -1,0 +1,16 @@
+#+TITLE: T++: El lenguaje oculto tras los Templates
+
+#+begin_src emacs-lisp :results silent
+  ;; File setup
+  (setq org-babel-default-header-args:C++ '((:includes . "'(<iostream> \"tpp.hpp\")")
+                                            (:results . "output")
+                                            (:flags . "-I/home/hectarea/emacs/lispylambda/posts/C++/tpp/include -std=c++20")))
+#+end_src
+
+
+#+begin_src C++
+debug<l<int>::type>::type;
+//   std::cout << tpp_v<fibonacci<v<10>>> << std::endl;
+#+end_src
+
+#+RESULTS:
