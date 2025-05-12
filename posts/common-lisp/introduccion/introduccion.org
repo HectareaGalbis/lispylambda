@@ -1,5 +1,58 @@
 #+title: Introducción al lenguaje Common Lisp (ahora sí)
-#+date: <2023-02-12 dom>
+
+#+language: es
+#+latex_compiler: xelatex
+#+latex_header: \setmainfont{Noto Serif}
+
+#+begin_src emacs-lisp :exports none :results silent
+  ;; File setup
+  (setq org-babel-default-header-args:lisp '((:results . "value verbatim") (:exports . "both")))
+#+end_src
+
+#+begin_src lisp :results value
+  (coalton (1+ 1))
+#+end_src
+
+#+RESULTS:
+: "Hola", 4
+
+#+begin_src lisp :results value
+  '|#(|
+#+end_src
+
+#+RESULTS:
+: |
+
+
+#+begin_src emacs-lisp :results value verbatim
+"Hello"
+#+end_src
+
+#+RESULTS:
+: "Hello"
+
+#+begin_src emacs-lisp :results output
+(prin1 "Hello")
+#+end_src
+
+#+RESULTS:
+: "Hello"
+
+
+
+
+((:colname-names)
+ (:rowname-names)
+ (:result-params replace value)
+ (:result-type . value)
+ (:results . replace value)
+ (:exports . code)
+ (:session . none)
+ (:cache . no)
+ (:noweb . no)
+ (:hlines . no)
+ (:tangle . no))
+
 
 * Introducción
 
@@ -83,14 +136,14 @@ Un tipo de dato poco común y que debería estar presente en más lenguajes de p
 
 Common Lisp tiene el tipo ~rational~. No lo confundas con la división que puedes encontrar en otros lenguajes como C++ o Java. Recuerda que para dividir dos números en Common Lisp usamos la expresión ~(/ a b)~ donde ~a~ y ~b~ son dos números. Por otro lado, la expresión ~a/b~ es la fracción ~a~ entre ~b~. Mientras que la división acepta cualquier tipo de número (enteros, fracciones, números con coma flotante), las fracciones sólo pueden formarse a partir de dos enteros.
 
-También podemos usar números complejos. Usamos ~#c(5 1)~, por ejemplo, para denotar al número ~5+i~. Utilizando la función de exponenciación ~expt~ y la variable ~pi~ podemos calcular el valor ~-1~ con la famosa identidad de Euler.
+También podemos usar números complejos. Usamos ~#c(5 1)~, por ejemplo, para denotar al número ~5+i~. Utilizando la función de exponenciación ~expt~ y la variable ~pi~ podemos calcular el valor ~-1~ con la famosa identidad de Euler: e^(\pi{}i)=-1.
 
-#+begin_src lisp :exports both :eval never-export
-(expt 2.718281828459045d0 (* pi #c(0 1)))  ; e^(πi)
+#+begin_src lisp
+(expt 2.718281828459045d0 (* pi #c(0 1)))
 #+end_src
 
 #+RESULTS:
-: #C(-1.0d0 1.2246467991473532d-16) 
+: #C(-1.0d0 1.2246467991473532d-16)
 
 La ~d~ que hay al final del número en coma flotante sirve para indicar que queremos usar doble precisión (~double~). 
 

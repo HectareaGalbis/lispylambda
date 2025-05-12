@@ -1,0 +1,558 @@
+% Created 2025-01-25 sáb 14:55
+% Intended LaTeX compiler: xelatex
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{pmboxdraw}
+\usepackage{fontspec}
+\usepackage[spanish]{babel}
+\setmainfont{Noto Serif}
+\author{Héctor Galbis Sanchis}
+\date{\today}
+\title{Introducción al lenguaje Common Lisp (ahora sí)}
+\hypersetup{
+ pdfauthor={Héctor Galbis Sanchis},
+ pdftitle={Introducción al lenguaje Common Lisp (ahora sí)},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 29.3 (Org mode 9.6.15)}, 
+ pdflang={Spanish}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+\begin{verbatim}
+;; File setup
+(setq org-babel-default-header-args:lisp '((:results . "both")))
+\end{verbatim}
+
+
+\section{Introducción}
+\label{sec:org04ca52c}
+
+Como ya sabrás, los lenguajes de programación nos sirven para comunicarnos con el ordenador y decirle cómo manipular datos. Es por ello que siempre vale la pena empezar viendo cómo funciona un lenguaje hablando sobre los tipos de datos que podemos manejar en él. Tras esto lo común es ver la sintaxis del lenguaje para realmente decirle a ordenador cómo manipulamos estos datos, pero con Common Lisp eso no va a ocurrir porque los propios datos ya son la sintaxis del lenguaje.
+
+Recordemos que para trabajar con Common Lisp se suele trabajar con un \emph{REPL}.  Este \emph{REPL} es lo que obtenemos al ejecutar cualquier implementación de Common Lisp. En él introducimos expresiones y el \emph{REPL} las evalúa y devuelve el resultado. Al principio da la sensación de que sólo sirve para probar expresiones sencillas, pero poco a poco uno va descubriendo su verdadero potencial.
+
+Dicho esto, en esta introducción estaré usando continuamente el \emph{REPL} para evaluar expresiones de Common Lisp, a no ser que se diga lo contrario.
+
+
+\section{Tipos de datos primitivos}
+\label{sec:org7babcb4}
+
+Como cualquier otro lenguaje de programación, Common Lisp dispone de los tipos de datos más primitivos. Entre ellos podemos encontrar:
+
+\begin{itemize}
+\item Números
+\item Booleanos
+\item Caracteres y cadenas de texto
+\end{itemize}
+
+Hay muchísimos tipos de datos más que iremos introduciendo poco a poco.
+
+\subsection{Números}
+\label{sec:orgbc166e8}
+
+En cuanto a los números enteros no hay mucho misterio. Se escriben exactamente igual que en cualquier otro lenguaje:
+
+\begin{verbatim}
+5    ; El entero 5
+-6   ; El entero negativo -6
+\end{verbatim}
+
+Lo que quizás no es tan común es que estos números enteros pueden usar, si es necesario, \emph{bignums}. Esto quiere decir que podemos escribir cualquier número sea lo grande que sea y todo seguirá yendo bien. 
+
+\begin{verbatim}
+9999999999999999999999999999999999   ; Un número muy grande,
+                                     ; pero todo va bien 
+\end{verbatim}
+
+Aunque aún no hayamos introducido las funciones, la siguiente expresión ejecuta la función \texttt{+} (función de suma):
+
+\begin{verbatim}
+(+ 3 4 5)
+\end{verbatim}
+
+\begin{verbatim}
+12
+\end{verbatim}
+
+
+Como se puede ver, para ejecutar una función debemos poner entre paréntesis la función (en este caso \texttt{+}) y seguidamente los argumentos (en este caso \texttt{3}, \texttt{4} y \texttt{5}). Podemos también multiplicar con la función \texttt{*}, dividir con \texttt{/}, y restar con \texttt{-}.
+
+\begin{verbatim}
+(* 9999 9999 99999 999988877 123456 6656) 
+\end{verbatim}
+
+\begin{verbatim}
+8215414458948896050459819081728
+\end{verbatim}
+
+
+Estas funciones aceptan cualquier tipo numérico, incluidos los números con coma flotante.
+
+\begin{verbatim}
+(/ 5.0 2.0 2.0)  ; 5.0 / 2.0 / 2.0
+\end{verbatim}
+
+\begin{verbatim}
+1.25
+\end{verbatim}
+
+
+Como ya ocurre en otros lenguajes, podemos usar notación científica para denotar números en coma flotante:
+
+\begin{verbatim}
+(- 6.e10 5.6e6)
+\end{verbatim}
+
+\begin{verbatim}
+5.9994403e10
+\end{verbatim}
+
+
+Un tipo de dato poco común y que debería estar presente en más lenguajes de programación son las fracciones:
+
+\begin{verbatim}
+(- 8/5 7/8 1/3)  ; 8/5 - 7/8 - 1/3
+\end{verbatim}
+
+\begin{verbatim}
+47/120
+\end{verbatim}
+
+
+Common Lisp tiene el tipo \texttt{rational}. No lo confundas con la división que puedes encontrar en otros lenguajes como C++ o Java. Recuerda que para dividir dos números en Common Lisp usamos la expresión \texttt{(/ a b)} donde \texttt{a} y \texttt{b} son dos números. Por otro lado, la expresión \texttt{a/b} es la fracción \texttt{a} entre \texttt{b}. Mientras que la división acepta cualquier tipo de número (enteros, fracciones, números con coma flotante), las fracciones sólo pueden formarse a partir de dos enteros.
+
+También podemos usar números complejos. Usamos \texttt{\#c(5 1)}, por ejemplo, para denotar al número \texttt{5+i}. Utilizando la función de exponenciación \texttt{expt} y la variable \texttt{pi} podemos calcular el valor \texttt{-1} con la famosa identidad de Euler: e\textsuperscript{(\(\pi\)i)}=-1.
+
+\begin{verbatim}
+(expt 2.718281828459045d0 (* pi #c(0 1)))
+\end{verbatim}
+
+La \texttt{d} que hay al final del número en coma flotante sirve para indicar que queremos usar doble precisión (\texttt{double}). 
+
+Si quieres más información sobre los números en Common Lisp te recomiendo ir al libro \href{https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node16.html}{Common Lisp the Language}.
+
+Por otro lado, si quieres ver qué operaciones matemáticas existen en Common Lisp puedes visitar el \href{http://clhs.lisp.se/Body/12\_aa.htm}{HyperSpec}.
+
+
+\subsection{Booleanos}
+\label{sec:org140a2e2}
+
+No existen unos valores que podamos identificar únicamente como booleanos, sino que Common Lisp hace algo parecido al lenguaje C. En C, el número \texttt{0} significa falso y cualquier otra cosa significa verdadero. Por su lado, en Common Lisp, \texttt{NIL} es usado para indicar falsedad y cualquier otra cosa significa verdadero. Aunque, en particular, se usa el valor \texttt{T} para referirse al valor booleano que indica verdad. Es decir los valores que entran dentro del tipo \texttt{boolean} estrictamente hablando son:
+
+\begin{itemize}
+\item \texttt{T}: Verdadero
+\item \texttt{NIL}: Falso
+\end{itemize}
+
+Como es de esperar tenemos disponibles las funciones que se corresponden con las puertas lógicas:
+
+\begin{verbatim}
+(not nil)
+\end{verbatim}
+
+\begin{verbatim}
+T
+\end{verbatim}
+
+
+\begin{verbatim}
+(and (or t nil) nil)
+\end{verbatim}
+
+\begin{verbatim}
+NIL
+\end{verbatim}
+
+
+Quizás te estés preguntando por qué he escrito antes \texttt{NIL} y en el código he escrito \texttt{nil}. La respuesta es que da igual cuál uses, ambos son equivalentes, pues Common Lisp no distingue entre mayúsculas y minúsculas (\emph{case-insensitive}). Normalmente el código se escribe en minúscula y los resultados se suelen escribir en mayúscula. Lo más seguro es que mezcle ambas formas de escribir los valores, pero debes de saber que al final son equivalentes y da igual cómo lo escribamos.
+
+Si quieres saber más sobre estas operaciones lógicas puedes volver al libro \href{https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node75.html}{Common Lisp the Language}.
+
+
+\subsection{Caracteres y cadenas de texto}
+\label{sec:org2eed500}
+
+Los caracteres en Common Lisp se denotan por \texttt{\#\textbackslash{}} seguidos del caracter que quieres representar. Por ejemplo, si queremos el caracter \texttt{g} utilizamos \texttt{\#\textbackslash{}g}. 
+
+\begin{verbatim}
+#\g
+\end{verbatim}
+
+Existen un conjunto de 96 caracteres presentes en el estándar de Common Lisp (es decir, cualquier implementación debe tenerlos). Eso quiere decir que existen caracteres que podrían o no estar dependiendo de la implementación que usemos, pero no nos vamos a meter ahí. 
+
+De entre esos 96 caracteres, 2 se refieren al espacio y a la nueva línea. Para referirnos a estos dos caracteres utilizamos lo que se llama un nombre de caracter. En particular, se usa \texttt{\#\textbackslash{}Space} y \texttt{\#\textbackslash{}Newline} (de nuevo, da igual usar minúsculas o mayúsculas). Puedes encontrar la lista completa de los caracteres en el \href{http://www.lispworks.com/documentation/HyperSpec/Body/02\_ac.htm}{HyperSpec}. Sin embargo, los nombres de caracteres disponibles están en \href{http://www.lispworks.com/documentation/HyperSpec/Body/13\_ag.htm}{otra sección}. Recuerda que los únicos nombres de caracter que están presentes en el estándar son los dos primeros (\texttt{\#\textbackslash{}Space} y \texttt{\#\textbackslash{}Newline}). 
+
+Tenemos bastantes funciones que trabajan sobre caracteres. Podemos comparar su orden, ver si dos caracteres son iguales, si es mayúscula o minúscula, si es un dígito, etc.
+
+\begin{verbatim}
+(char<= #\a #\h)
+\end{verbatim}
+
+\begin{verbatim}
+T
+\end{verbatim}
+
+
+\begin{verbatim}
+(char-upcase #\y)
+\end{verbatim}
+
+\begin{verbatim}
+#\Y
+\end{verbatim}
+
+
+Puedes ver una lista de algunas de estas funciones en el \href{http://www.lispworks.com/documentation/HyperSpec/Body/13\_aa.htm}{HyperSpec}.
+
+Por otro lado tenemos las cadenas de caracteres. Como en otros lenguajes de programación, las cadenas de texto, o strings, son arrays de caracteres. Las cadenas de texto se representan mediante una sucesión de caracteres puestos entre un par de dobles comillas (\emph{"}).
+
+\begin{verbatim}
+"Hola"
+\end{verbatim}
+
+Recordemos que habían dos caracteres 'especiales' con los que nos teníamos que referir con un nombre de caracter: \texttt{\#\textbackslash{}Space} y \texttt{\#\textbackslash{}Newline}. Al igual que no usarías nunca \texttt{\#\textbackslash{}a} para escribir una \texttt{a} en un string, tampoco vas a usar \texttt{\#\textbackslash{}Space} y \texttt{\#\textbackslash{}Newline} para insertar un espacio o una nueva línea en un string. Y tampoco podemos usar \texttt{\textbackslash{}b} o \texttt{\textbackslash{}n}. Lo que tenemos que hacer es insertar literalmente un espacio (usando la barra espaciadora) o una nueva línea (usando la tecla \emph{Enter}).
+
+\begin{verbatim}
+(string-upcase "Pongo espacios entre la palabras.
+Y una nueva linea entre frases.")
+\end{verbatim}
+
+\begin{verbatim}
+"PONGO ESPACIOS ENTRE LA PALABRAS.
+Y UNA NUEVA LINEA ENTRE FRASES."
+\end{verbatim}
+
+
+Al igual que con los caracteres, existen \href{http://www.lispworks.com/documentation/HyperSpec/Body/f\_stg\_up.htm}{algunas funciones que manipulan los strings}, y \href{http://www.lispworks.com/documentation/HyperSpec/Body/f\_stgeq\_.htm}{otras funciones que nos dan información}. También podemos concatenar varios strings:
+
+\begin{verbatim}
+(concatenate 'string "Hola " "mundo")
+\end{verbatim}
+
+\begin{verbatim}
+"Hola mundo"
+\end{verbatim}
+
+
+\section{Control de flujo}
+\label{sec:org68587cc}
+
+La operación más primitiva de control de flujo en Common Lisp es \texttt{if}. Como en cualquier otro lenguaje de programación, recibe una condición, y dependiendo de si esa condición es verdadera o falsa ejecutará una expresión u otra.
+
+\begin{verbatim}
+(if condicion 
+  entonces 
+  en-otro-caso)
+\end{verbatim}
+
+Algo importante a tener en cuenta es que cualquier expresión de Common Lisp debe devolver algo, e \texttt{if} no es una excepción. En particular, \texttt{if} devolverá el valor que devuelva la expresión \texttt{entonces} o \texttt{en-otro-caso} dependiendo del valor de \texttt{condicion}.
+
+\begin{verbatim}
+(if (> 5 0)
+  "5 es positivo"
+  "5 no es positivo")
+\end{verbatim}
+
+\begin{verbatim}
+"5 es positivo"
+\end{verbatim}
+
+
+En este caso se ha evaluado la expresión \texttt{(> 5 0)} que devuelve \texttt{T}, y por tanto se devuelve la expresión \texttt{"5 es positivo"} que está situado en el lugar del \texttt{then}.
+
+A partir de \texttt{if} se construye \texttt{cond}, que es la versión \texttt{if-else-if-else-if} de otros lenguajes. 
+
+\begin{verbatim}
+(cond
+  (cond1 expr1)
+  (cond2 expr2)
+  (cond3 expr3)
+  ...)
+\end{verbatim}
+
+Es decir, podríamos usar \texttt{if} para ver si un número es positivo, negativo o cero de esta forma:
+
+\begin{verbatim}
+(if (> -4 0)
+  "-4 es positivo"
+  (if (< -4 0)
+    "-4 es negativo"
+    "-4 es cero"))
+\end{verbatim}
+
+\begin{verbatim}
+"-4 es negativo"
+\end{verbatim}
+
+
+Pero es más cómodo usar \texttt{cond}:
+
+\begin{verbatim}
+(cond
+  ((> 0 0) "0 es positivo")
+  ((< 0 0) "0 es negativo")
+  (t       "0 es cero"))
+\end{verbatim}
+
+\begin{verbatim}
+"0 es cero"
+\end{verbatim}
+
+
+En la expresión \texttt{cond} se van evaluando las condiciones, y en el momento que se encuentre algo que sea verdadero (es decir, que devuelva \texttt{T}) devuelve la expresión asociada a dicha condición. En este caso, se usa como tercera condición el valor \texttt{T}, de esta forma creamos un 'en-otro-caso' si el resto de condiciones falla.
+
+Ahora es cuando debería hablar de bucles \texttt{while} y \texttt{for}, pero en Common Lisp no hay. Y antes de que te lleves las manos a la cabeza te diré que hay algo muchísimo mejor: la expresión \texttt{loop}. Sin exagerar, engloba todas las expresiones típicas de bucles como \texttt{while}, \texttt{for}, \texttt{do-while}, \texttt{repeat}, \ldots{} y añade incluso más potencia. Es un pelín compleja y se merece un post entero para ella sola. Aun así, si tienes curiosidad, puedes encontrar su funcionamiento explicado con bastante detalle en el libro \href{https://www.cs.cmu.edu/Groups/AI/html/cltl/clm/node235.html}{Common Lisp the Language}.
+
+\section{Variables}
+\label{sec:org83d9e09}
+
+Las variables son una de las herramientas más básicas de la programación que nos permiten abstraer información. Dado un objeto relativamente complejo, podemos darle un nombre y así poder usarlo en cualquier otro momento.
+
+Para crear variables globales podemos usar \texttt{defvar}, \texttt{defparameter} y \texttt{defconstant} (entre otros un poco más raros). La mayor diferencia entre estas 3 expresiones es qué ocurre cuando reevaluamos la expresión con la misma variable pero con un valor diferente. Pero por ahora, nos quedaremos sólo con \texttt{defvar}.
+
+\begin{verbatim}
+(defvar miVariable 10)
+\end{verbatim}
+
+\begin{verbatim}
+MIVARIABLE
+\end{verbatim}
+
+
+Recuerda que cualquier expresión de Common Lisp debe devolver algo. En este caso se retorna un símbolo, algo que veremos en otro momento. Por ahora, se ha definido la variable \texttt{miVariable} y ya podemos usarla como queramos. 
+
+\begin{verbatim}
+(+ miVariable 5)
+\end{verbatim}
+
+\begin{verbatim}
+15
+\end{verbatim}
+
+
+Otro ejemplo:
+
+\begin{verbatim}
+(defvar otraVariable (+ miVariable 2))
+
+(/ miVariable otraVariable)  ; 10/12
+\end{verbatim}
+
+\begin{verbatim}
+5/6
+\end{verbatim}
+
+
+En cuanto a las variables locales, hay que pensar que la localidad depende de algo. En lenguajes como C++ o Java las variables locales suelen serlo respecto de una función. Es decir, esa variable sólo puedes usarla dentro de la función. En Common Lisp es un poco diferente. Aquí, tenemos un poco más de control sobre cuándo se puede o no usar una variable. En particular, una variable (normalmente) será local con respecto a la expresión \texttt{let}. 
+
+\begin{verbatim}
+(let ((saludo "Hola")
+      (nombre "Juan"))
+  (concatenate 'string saludo ", " nombre "."))
+\end{verbatim}
+
+\begin{verbatim}
+"Hola, Juan."
+\end{verbatim}
+
+
+Una vez finaliza \texttt{let}, las variables \texttt{saludo} y \texttt{nombre} dejan de existir (a no ser que todo el \texttt{let} esté dentro de otro \texttt{let} con esas mismas variables o existan variables globales con esos nombres). Si ya existían variables con esos nombres, lo que hace \texttt{let} es ensombrecerlas (\emph{shadowing}). Por ejemplo, recuerda que antes hemos definido la variable \texttt{miVariable}.
+
+\begin{verbatim}
+miVariable
+\end{verbatim}
+
+\begin{verbatim}
+10
+\end{verbatim}
+
+
+Usando \texttt{let} podemos ensombrecer la variable global:
+
+\begin{verbatim}
+(let ((miVariable "Ahora es un string"))
+  (string-upcase miVariable))
+\end{verbatim}
+
+\begin{verbatim}
+"AHORA ES UN STRING"
+\end{verbatim}
+
+
+Una vez finaliza la expresión \texttt{let} la variable global \texttt{miVariable} deja de estar ensombrecida y vuelve a ser disponible con su valor original:
+
+\begin{verbatim}
+miVariable
+\end{verbatim}
+
+\begin{verbatim}
+10
+\end{verbatim}
+
+\section{Funciones}
+\label{sec:orgb4647c5}
+
+Si con las variables podemos dar nombre a los objetos, con las funciones le damos nombre a una serie de expresiones. Ya hemos usado algunas funciones como \texttt{+}, \texttt{-}, \texttt{concatenate} o \texttt{string-upcase}. Pero también estamos interesados en crear nuestras propias funciones. Para ello utilizamos \texttt{defun}.
+
+\begin{verbatim}
+(defun suma2 (n)
+  (+ n 2))
+\end{verbatim}
+
+\begin{verbatim}
+SUMA2
+\end{verbatim}
+
+
+Al igual que pasaba con \texttt{defvar}, \texttt{defun} también devuelve el símbolo que representa a nuestra función. Cuando usamos \texttt{defun} debemos indicar el nombre de la función, que en este caso es \texttt{suma2}, unos argumentos de entrada como \texttt{n}, y luego el cuerpo de la función. En el cuerpo podemos escribir la cantidad de expresiones que queramos. Además, el valor devuelto por la función será el valor devuelto por la última expresión del cuerpo de la función.
+
+\begin{verbatim}
+(defun saludar (nombre)
+  (let ((saludo (concatenate 'string "Hola, " nombre ".")))
+    (princ saludo))
+  nombre) 
+\end{verbatim}
+
+\begin{verbatim}
+SALUDAR
+\end{verbatim}
+
+
+En la función saludar recibimos un \texttt{nombre} con el que creamos un \texttt{saludo}. Imprimimos el saludo con la función \texttt{princ} (también existe la función \texttt{print}). Por último, escribimos \texttt{nombre} al final de la función para devolver el nombre que hemos recibido.
+
+\begin{verbatim}
+(saludar "Juan")
+\end{verbatim}
+
+\begin{verbatim}
+Hola, Juan.
+"Juan"
+\end{verbatim}
+
+
+En los resultados, primero se muestra qué se imprime por pantalla y luego se muestra el valor devuelto por la función.
+
+En otro momento veremos cómo sacarle el máximo provecho a las funciones, pues es posible indicar argumentos opcionales, e incluso una cantidad variable de argumentos. 
+
+
+\section{Hello world!}
+\label{sec:org47a5ccb}
+
+Para terminar vamos a ver cómo podemos hacer un programa \emph{Hello World}. Es claro que si en el \emph{REPL} de \emph{SLIME} escribimos simplemente \texttt{"Hello world"}, el propio \emph{REPL} nos mostrará lo mismo.
+
+\begin{verbatim}
+"Hello world"
+\end{verbatim}
+
+\begin{verbatim}
+"Hello world"
+\end{verbatim}
+
+
+Pero eso no es lo que queremos. Un programa \emph{Hello World} requiere al menos que escribamos el código en un fichero, que podamos cargar dicho fichero y así poder ejecutar una función que nos imprima \texttt{"Hello World"}. Pues eso es exactamente lo que vamos a hacer ahora.
+
+Los programas de Common Lisp se escriben en ficheros con extensión '\emph{.lisp}'. Vamos entonces a crear un fichero en el directorio \emph{HOME} (​\textasciitilde{}​) llamado '\emph{hello-world.lisp}'. En él, escribiremos la definición de una función \texttt{main} que imprimirá \texttt{"Hello world!"}.
+
+\begin{verbatim}
+;;; ~/hellow-world.lisp
+
+(defun main ()
+  (princ "Hello world!"))
+\end{verbatim}
+
+Ahora sólo falta cargar el fichero. Para ello usamos la función \texttt{load} desde nuestro \emph{REPL} (sí, todo se hace desde el \emph{REPL}).
+
+\begin{verbatim}
+(load "~/hello-world.lisp")
+\end{verbatim}
+
+\begin{verbatim}
+T
+\end{verbatim}
+
+
+Si la función \texttt{load} devuelve el valor \texttt{T}, significa que todo ha ido bien. Eso, además, quiere decir que la función \texttt{main} ya se puede usar.
+
+\begin{verbatim}
+(main)
+\end{verbatim}
+
+\begin{verbatim}
+Hello world!
+"Hello world!"
+\end{verbatim}
+
+
+Quizás te sorprendas de que se haya impreso dos veces \texttt{Hello world!}. Eso es porque la función \texttt{princ}, que también tiene que devolver algo, devuelve el objeto que ha recibido. En este caso, \texttt{princ} recibe el objeto \texttt{"Hello world!"}​, por lo que primero se imprime \texttt{Hello world!}, y luego se muestra el valor devuelto por la función \texttt{main} que es el valor devuelto por \texttt{princ}, es decir, \texttt{"Hello world!"}.
+
+Podríamos ir un paso más y generar un ejecutable, aunque es un pelín más complicado. Pero qué carajos, vamos a hacerlo.
+
+Primero hay que tener en cuenta que en el estandar no se habla nada sobre ejecutables, por lo que su creación debe estar soportada por las implementaciones. Es más, cada implementación lo hará de una manera diferente. En el caso de SBCL, la creación de un ejecutable pasa por usar la función \texttt{sb-ext:save-lisp-and-die}. ¡Pero cuidado! Esta función debe ejecutarse cuando no hay hilos extra ejecutándose. Y, ¿cuál es el problema? SLIME ejecuta varios hilos al mismo tiempo. Es decir, no podemos usar esta función en Emacs con SLIME. Pero la solución es sencilla: No usar Emacs, sino usar la consola de comandos.
+
+Abre la consola de comandos y ejecuta SBCL:
+
+\begin{verbatim}
+sbcl
+\end{verbatim}
+
+Se te abrirá un \emph{REPL} en la terminal. Primero, como hemos creado una sesión nueva de Common Lisp, nuestra función \texttt{main} no está disponible. Así que, de nuevo, cargamos el fichero.
+
+\begin{verbatim}
+(load "~/hello-world.lisp")
+\end{verbatim}
+
+\begin{verbatim}
+T
+\end{verbatim}
+
+
+Por si acaso, comprueba que ya está disponible usándola:
+
+\begin{verbatim}
+(main)
+\end{verbatim}
+
+\begin{verbatim}
+Hello world!
+"Hello world!"
+\end{verbatim}
+
+
+Si todo ha ido bien, ya podemos crear el ejecutable:
+
+\begin{verbatim}
+(sb-ext:save-lisp-and-die "hello-world.out" 
+                          :toplevel #'main 
+                          :executable t)
+\end{verbatim}
+
+El primer argumento es el nombre del nuevo fichero que queremos generar. El resto de argumentos son conocidos como \emph{keyword arguments}. Cada argumento empezando por '\texttt{:}', como \texttt{:toplevel} es un \emph{keyword.} Y el valor que le sucede es el valor asociado a ese \emph{keyword}, en este caso, \texttt{\#'main}. Con el \emph{keyword argument} \texttt{:toplevel} indicamos la función que queremos que se llame cuando ejecutemos el ejecutable '\emph{\textasciitilde{}​/​hello-world.out}'. Por último, con el \emph{keyword argument} \texttt{:executable} indicamos si queremos que se cree un ejecutable, por eso le pasamos el valor \texttt{T}.
+
+Cuando ejecutes esta función, la sesión de Common Lisp se termina. Es decir, se cierra el \emph{REPL} y volverás a la entrada de comandos de la terminal. Sólo queda probar nuestro programa:
+
+\begin{verbatim}
+./hello-world.out
+\end{verbatim}
+
+\begin{verbatim}
+Hello world!
+\end{verbatim}
+
+\section{Conclusión}
+\label{sec:orgb01687d}
+
+Con este post hemos echado un vistazo general a lo más básico de Common Lisp: Números, booleanos, variables, \ldots{} Pero no te relajes porque esto escala muy rápido. 
+
+:D
+\end{document}
