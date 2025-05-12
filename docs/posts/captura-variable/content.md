@@ -5,7 +5,7 @@
 * [¿Qué es la captura de variable\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG3)
 * [Evitando la captura de variable](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG4)
 * [Gensym](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG5)
-* [Cuándo debo usar [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm)](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG6)
+* [¿Cuándo debo usar gensym\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG6)
 * [With\-gensyms](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG7)
 * [Recomendaciones finales](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG8)
 
@@ -422,7 +422,7 @@ Ahora sí\. Mucho mejor\. Obviamente no es el código más legible\, pero al men
 
 
 <a id="TITLE:LISPYLAMBDA:TAG6"></a>
-## Cuándo debo usar [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm)
+## ¿Cuándo debo usar gensym\?
 
 La regla de oro consiste en usar [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm) siempre que necesitemos alguna variable auxiliar como en el caso de ```swap```\.
 

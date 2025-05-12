@@ -293,7 +293,7 @@ Y por último, veamos la expansión total de la macro @code{swap-with-aux}.
 Ahora sí. Mucho mejor. Obviamente no es el código más legible, pero al menos podemos distinguir las diferentes variables que se están usando.
 
 
-@subtitle{Cuándo debo usar @clref[cl:gensym]}
+@subtitle{¿Cuándo debo usar gensym?}
 
 La regla de oro consiste en usar @clref[cl:gensym] siempre que necesitemos alguna variable auxiliar como en el caso de @code{swap}.
 
