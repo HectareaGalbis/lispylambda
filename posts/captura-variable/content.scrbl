@@ -4,9 +4,9 @@
 
 @title[:tag captura-variable :toc nil]{Macros y la captura de variable}
 
-@table-of-contents[]
-
 Las macros de Common Lisp dan una libertad increible. Pero esta libertad viene con un precio. Si no tenemos cuidado, podemos introducir bugs difíciles de detectar que nos darán dolor de cabeza durante unas buenas horas. Estos bugs suelen estar ocasionados por la llamada @bold{captura de variable}.
+
+@table-of-contents[]
 
 @subtitle{¿Qué es la captura de variable?}
 

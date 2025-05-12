@@ -2,6 +2,8 @@
 <a id="TITLE:LISPYLAMBDA:CAPTURA-VARIABLE"></a>
 # Macros y la captura de variable
 
+Las macros de Common Lisp dan una libertad increible\. Pero esta libertad viene con un precio\. Si no tenemos cuidado\, podemos introducir bugs difíciles de detectar que nos darán dolor de cabeza durante unas buenas horas\. Estos bugs suelen estar ocasionados por la llamada **captura de variable**\.
+
 * [¿Qué es la captura de variable\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG3)
 * [Evitando la captura de variable](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG4)
 * [Gensym](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG5)
@@ -9,8 +11,6 @@
 * [With\-gensyms](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG7)
 * [Recomendaciones finales](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG8)
 
-
-Las macros de Common Lisp dan una libertad increible\. Pero esta libertad viene con un precio\. Si no tenemos cuidado\, podemos introducir bugs difíciles de detectar que nos darán dolor de cabeza durante unas buenas horas\. Estos bugs suelen estar ocasionados por la llamada **captura de variable**\.
 
 <a id="TITLE:LISPYLAMBDA:TAG3"></a>
 ## ¿Qué es la captura de variable\?
