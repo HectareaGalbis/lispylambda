@@ -6,8 +6,8 @@ Las macros de Common Lisp dan una libertad increible\. Pero esta libertad viene 
 
 * [¿Qué es la captura de variable\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG3)
 * [Evitando la captura de variable](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG4)
-* [Gensym](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG5)
-* [¿Cuándo debo usar gensym\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG6)
+* [¿Cuándo debo usar un símbolo no internado\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG5)
+* [Gensym](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG6)
 * [With\-gensyms](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG7)
 * [Recomendaciones finales](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG8)
 
@@ -267,72 +267,200 @@ Si probamos ahora\, la macro ya debe funcionar perfectamente\:
 "a: 5 | aux: \"a\""
 `````
 
-Incluso podemos forzar el uso de una variable ```#:aux``` para ver que realmente funciona\:
+¡Genial\!
+
+<a id="TITLE:LISPYLAMBDA:TAG5"></a>
+## ¿Cuándo debo usar un símbolo no internado\?
+
+La regla de oro consiste en usar un símbolo no internado siempre que necesitemos alguna variable auxiliar como en el caso de ```swap```\. Más precisamente\, necesitamos este tipo de símbolos cada vez que se va a hacer una ligadura que sea interna\, es decir\, que desde fuera no se deba usar\.
+
+Para la macro ```swap``` necesitábamos una variable auxiliar ```#:aux``` para poder realizar el intercambio de valores\. En este caso era fácil identificar la ligadura porque la estamos creando de manera explícita al usar [let](http://www.lispworks.com/reference/HyperSpec/Body/s_let_l.htm)\. Sin embargo\, otras veces no es tan obvio pues no siempre estas variables se definen con un [let](http://www.lispworks.com/reference/HyperSpec/Body/s_let_l.htm) o un [multiple\-value\-bind](http://www.lispworks.com/reference/HyperSpec/Body/m_multip.htm)\.
+
+Supongamos que queremos una macro que nos permita repetir varias veces la ejecución de una o varias expresiones\. La manera más sencilla de hacer esto es usar la macro [dotimes](http://www.lispworks.com/reference/HyperSpec/Body/m_dotime.htm)\.
 
 `````common-lisp
-(defmacro swap-with-aux ()
-  (let ((aux-sym '#:aux)
-        (a-sym '#:a))
-    `(let ((,a-sym "a") (,aux-sym 5))
-       (swap ,a-sym ,aux-sym)
-       (format nil "a: ~s | aux: ~s" ,a-sym ,aux-sym))))
-`````
-`````common-lisp
-;; Returns
-SWAP-WITH-AUX
-`````
-
-Fíjate que también hemos creado un símbolo no internado ```#:a```\. Podría ocurrir que tengamos una variable global ```a``` en nuestro código\, así que más vale prevenir que curar\.
-
-`````common-lisp
-(swap-with-aux)
+(dotimes (aux 5)
+  (princ "Hola")
+  (terpri) ; Nueva linea
+  )
 `````
 `````text
 ;; Output
-.
+Hola
+Hola
+Hola
+Hola
+Hola
+
 `````
 `````common-lisp
 ;; Returns
-"a: 5 | aux: \"a\""
+NIL
 `````
 
+Buscamos el mismo comportamiento pero sin tener que especificar una variable como ```aux```\. Sólo queremos indicar el número y las expresiones\. Una opción sería esta\:
 
-<a id="TITLE:LISPYLAMBDA:TAG5"></a>
+`````common-lisp
+(defmacro repeat (num &body exprs)
+  `(dotimes (aux ,num)
+     ,@exprs))
+`````
+`````common-lisp
+;; Returns
+REPEAT
+`````
+
+La forma de usarla es sencilla\:
+
+`````common-lisp
+(repeat 10
+  (princ "Hola mundo")
+  (terpri))
+`````
+`````text
+;; Output
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+Hola mundo
+
+`````
+`````common-lisp
+;; Returns
+NIL
+`````
+
+Pero claro\, internamente la macro [dotimes](http://www.lispworks.com/reference/HyperSpec/Body/m_dotime.htm) bindea la variable ```aux``` con un valor del 0 al 9 para cada iteración del bucle\. Si utilizásemos una variable ```aux``` el resultado podría no ser el esperado\:
+
+`````common-lisp
+(let ((aux 5))
+  (repeat 10
+    (format t "aux vale: ~a" aux)
+    (terpri)))
+`````
+`````text
+;; Output
+aux vale: 0
+aux vale: 1
+aux vale: 2
+aux vale: 3
+aux vale: 4
+aux vale: 5
+aux vale: 6
+aux vale: 7
+aux vale: 8
+aux vale: 9
+
+`````
+`````common-lisp
+;; Returns
+NIL
+`````
+
+El resultado esperado es que siempre imprima ```aux vale: 5```\, pero como [dotimes](http://www.lispworks.com/reference/HyperSpec/Body/m_dotime.htm) bindea nuevos valores a la variable ```aux``` en cada iteración\, ocurre el desastre\.
+
+La solución ya la sabemos\, usar un símbolo no internado\:
+
+`````common-lisp
+(defmacro repeat (num &body exprs)
+  (let ((aux '#:aux))
+    `(dotimes (,aux ,num)
+       ,@exprs)))
+`````
+`````common-lisp
+;; Returns
+REPEAT
+`````
+
+Como ahora el simbolo usado es no internado\, todo funciona perfectamente\:
+
+`````common-lisp
+(let ((aux 5))
+  (repeat 10
+    (format t "aux vale: ~a" aux)
+    (terpri)))
+`````
+`````text
+;; Output
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+aux vale: 5
+
+`````
+`````common-lisp
+;; Returns
+NIL
+`````
+
+¡Perfecto\!
+
+<a id="TITLE:LISPYLAMBDA:TAG6"></a>
 ## Gensym
 
 En la práctica\, la macro se puede considerar perfecta\. Ya no fallará nunca\. Está libre de bugs\. Pero hay un pequeño detalle que nos puede jugar una mala pasada\. Estas macros son pequeñas\, pero en un proyecto real las macros pueden ser muy grandes\, por lo que siempre acabaremos recurriendo a algún sistema de debugueo\. En particular\, la herramienta más usada es [macroexpand\-1](http://www.lispworks.com/reference/HyperSpec/Body/f_mexp_.htm) o [macroexpand](http://www.lispworks.com/reference/HyperSpec/Body/f_mexp_.htm)\.
 
-Probemos a expandir la macro ```swap-with-aux```\:
+Imaginemos que tenemos un código como el siguiente\:
 
 `````common-lisp
-(macroexpand-1 '(swap-with-aux))
+(let ((a "a") (b "b") (c "c"))
+  (repeat 5
+    (swap a b)
+    (swap a c)
+    (swap b c)))
+`````
+
+Supongamos que no está haciendo lo que esperamos\, así que decidimos expandir las macros ```repeat``` y ```swap```\:
+
+`````common-lisp
+(macroexpand-1 '(repeat 5
+                  (swap a b)
+                  (swap a c)
+                  (swap b c)))
 `````
 `````common-lisp
 ;; Returns
-(LET ((#:A "a") (#:AUX 5))
-  (SWAP #:A #:AUX)
-  (FORMAT NIL "a: ~s | aux: ~s" #:A #:AUX))
+(DOTIMES (#:AUX 5) (SWAP A B) (SWAP A C) (SWAP B C))
 T
 `````
 
-Nos interesa también expandir la llamada a ```swap```\, pero no existe una función en el estándar de Common Lisp que nos permita hacer esto\. Por ello\, me voy a permitir el lujo de usar la librería [trivial\-macroexpand\-all](https://github.com/cbaggers/trivial-macroexpand-all)\.
+Nos interesa también expandir la llamada a ```swap```\. Así que voy a hacer lo siguiente\:
 
 
 `````common-lisp
-(trivial-macroexpand-all:macroexpand-all '(swap-with-aux))
+(macroexpand-1 `(repeat 5
+                  ,(macroexpand-1 '(swap a b))
+                  ,(macroexpand-1 '(swap a c))
+                  ,(macroexpand-1 '(swap b c))))
 `````
 `````common-lisp
 ;; Returns
-(LET ((#:A "a") (#:AUX 5))
-  (LET ((#:AUX #:A))
-    (SETQ #:A #:AUX)
-    (SETQ #:AUX #:AUX))
-  (FORMAT NIL "a: ~s | aux: ~s" #:A #:AUX))
-T
+(DOTIMES (#:AUX 5)
+  (LET ((#:AUX A))
+    (SETF A B)
+    (SETF B #:AUX))
+  (LET ((#:AUX A))
+    (SETF A C)
+    (SETF C #:AUX))
+  (LET ((#:AUX B))
+    (SETF B C)
+    (SETF C #:AUX)))
 T
 `````
 
-Recordemos que ya hemos deducido que las macros son correctas\. Pero hay un claro problema aquí\. ¡No podemos distinguir qué ```#:aux``` es cuál\! Uno de los símbolos ```#:aux``` pertenece a la macro ```swap```\. Y el otro símbolo ```#:aux``` pertenece a la macro ```swap-with-aux```\. Al ser dos macros sencillas\, podemos acabar deduciendo cuál es cuál mirando las definiciones de cada macro\. Pero está claro que esto sería un problema muy gordo si usamos macros mucho más grandes\.
+Recordemos que ya sabemos que las macros usando símbolos no internados son correctas\. Pero hay un claro problema aquí\. Ya se hace difícil distinguir entre las diferentes variables ```#:aux```\. Y aunque hayamos usado un nombre diferente para la macro ```repeat```\, piensa que ```swap``` está generando 3 variable ```#:aux``` que son diferentes\. Este caso es pequeño\, pero a medida que crece un proyecto\, esto puede dificultar bastante la búsqueda de bugs\.
 
 Recapitulemos qué tenemos y qué necesitamos ahora\. Hemos visto que necesitamos símbolos no internados para nuestras macros\. Pero ahora también queremos que sus nombres sean diferentes para poder diferenciarlos a la hora de debuguear\.
 
@@ -375,14 +503,14 @@ Como el programa va a funcionar perfectamente\, podemos al menos sacrificar que 
 
 Aunque ya te puedo asegurar que en prácticamente todo el tiempo que le dediques a debuguear macros \(y si no has modificado la variable [\*gensym\-counter\*](http://www.lispworks.com/reference/HyperSpec/Body/v_gensym.htm)\) nunca te vas a encontrar con el remoto caso de que dos símbolos no internados diferentes acaben con el mismo nombre\.
 
-Dicho esto\, modifiquemos nuestras macros ```swap``` y ```swap-with-aux```
+Dicho esto\, modifiquemos nuestras macros ```swap``` y ```repeat```\:
 
 `````common-lisp
 (defmacro swap (a b)
-  (let ((aux-sym (gensym "AUX")))
-    `(let ((,aux-sym ,a))
+  (let ((aux (gensym "AUX")))
+    `(let ((,aux ,a))
        (setf ,a ,b)
-       (setf ,b ,aux-sym))))
+       (setf ,b ,aux))))
 `````
 `````common-lisp
 ;; Returns
@@ -390,141 +518,9 @@ SWAP
 `````
 
 `````common-lisp
-(defmacro swap-with-aux ()
-  (let ((aux-sym (gensym "AUX"))
-        (a-sym (gensym "A")))
-    `(let ((,a-sym "a") (,aux-sym 5))
-       (swap ,a-sym ,aux-sym)
-       (format nil "a: ~s | aux: ~s" ,a-sym ,aux-sym))))
-`````
-`````common-lisp
-;; Returns
-SWAP-WITH-AUX
-`````
-
-Y por último\, veamos la expansión total de la macro ```swap-with-aux```\.
-
-`````common-lisp
-(trivial-macroexpand-all:macroexpand-all '(swap-with-aux))
-`````
-`````common-lisp
-;; Returns
-(LET ((#:A13 "a") (#:AUX12 5))
-  (LET ((#:AUX14 #:A13))
-    (SETQ #:A13 #:AUX12)
-    (SETQ #:AUX12 #:AUX14))
-  (FORMAT NIL "a: ~s | aux: ~s" #:A13 #:AUX12))
-T
-T
-`````
-
-Ahora sí\. Mucho mejor\. Obviamente no es el código más legible\, pero al menos podemos distinguir las diferentes variables que se están usando\.
-
-
-<a id="TITLE:LISPYLAMBDA:TAG6"></a>
-## ¿Cuándo debo usar gensym\?
-
-La regla de oro consiste en usar [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm) siempre que necesitemos alguna variable auxiliar como en el caso de ```swap```\.
-
-Para la macro ```swap``` necesitábamos una variable auxiliar ```#:aux``` para poder realizar el intercambio de valores\. Por otro lado\, para la macro ```swap-with-aux``` necesitábamos dos variables auxiliares donde colocar los valores que queremos intercambiar\.
-
-Aunque a veces no es tan obvio\, pues no siempre estas variables se definen con un [let](http://www.lispworks.com/reference/HyperSpec/Body/s_let_l.htm) o un [multiple\-value\-bind](http://www.lispworks.com/reference/HyperSpec/Body/m_multip.htm)\.
-
-Supongamos que queremos una macro que nos permita repetir varias veces la ejecución de una o varias expresiones\. La manera más sencilla de hacer esto es usar la macro [dotimes](http://www.lispworks.com/reference/HyperSpec/Body/m_dotime.htm)\.
-
-`````common-lisp
-(dotimes (i 5)
-  (princ "Hola")
-  (terpri) ; Nueva linea
-  )
-`````
-`````text
-;; Output
-Hola
-Hola
-Hola
-Hola
-Hola
-
-`````
-`````common-lisp
-;; Returns
-NIL
-`````
-
-Buscamos el mismo comportamiento sin tener que especificar una variable como ```i```\. Sólo queremos indicar el número y las expresiones\. Una opción sería esta\:
-
-`````common-lisp
 (defmacro repeat (num &body exprs)
-  `(dotimes (i ,num)
-     ,@exprs))
-`````
-`````common-lisp
-;; Returns
-REPEAT
-`````
-
-La forma de usarla es sencilla\:
-
-`````common-lisp
-(repeat 10
-  (princ "Hola mundo")
-  (terpri))
-`````
-`````text
-;; Output
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-Hola mundo
-
-`````
-`````common-lisp
-;; Returns
-NIL
-`````
-
-Pero claro\, internamente la macro [dotimes](http://www.lispworks.com/reference/HyperSpec/Body/m_dotime.htm) bindea la variable ```i``` con un valor del 0 al 9 para cada iteración del bucle\. Si utilizásemos una variable ```i``` el resultado podría no ser el esperado\:
-
-`````common-lisp
-(let ((i 5))
-  (repeat 10
-    (format t "i vale: ~a" i)
-    (terpri)))
-`````
-`````text
-;; Output
-i vale: 0
-i vale: 1
-i vale: 2
-i vale: 3
-i vale: 4
-i vale: 5
-i vale: 6
-i vale: 7
-i vale: 8
-i vale: 9
-
-`````
-`````common-lisp
-;; Returns
-NIL
-`````
-
-El resultado esperado es que siempre imprima ```i vale: 5```\, pero como [dotimes](http://www.lispworks.com/reference/HyperSpec/Body/m_dotime.htm) bindea nuevos valores a la variable ```i``` en cada iteración ocurre el desastre\.
-
-La solución ya la sabemos\, usar [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm)\:
-
-`````common-lisp
-(defmacro repeat (num &body exprs)
-  (let ((i (gensym "I")))
-    `(dotimes (,i ,num)
+  (let ((aux (gensym "AUX")))
+    `(dotimes (,aux ,num)
        ,@exprs)))
 `````
 `````common-lisp
@@ -532,32 +528,30 @@ La solución ya la sabemos\, usar [gensym](http://www.lispworks.com/reference/Hy
 REPEAT
 `````
 
-Como ahora el simbolo usado es no internado\, todo funciona perfectamente\:
+Y por último\, veamos la expansión total del ejemplo de más arriba\:
 
 `````common-lisp
-(let ((i 5))
-  (repeat 10
-    (format t "i vale: ~a" i)
-    (terpri)))
-`````
-`````text
-;; Output
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-i vale: 5
-
+(macroexpand-1 `(repeat 5
+                  ,(macroexpand-1 '(swap a b))
+                  ,(macroexpand-1 '(swap a c))
+                  ,(macroexpand-1 '(swap b c))))
 `````
 `````common-lisp
 ;; Returns
-NIL
+(DOTIMES (#:AUX15 5)
+  (LET ((#:AUX12 A))
+    (SETF A B)
+    (SETF B #:AUX12))
+  (LET ((#:AUX13 A))
+    (SETF A C)
+    (SETF C #:AUX13))
+  (LET ((#:AUX14 B))
+    (SETF B C)
+    (SETF C #:AUX14)))
+T
 `````
+
+Ahora sí\. Mucho mejor\. Obviamente no es el código más legible\, pero al menos podemos distinguir las diferentes variables que se están usando\.
 
 
 <a id="TITLE:LISPYLAMBDA:TAG7"></a>
@@ -640,7 +634,7 @@ Probemos a ver si funciona\:
  (E (GENSYM "E")) (F (GENSYM "F")))
 `````
 
-Genial\!
+¡Genial\!
 
 Ahora sólo queda usar la función en nuestra macro\:
 
@@ -656,7 +650,7 @@ WITH-GENSYMS
 
 Fíjate que en este caso no hemos necesitado usar ningún símbolo no internado\, pues todas las variables que se van a bindear están especificadas por los argumentos de la macro \(las que contiene la lista ```vars```\)\.
 
-Para terminar podemos redefinir nuestras macros ```swap``` y ```swap-with-aux``` usando ```with-gensyms```\.
+Para terminar podemos redefinir nuestras macros ```swap``` y ```repeat``` usando ```with-gensyms```\.
 
 `````common-lisp
 (defmacro swap (a b)
@@ -665,33 +659,38 @@ Para terminar podemos redefinir nuestras macros ```swap``` y ```swap-with-aux```
        (setf ,a ,b)
        (setf ,b ,aux))))
 
-(defmacro swap-with-aux ()
-  (with-gensyms (a aux)
-    `(let ((,a "a") (,aux 5))
-       (swap ,a ,aux)
-       (format nil "a: ~s | aux: ~s" ,a ,aux))))
+(defmacro repeat (num &body exprs)
+  (with-gensyms (aux)
+    `(dotimes (,aux ,num)
+       ,@exprs)))
 `````
 `````common-lisp
 ;; Returns
-SWAP-WITH-AUX
+REPEAT
 `````
 
-Ah\, mucho mejor\. Se queda el código más limpio y elegante\. Si expandimos de nuevo la macro veremos que seguimos distinguiendo los diferentes símbolos no internados\:
+Ah\, mucho mejor\. Se queda el código más limpio y elegante\. Si expandimos de nuevo el ejemplo veremos que seguimos distinguiendo los diferentes símbolos no internados\:
 
 `````common-lisp
-(trivial-macroexpand-all:macroexpand-all '(swap-with-aux))
+(macroexpand-1 `(repeat 5
+                  ,(macroexpand-1 '(swap a b))
+                  ,(macroexpand-1 '(swap a c))
+                  ,(macroexpand-1 '(swap b c))))
 `````
 `````common-lisp
 ;; Returns
-(LET ((#:A16 "a") (#:AUX17 5))
-  (LET ((#:AUX18 #:A16))
-    (SETQ #:A16 #:AUX17)
-    (SETQ #:AUX17 #:AUX18))
-  (FORMAT NIL "a: ~s | aux: ~s" #:A16 #:AUX17))
-T
+(DOTIMES (#:AUX19 5)
+  (LET ((#:AUX16 A))
+    (SETF A B)
+    (SETF B #:AUX16))
+  (LET ((#:AUX17 A))
+    (SETF A C)
+    (SETF C #:AUX17))
+  (LET ((#:AUX18 B))
+    (SETF B C)
+    (SETF C #:AUX18)))
 T
 `````
-
 
 <a id="TITLE:LISPYLAMBDA:TAG8"></a>
 ## Recomendaciones finales

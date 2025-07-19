@@ -193,42 +193,104 @@ Si probamos ahora, la macro ya debe funcionar perfectamente:
   (format nil "a: ~s | aux: ~s" a aux))
 }
 
-Incluso podemos forzar el uso de una variable @code{#:aux} para ver que realmente funciona:
+¡Genial!
+
+@subtitle{¿Cuándo debo usar un símbolo no internado?}
+
+La regla de oro consiste en usar un símbolo no internado siempre que necesitemos alguna variable auxiliar como en el caso de @code{swap}. Más precisamente, necesitamos este tipo de símbolos cada vez que se va a hacer una ligadura que sea interna, es decir, que desde fuera no se deba usar.
+
+Para la macro @code{swap} necesitábamos una variable auxiliar @code{#:aux} para poder realizar el intercambio de valores. En este caso era fácil identificar la ligadura porque la estamos creando de manera explícita al usar @clref[let]. Sin embargo, otras veces no es tan obvio pues no siempre estas variables se definen con un @clref[let] o un @clref[multiple-value-bind].
+
+Supongamos que queremos una macro que nos permita repetir varias veces la ejecución de una o varias expresiones. La manera más sencilla de hacer esto es usar la macro @clref[dotimes].
 
 @example{
-(defmacro swap-with-aux ()
-  (let ((aux-sym '#:aux)
-        (a-sym '#:a))
-    `(let ((,a-sym "a") (,aux-sym 5))
-       (swap ,a-sym ,aux-sym)
-       (format nil "a: ~s | aux: ~s" ,a-sym ,aux-sym))))
+(dotimes (aux 5)
+  (princ "Hola")
+  (terpri) ; Nueva linea
+  )
 }
 
-Fíjate que también hemos creado un símbolo no internado @code{#:a}. Podría ocurrir que tengamos una variable global @code{a} en nuestro código, así que más vale prevenir que curar.
+Buscamos el mismo comportamiento pero sin tener que especificar una variable como @code{aux}. Sólo queremos indicar el número y las expresiones. Una opción sería esta:
+
+@example|{
+(defmacro repeat (num &body exprs)
+  `(dotimes (aux ,num)
+     ,@exprs))
+}|
+
+La forma de usarla es sencilla:
 
 @example{
-(swap-with-aux)
+(repeat 10
+  (princ "Hola mundo")
+  (terpri))
 }
 
+Pero claro, internamente la macro @clref[dotimes] bindea la variable @code{aux} con un valor del 0 al 9 para cada iteración del bucle. Si utilizásemos una variable @code{aux} el resultado podría no ser el esperado:
+
+@example{
+(let ((aux 5))
+  (repeat 10
+    (format t "aux vale: ~a" aux)
+    (terpri)))
+}
+
+El resultado esperado es que siempre imprima @code{aux vale: 5}, pero como @clref[dotimes] bindea nuevos valores a la variable @code{aux} en cada iteración, ocurre el desastre.
+
+La solución ya la sabemos, usar un símbolo no internado:
+
+@example|{
+(defmacro repeat (num &body exprs)
+  (let ((aux '#:aux))
+    `(dotimes (,aux ,num)
+       ,@exprs)))
+}|
+
+Como ahora el simbolo usado es no internado, todo funciona perfectamente:
+
+@example{
+(let ((aux 5))
+  (repeat 10
+    (format t "aux vale: ~a" aux)
+    (terpri)))
+}
+
+¡Perfecto!
 
 @subtitle{Gensym}
 
 En la práctica, la macro se puede considerar perfecta. Ya no fallará nunca. Está libre de bugs. Pero hay un pequeño detalle que nos puede jugar una mala pasada. Estas macros son pequeñas, pero en un proyecto real las macros pueden ser muy grandes, por lo que siempre acabaremos recurriendo a algún sistema de debugueo. En particular, la herramienta más usada es @clref[macroexpand-1] o @clref[macroexpand].
 
-Probemos a expandir la macro @code{swap-with-aux}:
+Imaginemos que tenemos un código como el siguiente:
 
-@example{
-(macroexpand-1 '(swap-with-aux))
+@code-block[:lang "common-lisp"]{
+(let ((a "a") (b "b") (c "c"))
+  (repeat 5
+    (swap a b)
+    (swap a c)
+    (swap b c)))
 }
 
-Nos interesa también expandir la llamada a @code{swap}, pero no existe una función en el estándar de Common Lisp que nos permita hacer esto. Por ello, me voy a permitir el lujo de usar la librería @link[:address "https://github.com/cbaggers/trivial-macroexpand-all"]{trivial-macroexpand-all}.
+Supongamos que no está haciendo lo que esperamos, así que decidimos expandir las macros @code{repeat} y @code{swap}:
+
+@example{
+(macroexpand-1 '(repeat 5
+                  (swap a b)
+                  (swap a c)
+                  (swap b c)))
+}
+
+Nos interesa también expandir la llamada a @code{swap}. Así que voy a hacer lo siguiente:
 
 
 @example{
-(trivial-macroexpand-all:macroexpand-all '(swap-with-aux))
+(macroexpand-1 `(repeat 5
+                  ,(macroexpand-1 '(swap a b))
+                  ,(macroexpand-1 '(swap a c))
+                  ,(macroexpand-1 '(swap b c))))
 }
 
-Recordemos que ya hemos deducido que las macros son correctas. Pero hay un claro problema aquí. ¡No podemos distinguir qué @code{#:aux} es cuál! Uno de los símbolos @code{#:aux} pertenece a la macro @code{swap}. Y el otro símbolo @code{#:aux} pertenece a la macro @code{swap-with-aux}. Al ser dos macros sencillas, podemos acabar deduciendo cuál es cuál mirando las definiciones de cada macro. Pero está claro que esto sería un problema muy gordo si usamos macros mucho más grandes.
+Recordemos que ya sabemos que las macros usando símbolos no internados son correctas. Pero hay un claro problema aquí. Ya se hace difícil distinguir entre las diferentes variables @code{#:aux}. Y aunque hayamos usado un nombre diferente para la macro @code{repeat}, piensa que @code{swap} está generando 3 variable @code{#:aux} que son diferentes. Este caso es pequeño, pero a medida que crece un proyecto, esto puede dificultar bastante la búsqueda de bugs.
 
 Recapitulemos qué tenemos y qué necesitamos ahora. Hemos visto que necesitamos símbolos no internados para nuestras macros. Pero ahora también queremos que sus nombres sean diferentes para poder diferenciarlos a la hora de debuguear.
 
@@ -265,95 +327,33 @@ Como el programa va a funcionar perfectamente, podemos al menos sacrificar que l
 
 Aunque ya te puedo asegurar que en prácticamente todo el tiempo que le dediques a debuguear macros (y si no has modificado la variable @clref[*gensym-counter*]) nunca te vas a encontrar con el remoto caso de que dos símbolos no internados diferentes acaben con el mismo nombre.
 
-Dicho esto, modifiquemos nuestras macros @code{swap} y @code{swap-with-aux}
+Dicho esto, modifiquemos nuestras macros @code{swap} y @code{repeat}:
 
 @example{
 (defmacro swap (a b)
-  (let ((aux-sym (gensym "AUX")))
-    `(let ((,aux-sym ,a))
+  (let ((aux (gensym "AUX")))
+    `(let ((,aux ,a))
        (setf ,a ,b)
-       (setf ,b ,aux-sym))))
+       (setf ,b ,aux))))
 }
-
-@example{
-(defmacro swap-with-aux ()
-  (let ((aux-sym (gensym "AUX"))
-        (a-sym (gensym "A")))
-    `(let ((,a-sym "a") (,aux-sym 5))
-       (swap ,a-sym ,aux-sym)
-       (format nil "a: ~s | aux: ~s" ,a-sym ,aux-sym))))
-}
-
-Y por último, veamos la expansión total de la macro @code{swap-with-aux}.
-
-@example{
-(trivial-macroexpand-all:macroexpand-all '(swap-with-aux))
-}
-
-Ahora sí. Mucho mejor. Obviamente no es el código más legible, pero al menos podemos distinguir las diferentes variables que se están usando.
-
-
-@subtitle{¿Cuándo debo usar gensym?}
-
-La regla de oro consiste en usar @clref[cl:gensym] siempre que necesitemos alguna variable auxiliar como en el caso de @code{swap}.
-
-Para la macro @code{swap} necesitábamos una variable auxiliar @code{#:aux} para poder realizar el intercambio de valores. Por otro lado, para la macro @code{swap-with-aux} necesitábamos dos variables auxiliares donde colocar los valores que queremos intercambiar.
-
-Aunque a veces no es tan obvio, pues no siempre estas variables se definen con un @clref[let] o un @clref[multiple-value-bind].
-
-Supongamos que queremos una macro que nos permita repetir varias veces la ejecución de una o varias expresiones. La manera más sencilla de hacer esto es usar la macro @clref[dotimes].
-
-@example{
-(dotimes (i 5)
-  (princ "Hola")
-  (terpri) ; Nueva linea
-  )
-}
-
-Buscamos el mismo comportamiento sin tener que especificar una variable como @code{i}. Sólo queremos indicar el número y las expresiones. Una opción sería esta:
 
 @example|{
 (defmacro repeat (num &body exprs)
-  `(dotimes (i ,num)
-     ,@exprs))
-}|
-
-La forma de usarla es sencilla:
-
-@example{
-(repeat 10
-  (princ "Hola mundo")
-  (terpri))
-}
-
-Pero claro, internamente la macro @clref[dotimes] bindea la variable @code{i} con un valor del 0 al 9 para cada iteración del bucle. Si utilizásemos una variable @code{i} el resultado podría no ser el esperado:
-
-@example{
-(let ((i 5))
-  (repeat 10
-    (format t "i vale: ~a" i)
-    (terpri)))
-}
-
-El resultado esperado es que siempre imprima @code{i vale: 5}, pero como @clref[dotimes] bindea nuevos valores a la variable @code{i} en cada iteración ocurre el desastre.
-
-La solución ya la sabemos, usar @clref[cl:gensym]:
-
-@example|{
-(defmacro repeat (num &body exprs)
-  (let ((i (gensym "I")))
-    `(dotimes (,i ,num)
+  (let ((aux (gensym "AUX")))
+    `(dotimes (,aux ,num)
        ,@exprs)))
 }|
 
-Como ahora el simbolo usado es no internado, todo funciona perfectamente:
+Y por último, veamos la expansión total del ejemplo de más arriba:
 
 @example{
-(let ((i 5))
-  (repeat 10
-    (format t "i vale: ~a" i)
-    (terpri)))
+(macroexpand-1 `(repeat 5
+                  ,(macroexpand-1 '(swap a b))
+                  ,(macroexpand-1 '(swap a c))
+                  ,(macroexpand-1 '(swap b c))))
 }
+
+Ahora sí. Mucho mejor. Obviamente no es el código más legible, pero al menos podemos distinguir las diferentes variables que se están usando.
 
 
 @subtitle{With-gensyms}
@@ -426,7 +426,7 @@ Probemos a ver si funciona:
 (syms-to-bindings '(a b c d e f))
 }
 
-Genial!
+¡Genial!
 
 Ahora sólo queda usar la función en nuestra macro:
 
@@ -438,28 +438,29 @@ Ahora sólo queda usar la función en nuestra macro:
 
 Fíjate que en este caso no hemos necesitado usar ningún símbolo no internado, pues todas las variables que se van a bindear están especificadas por los argumentos de la macro (las que contiene la lista @code{vars}).
 
-Para terminar podemos redefinir nuestras macros @code{swap} y @code{swap-with-aux} usando @code{with-gensyms}.
+Para terminar podemos redefinir nuestras macros @code{swap} y @code{repeat} usando @code{with-gensyms}.
 
-@example{
+@example|{
 (defmacro swap (a b)
   (with-gensyms (aux)
     `(let ((,aux ,a))
        (setf ,a ,b)
        (setf ,b ,aux))))
 
-(defmacro swap-with-aux ()
-  (with-gensyms (a aux)
-    `(let ((,a "a") (,aux 5))
-       (swap ,a ,aux)
-       (format nil "a: ~s | aux: ~s" ,a ,aux))))
-}
+(defmacro repeat (num &body exprs)
+  (with-gensyms (aux)
+    `(dotimes (,aux ,num)
+       ,@exprs)))
+}|
 
-Ah, mucho mejor. Se queda el código más limpio y elegante. Si expandimos de nuevo la macro veremos que seguimos distinguiendo los diferentes símbolos no internados:
+Ah, mucho mejor. Se queda el código más limpio y elegante. Si expandimos de nuevo el ejemplo veremos que seguimos distinguiendo los diferentes símbolos no internados:
 
 @example{
-(trivial-macroexpand-all:macroexpand-all '(swap-with-aux))
+(macroexpand-1 `(repeat 5
+                  ,(macroexpand-1 '(swap a b))
+                  ,(macroexpand-1 '(swap a c))
+                  ,(macroexpand-1 '(swap b c))))
 }
-
 
 @subtitle{Recomendaciones finales}
 
