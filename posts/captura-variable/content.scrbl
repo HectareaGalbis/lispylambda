@@ -162,7 +162,7 @@ Aunque parezca que son el mismo símbolo por tener la misma representación grá
 Every time this syntax is encountered, a distinct uninterned symbol is created.
 }
 
-Cada vez que escribamos @code{#:un-simbolo} se creará un nuevo símbolo internado diferente. Por eso en nuestro ejemplo se indica que son diferentes, porque al escribir dos veces @code{#:aux} tenemos en total dos símbolos no internados con el nombre @code{"AUX"}.
+Cada vez que escribamos @code{#:un-simbolo} se creará un nuevo símbolo no internado diferente. Por eso en nuestro ejemplo se indica que son diferentes, porque al escribir dos veces @code{#:aux} tenemos en total dos símbolos no internados con el nombre @code{"AUX"}.
 
 Con esto ya podemos hacer nuestra macro. Un primer intento podría ser el siguiente.
 
