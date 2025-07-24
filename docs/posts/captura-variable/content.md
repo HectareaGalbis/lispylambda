@@ -4,15 +4,15 @@
 
 Las macros de Common Lisp dan una libertad increible\. Pero esta libertad viene con un precio\. Si no tenemos cuidado\, podemos introducir bugs difíciles de detectar que nos darán dolor de cabeza durante unas buenas horas\. Estos bugs suelen estar ocasionados por la llamada **captura de variable**\.
 
-* [¿Qué es la captura de variable\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG3)
-* [Evitando la captura de variable](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG4)
-* [¿Cuándo debo usar un símbolo no internado\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG5)
-* [Gensym](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG6)
-* [With\-gensyms](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG7)
-* [Recomendaciones finales](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG8)
+* [¿Qué es la captura de variable\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG213)
+* [Evitando la captura de variable](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG214)
+* [¿Cuándo debo usar un símbolo no internado\?](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG215)
+* [Gensym](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG216)
+* [With\-gensyms](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG217)
+* [Recomendaciones finales](/docs/posts/captura-variable/content.md#TITLE:LISPYLAMBDA:TAG218)
 
 
-<a id="TITLE:LISPYLAMBDA:TAG3"></a>
+<a id="TITLE:LISPYLAMBDA:TAG213"></a>
 ## ¿Qué es la captura de variable\?
 
 Consideremos el ejemplo de crear una macro ```swap```\. Debe recibir dos argumentos e intercambiar sus valores\. Pensemos primero en el código al que debe expandirse\. Si queremos intercambiar el valor de dos variables lo haríamos de esta manera\:
@@ -107,7 +107,7 @@ El problema de nuestra macro es que ha permitido que tanto el argumento como la 
 Es esta **colisión de nombres** lo que denominamos **captura de variable**\.
 
 
-<a id="TITLE:LISPYLAMBDA:TAG4"></a>
+<a id="TITLE:LISPYLAMBDA:TAG214"></a>
 ## Evitando la captura de variable
 
 Tras saber que una captura de variable es una colisión de nombres la pregunta es obvia\: ¿Cómo evitamos la colisión de nombres\? Y la respuesta parece obvia\: Necesitamos usar variables en nuestra macro que siempre vayan a ser diferentes a cualquier argumento que nos puedan pasar\.
@@ -224,7 +224,7 @@ Aunque parezca que son el mismo símbolo por tener la misma representación grá
 > \#\: introduces an uninterned symbol whose name is symbol\-name\.<br>
 > Every time this syntax is encountered\, a distinct uninterned symbol is created\.
 
-Cada vez que escribamos ```#:un-simbolo``` se creará un nuevo símbolo internado diferente\. Por eso en nuestro ejemplo se indica que son diferentes\, porque al escribir dos veces ```#:aux``` tenemos en total dos símbolos no internados con el nombre ```"AUX"```\.
+Cada vez que escribamos ```#:un-simbolo``` se creará un nuevo símbolo no internado diferente\. Por eso en nuestro ejemplo se indica que son diferentes\, porque al escribir dos veces ```#:aux``` tenemos en total dos símbolos no internados con el nombre ```"AUX"```\.
 
 Con esto ya podemos hacer nuestra macro\. Un primer intento podría ser el siguiente\.
 
@@ -269,7 +269,7 @@ Si probamos ahora\, la macro ya debe funcionar perfectamente\:
 
 ¡Genial\!
 
-<a id="TITLE:LISPYLAMBDA:TAG5"></a>
+<a id="TITLE:LISPYLAMBDA:TAG215"></a>
 ## ¿Cuándo debo usar un símbolo no internado\?
 
 La regla de oro consiste en usar un símbolo no internado siempre que necesitemos alguna variable auxiliar como en el caso de ```swap```\. Más precisamente\, necesitamos este tipo de símbolos cada vez que se va a hacer una ligadura que sea interna\, es decir\, que desde fuera no se deba usar\.
@@ -407,7 +407,7 @@ NIL
 
 ¡Perfecto\!
 
-<a id="TITLE:LISPYLAMBDA:TAG6"></a>
+<a id="TITLE:LISPYLAMBDA:TAG216"></a>
 ## Gensym
 
 En la práctica\, la macro se puede considerar perfecta\. Ya no fallará nunca\. Está libre de bugs\. Pero hay un pequeño detalle que nos puede jugar una mala pasada\. Estas macros son pequeñas\, pero en un proyecto real las macros pueden ser muy grandes\, por lo que siempre acabaremos recurriendo a algún sistema de debugueo\. En particular\, la herramienta más usada es [macroexpand\-1](http://www.lispworks.com/reference/HyperSpec/Body/f_mexp_.htm) o [macroexpand](http://www.lispworks.com/reference/HyperSpec/Body/f_mexp_.htm)\.
@@ -554,7 +554,7 @@ T
 Ahora sí\. Mucho mejor\. Obviamente no es el código más legible\, pero al menos podemos distinguir las diferentes variables que se están usando\.
 
 
-<a id="TITLE:LISPYLAMBDA:TAG7"></a>
+<a id="TITLE:LISPYLAMBDA:TAG217"></a>
 ## With\-gensyms
 
 Sería un crimen hablar de captura de variable y [gensym](http://www.lispworks.com/reference/HyperSpec/Body/f_gensym.htm) sin hablar de ```with-gensyms```\. Imagina que estamos intentando crear una macro que necesita crear unas 6 variables no internadas\. El código podría ser algo parecido a esto\:
@@ -692,7 +692,7 @@ Ah\, mucho mejor\. Se queda el código más limpio y elegante\. Si expandimos de
 T
 `````
 
-<a id="TITLE:LISPYLAMBDA:TAG8"></a>
+<a id="TITLE:LISPYLAMBDA:TAG218"></a>
 ## Recomendaciones finales
 
 Antes que crear tu propia macro ```with-gensyms```\, es recomendable utilizar alguna librería que ya la contenga\. Mi recomendación es usar [alexandría](https://alexandria.common-lisp.dev/draft/alexandria.html)\. Además de ```with-gensyms```\, contiene ```once-only``` y funciones bastante útiles que podrían estar perfectamente en el estándar\. Algunas de mis preferidas son ```ensure-list``` y ```parse-body```\, también muy útiles para escribir macros\.

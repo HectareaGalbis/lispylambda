@@ -10,6 +10,5 @@
   :components ((:file "package")
                (:scribble "README")
                (:module "posts"
-                :components ((:module "captura-variable"
-                              :components ((:file "commands")
-                                           (:scribble "content")))))))
+                :components ((:scribble "captura-variable/content")
+                             (:scribble "macros-with/content")))))
