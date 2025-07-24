@@ -1,16 +1,16 @@
-<a id="TITLE:ADP-GITHUB:TAG219"></a>
+<a id="TITLE:LISPYLAMBDA:MACROS-WITH"></a>
 # Las macros with
 
-* [Introducción](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG220)
-* [Definiendo una macro with](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG221)
-* [El operador ```unwind-protect```](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG222)
-* [Una variable auxiliar](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG223)
-* [Un detalle sutil](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG224)
-* [Añadiendo declaraciones](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG225)
-* [Conclusión](/docs/posts/macros-with/content.md#TITLE:ADP-GITHUB:TAG226)
+* [Introducción](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG9)
+* [Definiendo una macro with](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG10)
+* [El operador ```unwind-protect```](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG11)
+* [Una variable auxiliar](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG12)
+* [Un detalle sutil](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG13)
+* [Añadiendo declaraciones](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG14)
+* [Conclusión](/docs/posts/macros-with/content.md#TITLE:LISPYLAMBDA:TAG15)
 
 
-<a id="TITLE:ADP-GITHUB:TAG220"></a>
+<a id="TITLE:LISPYLAMBDA:TAG9"></a>
 ## Introducción
 
 La familia de macros ```with``` es sin duda una de las más conocidas en Common Lisp\. Y es que a pesar de que existe el _Garbage Collector_ existen objetos que requieren de una inicialización y una terminación\.
@@ -34,7 +34,7 @@ El concepto de que algo vive de forma limitada en Common Lisp se conoce como **d
 Para estos casos se usan las macros ```with```\. Una macro ```with```\, en general\, va a definir un objeto con _dynamic extent_\. Es decir\, va a definir un objeto que estará disponible durante un tiempo limitado\. De hecho\, una buena macro ```with``` debe asegurarse de que el objeto en cuestión es finalizado sí o sí\, independientemente de si la ejecución ha sido correcta o ha ocurrido algún error\. Dicho de otra forma\, si salimos de la expresión ```with```\, el objeto que haya definido debe finalizarse sin falta\.
 
 
-<a id="TITLE:ADP-GITHUB:TAG221"></a>
+<a id="TITLE:LISPYLAMBDA:TAG10"></a>
 ## Definiendo una macro with
 
 Siguiendo el ejemplo del fichero\, vamos a crear una macro que llamaremos ```with-file``` que abra un fichero y lo cierre automáticamente al terminarse la macro\.
@@ -150,7 +150,7 @@ Fuera de WITH-FILE: T
 ¡Oh no\! ¡En este ejemplo al lanzarse una excepción el fichero no se ha cerrado\!
 
 
-<a id="TITLE:ADP-GITHUB:TAG222"></a>
+<a id="TITLE:LISPYLAMBDA:TAG11"></a>
 ## El operador ```unwind-protect```
 
 Tras el error anterior es tentador pensar en alguna solución que involucre capturar la excepción y relanzarla tras haber cerrado el fichero\. Pero hay otras expresiones que pueden sacarnos de la macro ```with-file``` sin haber cerrado el fichero\, como por ejemplo\, [return\-from](http://www.lispworks.com/reference/HyperSpec/Body/s_ret_fr.htm)\.
@@ -264,7 +264,7 @@ is not of type
 `````
 
 
-<a id="TITLE:ADP-GITHUB:TAG223"></a>
+<a id="TITLE:LISPYLAMBDA:TAG12"></a>
 ## Una variable auxiliar
 
 Quizás estés pensando que lo anterior es algo forzado\. Estamos asignando un valor a ```mi-fichero``` para que al usarse [close](http://www.lispworks.com/reference/HyperSpec/Body/f_close.htm) se produzca un error\. Pero hay que recordar que la premisa de una macro ```with``` es que el objeto dure tanto como la propia expresión\. Y al producirse el error en [close](http://www.lispworks.com/reference/HyperSpec/Body/f_close.htm) estamos saliendo de la macro \(de manera abrupta\) sin que el fichero se haya cerrado\. Por tanto\, la macro sigue sin estar perfecta\.
@@ -330,7 +330,7 @@ NIL
 ¿Ves el problema\? ¿No\? Pues ahí está precisamente lo malo\.
 
 
-<a id="TITLE:ADP-GITHUB:TAG224"></a>
+<a id="TITLE:LISPYLAMBDA:TAG13"></a>
 ## Un detalle sutil
 
 Quizás lo siguiente pueda parecer innecesario\, pero a mi me gusta que todo esté lo más perfecto posible\. También es cierto que toda esta sección depende de la implementación que estés usando\, pues los mensajes de warning o errores pueden variar de una a otra\. En mi caso estoy usando SBCL\.
@@ -378,8 +378,8 @@ Veamos el porqué expandiendo el ejemplo\:
 `````
 `````common-lisp
 ;; Returns
-(LET* ((MI-FICHERO (OPEN "~/file.txt")) (#:AUX-SYM652 MI-FICHERO))
-  (UNWIND-PROTECT (PROGN NIL) (CLOSE #:AUX-SYM652)))
+(LET* ((MI-FICHERO (OPEN "~/file.txt")) (#:AUX-SYM308 MI-FICHERO))
+  (UNWIND-PROTECT (PROGN NIL) (CLOSE #:AUX-SYM308)))
 T
 `````
 
@@ -440,7 +440,7 @@ caught ERROR:
 ¡Pero será hijo de \.\.\.\!
 
 
-<a id="TITLE:ADP-GITHUB:TAG225"></a>
+<a id="TITLE:LISPYLAMBDA:TAG14"></a>
 ## Añadiendo declaraciones
 
 Bueno\, al igual que en los anteriores casos\, vamos a expandir el ejemplo para ver mejor porqué obtenemos un error al usar una declaración\:
@@ -452,9 +452,9 @@ Bueno\, al igual que en los anteriores casos\, vamos a expandir el ejemplo para 
 `````
 `````common-lisp
 ;; Returns
-(LET* ((#:AUX-SYM654 (OPEN "~/file.txt")) (MI-FICHERO #:AUX-SYM654))
+(LET* ((#:AUX-SYM310 (OPEN "~/file.txt")) (MI-FICHERO #:AUX-SYM310))
   (UNWIND-PROTECT (PROGN (DECLARE (IGNORE MI-FICHERO)) NIL)
-    (CLOSE #:AUX-SYM654)))
+    (CLOSE #:AUX-SYM310)))
 T
 `````
 
@@ -565,10 +565,10 @@ NIL
 `````
 `````common-lisp
 ;; Returns
-(LET* ((#:AUX-SYM656 (OPEN "~/file.txt")) (MI-FICHERO #:AUX-SYM656))
+(LET* ((#:AUX-SYM312 (OPEN "~/file.txt")) (MI-FICHERO #:AUX-SYM312))
   (DECLARE (IGNORE MI-FICHERO))
   (DECLARE (SPECIAL MI-FICHERO))
-  (UNWIND-PROTECT (PROGN (PRINT X) (PRINT Y)) (CLOSE #:AUX-SYM656)))
+  (UNWIND-PROTECT (PROGN (PRINT X) (PRINT Y)) (CLOSE #:AUX-SYM312)))
 T
 `````
 
@@ -581,8 +581,8 @@ T
 `````
 `````common-lisp
 ;; Returns
-(LET* ((#:AUX-SYM657 (OPEN "~/file.txt")) (MI-FICHERO #:AUX-SYM657))
-  (UNWIND-PROTECT (PROGN (PRINT X) (PRINT Y)) (CLOSE #:AUX-SYM657)))
+(LET* ((#:AUX-SYM313 (OPEN "~/file.txt")) (MI-FICHERO #:AUX-SYM313))
+  (UNWIND-PROTECT (PROGN (PRINT X) (PRINT Y)) (CLOSE #:AUX-SYM313)))
 T
 `````
 
@@ -609,10 +609,10 @@ WITH-FILE
 Lo único que hemos tenido que cambiar es el orden de los valores de retorno ```declarations``` y  ```rest-body```\. Por lo demás\, todo se queda igual\.
 
 
-<a id="TITLE:ADP-GITHUB:TAG226"></a>
+<a id="TITLE:LISPYLAMBDA:TAG15"></a>
 ## Conclusión
 
-Seguramente haya aún algún error en nuestra macro\, pero se ha quedado lo suficientemente bien como para quedarme satisfecho\.
+Seguramente nuestra macro ```with-file``` se pueda mejorar aún más\, pero se ha quedado lo suficientemente bien como para quedarme satisfecho\.
 
 Las macros ```with``` parecen en un inicio inofensivas\. Macros sencillas de hacer\. Pero poco a poco uno se va dando cuenta de que siempre se pueden mejorar más y más\.
 

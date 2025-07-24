@@ -14,4 +14,5 @@ Lispylambda es un blog de programación de Common Lisp.
 
 @itemize[
 @item{@tref[captura-variable]}
+@item{@tref[macros-with]}
 ]

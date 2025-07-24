@@ -1,7 +1,7 @@
 
-(in-package :adpgh)
+(in-package :lispylambda)
 
-@title[:toc nil]{Las macros with}
+@title[:toc nil :tag macros-with]{Las macros with}
 
 @table-of-contents[]
 
